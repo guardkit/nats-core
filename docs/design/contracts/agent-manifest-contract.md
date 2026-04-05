@@ -1,7 +1,7 @@
 # Agent Manifest Contract — Shared Capability Declaration Schema
 
 ## For: All fleet agents, MCP adapters, and NATS infrastructure
-## Date: 4 April 2026
+## Date: 4 April 2026 (updated: 5 April 2026)
 ## Status: Draft — to be implemented in nats-core
 ## Owner: nats-core library (all repos depend on this)
 
@@ -15,7 +15,12 @@ This contract ensures that adding a new agent or adapter requires zero changes t
 Jarvis router code, zero changes to other agents, and zero duplication of capability
 definitions.
 
-Implementation target: `nats-core/src/nats_core/manifest.py`
+The **AgentConfig** is the companion schema for runtime configuration — how the
+agent runs, not what it does. AgentConfig is local to each agent and never
+published to the fleet.
+
+Implementation target: `nats-core/src/nats_core/manifest.py` (AgentManifest)
+and `nats-core/src/nats_core/config.py` (AgentConfig)
 
 ---
 
@@ -28,9 +33,12 @@ Implementation target: `nats-core/src/nats_core/manifest.py`
 3. **Risk classification** — Every tool declares read_only, mutating, or destructive.
 4. **Transport-agnostic** — Pure data. NATS publishes it. MCP translates it. Neither
    transport is privileged.
+5. **Manifest vs Config separation** — Capabilities (what) are public and shared.
+   Runtime settings (how) are private and local. API keys, endpoints, and timeouts
+   never appear in the manifest.
 
 Sources: Claude Code 12 Primitives analysis (Primitives #1, #2, #3, #15),
-ADR-004 Dynamic Fleet Registration, Decision DA2.
+ADR-004 Dynamic Fleet Registration, Decisions DA2, DA15.
 
 ---
 
@@ -76,6 +84,10 @@ class AgentManifest(BaseModel):
 
     Single source of truth. NATS registration and MCP tool
     definitions are both derived from this.
+
+    This is the PUBLIC contract — published to fleet.register,
+    readable by all fleet members. Never contains secrets,
+    endpoints, or runtime configuration. See AgentConfig for those.
     """
     # Identity
     agent_id: str                # e.g. "architect-agent"
@@ -126,6 +138,157 @@ class AgentDeregistrationPayload(BaseModel):
     agent_id: str
     reason: str = "shutdown"  # shutdown | maintenance | error
 ```
+
+---
+
+## Companion Schema: AgentConfig (Runtime Configuration)
+
+AgentConfig is the **private, local** counterpart to the public AgentManifest.
+It defines HOW the agent runs — model endpoints, API keys, connection strings,
+timeouts. It is never published to `fleet.register` and never shared with
+other agents.
+
+All agents import AgentConfig from nats-core so the schema is consistent
+across the fleet. This prevents six agents drifting into six different config
+formats, which would break fleet-level tooling (dashboards, cost tracking,
+fleet compose environment injection).
+
+Implementation target: `nats-core/src/nats_core/config.py`
+
+### Schema
+
+```python
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
+
+class ModelConfig(BaseModel):
+    """Model endpoint configuration for an agent."""
+    reasoning_model: str = Field(
+        description="Model identifier for reasoning/orchestration, "
+                    "e.g. 'gemini-3.1-pro', 'openai:gpt-4o', 'claude-sonnet-4-20250514'"
+    )
+    reasoning_endpoint: str = Field(
+        default="",
+        description="API endpoint URL. Empty string uses the provider's default."
+    )
+    implementation_model: str | None = Field(
+        default=None,
+        description="Model for implementation tasks (if two-model separation applies), "
+                    "e.g. 'vllm:qwen3-coder-next'"
+    )
+    implementation_endpoint: str | None = Field(
+        default=None,
+        description="Implementation model endpoint, e.g. 'http://promaxgb10-41b1:8002/v1'"
+    )
+    embedding_model: str | None = Field(
+        default=None,
+        description="Embedding model if agent needs embeddings directly, "
+                    "e.g. 'nomic-ai/nomic-embed-text-v1.5'"
+    )
+    embedding_endpoint: str | None = Field(
+        default=None,
+        description="Embedding endpoint, e.g. 'http://promaxgb10-41b1:8001/v1'"
+    )
+
+
+class GraphitiConfig(BaseModel):
+    """Graphiti knowledge graph connection settings."""
+    endpoint: str = Field(
+        default="bolt://localhost:7687",
+        description="FalkorDB/Neo4j bolt endpoint"
+    )
+    default_group_ids: list[str] = Field(
+        default_factory=lambda: ["appmilla-fleet"],
+        description="Default group IDs to query. Agents typically include "
+                    "'appmilla-fleet' plus their project scope."
+    )
+
+
+class NATSConfig(BaseModel):
+    """NATS connection settings."""
+    url: str = Field(
+        default="nats://localhost:4222",
+        description="NATS server URL"
+    )
+    credentials_file: str | None = Field(
+        default=None,
+        description="Path to NATS credentials file"
+    )
+
+
+class AgentConfig(BaseSettings):
+    """Runtime configuration for a fleet agent.
+
+    LOCAL to each agent — never published to fleet.register.
+    Loaded from agent-config.yaml, environment variables, or .env file.
+
+    Uses pydantic-settings for environment variable override:
+      AGENT_MODELS__REASONING_MODEL=gemini-3.1-pro
+      AGENT_GRAPHITI__ENDPOINT=bolt://promaxgb10-41b1:7687
+      AGENT_NATS__URL=nats://promaxgb10-41b1:4222
+    """
+    models: ModelConfig
+    graphiti: GraphitiConfig | None = None
+    nats: NATSConfig = Field(default_factory=NATSConfig)
+
+    # Observability
+    langsmith_project: str | None = Field(
+        default=None,
+        description="LangSmith project name for tracing. "
+                    "Convention: '{agent_id}' or '{agent_id}-{project}'"
+    )
+    langsmith_api_key: str | None = None
+
+    # Lifecycle
+    heartbeat_interval_seconds: int = 30
+    heartbeat_timeout_seconds: int = 90
+    max_task_timeout_seconds: int = 600
+
+    # API keys (loaded from environment)
+    gemini_api_key: str | None = None
+    anthropic_api_key: str | None = None
+    openai_api_key: str | None = None
+
+    model_config = {"env_prefix": "AGENT_", "env_nested_delimiter": "__"}
+```
+
+### Per-Agent Config File
+
+Each agent repo has an `agent-config.yaml.example` (committed) and
+`agent-config.yaml` (gitignored, contains real credentials):
+
+```yaml
+# architect-agent/agent-config.yaml.example
+models:
+  reasoning_model: "gemini-3.1-pro"
+  reasoning_endpoint: ""  # uses provider default
+  implementation_model: null  # architect agent doesn't implement code
+  embedding_model: "nomic-ai/nomic-embed-text-v1.5"
+  embedding_endpoint: "http://promaxgb10-41b1:8001/v1"
+
+graphiti:
+  endpoint: "bolt://promaxgb10-41b1:7687"
+  default_group_ids:
+    - "appmilla-fleet"
+    # Add project scope when running: e.g. "finproxy"
+
+nats:
+  url: "nats://promaxgb10-41b1:4222"
+
+langsmith_project: "architect-agent"
+heartbeat_interval_seconds: 30
+max_task_timeout_seconds: 1200  # 20 min — architecture sessions are longer
+```
+
+### Why Both Schemas Live in nats-core
+
+Both `AgentManifest` and `AgentConfig` are imported by every agent. Defining
+them in nats-core ensures:
+- One Pydantic model, not six drift-prone variants
+- Fleet-level tooling (dashboard, cost tracking) knows the config shape
+- Docker Compose fleet environment variables map to a known schema
+- New agents get config validation for free by importing the base class
 
 ---
 
@@ -204,3 +367,4 @@ class ManifestRegistry(ABC):
 ---
 
 *Created: 4 April 2026 | Agent manifest contract design session*
+*Updated: 5 April 2026 | Added AgentConfig companion schema (DA15)*
