@@ -1,20 +1,43 @@
+# Graphiti Knowledge Graph Configuration
+#
+# FalkorDB runs on the Synology DS918+ NAS, accessible via Tailscale.
+#
+# FalkorDB on NAS:
+#   ssh richardwoollcott@whitestocks
+#   cd /volume1/guardkit/docker
+#   sudo docker-compose -f docker-compose.falkordb.yml up -d
+#
+# FalkorDB Browser UI: http://whitestocks:3000
+
 project_id: nats-core
 enabled: true
 graph_store: falkordb
+
+# FalkorDB connection (Synology DS918+ NAS via Tailscale)
 falkordb_host: whitestocks
 falkordb_port: 6379
 timeout: 30.0
 max_concurrent_episodes: 3
-llm_provider: ollama
-llm_base_url: http://richards-macbook-pro.tailebf801.ts.net:8000/v1
-llm_model: qwen2.5:14b-instruct-q4_K_M
+
+# LLM provider for Graphiti entity extraction
+# --- GB10 (vLLM, FP8) ---
+llm_provider: vllm
+llm_base_url: http://promaxgb10-41b1:8000/v1
+llm_model: neuralmagic/Qwen2.5-14B-Instruct-FP8-dynamic
 llm_max_tokens: 4096
+
+# Embedding provider for Graphiti vector search
 embedding_provider: vllm
 embedding_base_url: http://promaxgb10-41b1:8001/v1
 embedding_model: nomic-embed-text-v1.5
+embedding_dimensions: 1024
+
+# Group IDs for organizing knowledge
 group_ids:
-- product_knowledge
-- command_workflows
-- architecture_decisions
+  - product_knowledge
+  - command_workflows
+  - architecture_decisions
+
+# Deprecated fields (kept for backwards compatibility)
 host: localhost
 port: 8000
