@@ -1,22 +1,51 @@
 ---
 id: TASK-NC08
-title: "Unit tests (config, topics, events, manifest, agent_config)"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: Unit tests (config, topics, events, manifest, agent_config)
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: testing
-tags: [nats-client, unit-tests, pytest, declarative-modules]
+tags:
+- nats-client
+- unit-tests
+- pytest
+- declarative-modules
 complexity: 4
 wave: 6
 implementation_mode: direct
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-NC01, TASK-NC02, TASK-NC03, TASK-NC04]
+dependencies:
+- TASK-NC01
+- TASK-NC02
+- TASK-NC03
+- TASK-NC04
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T21:57:48.299555'
+  last_updated: '2026-04-08T22:02:35.944241'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:57:48.299555'
+    player_summary: 'Added ''unit'' marker to pyproject.toml and applied pytestmark=pytest.mark.unit
+      to all five test files (test_config.py, test_topics.py, test_events.py, test_manifest.py,
+      test_agent_config.py). Created new test_events.py with comprehensive mutable
+      default isolation tests for AgentHeartbeatPayload.metadata and active_workflow_states.
+      Existing tests already covered abstract base TypeError (test_manifest.py), wildcard
+      rejection (test_topics.py), and monkeypatch.setenv (test_config.py). All test
+      files '
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Unit tests (config, topics, events, manifest, agent_config)

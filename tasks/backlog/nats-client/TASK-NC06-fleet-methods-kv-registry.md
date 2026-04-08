@@ -1,33 +1,58 @@
 ---
 id: TASK-NC06
-title: "Fleet convenience methods + NATSKVManifestRegistry"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: Fleet convenience methods + NATSKVManifestRegistry
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: feature
-tags: [nats-client, fleet, kv, jetstream, registry]
+tags:
+- nats-client
+- fleet
+- kv
+- jetstream
+- registry
 complexity: 5
 wave: 5
 implementation_mode: task-work
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-NC04, TASK-NC05]
+dependencies:
+- TASK-NC04
+- TASK-NC05
 consumer_context:
-  - task: TASK-NC04
-    consumes: AgentManifest
-    framework: "Pydantic BaseModel (nats_core.manifest.AgentManifest)"
-    driver: "pydantic"
-    format_note: "register_agent() accepts AgentManifest; serialises to manifest.model_dump_json().encode() for fleet.register publish AND KV put; get_fleet_registry() returns dict[str, AgentManifest] by deserialising KV values with AgentManifest.model_validate_json()"
-  - task: TASK-NC05
-    consumes: NATSClient
-    framework: "nats_core.client.NATSClient"
-    driver: "nats-py"
-    format_note: "Fleet methods are added directly to NATSClient class; NATSKVManifestRegistry receives a connected NATSClient instance; access JetStream via client._nc.jetstream()"
+- task: TASK-NC04
+  consumes: AgentManifest
+  framework: Pydantic BaseModel (nats_core.manifest.AgentManifest)
+  driver: pydantic
+  format_note: register_agent() accepts AgentManifest; serialises to manifest.model_dump_json().encode()
+    for fleet.register publish AND KV put; get_fleet_registry() returns dict[str,
+    AgentManifest] by deserialising KV values with AgentManifest.model_validate_json()
+- task: TASK-NC05
+  consumes: NATSClient
+  framework: nats_core.client.NATSClient
+  driver: nats-py
+  format_note: Fleet methods are added directly to NATSClient class; NATSKVManifestRegistry
+    receives a connected NATSClient instance; access JetStream via client._nc.jetstream()
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T21:57:48.300077'
+  last_updated: '2026-04-08T22:05:41.116051'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:57:48.300077'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Fleet convenience methods + NATSKVManifestRegistry

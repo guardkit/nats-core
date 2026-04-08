@@ -1,22 +1,45 @@
 ---
 id: TASK-NC09
-title: "Integration tests (NATSClient — all 33 BDD scenarios)"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: "Integration tests (NATSClient \u2014 all 33 BDD scenarios)"
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: testing
-tags: [nats-client, integration-tests, pytest, bdd, natsclient]
+tags:
+- nats-client
+- integration-tests
+- pytest
+- bdd
+- natsclient
 complexity: 6
 wave: 6
 implementation_mode: task-work
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-NC05, TASK-NC06, TASK-NC07]
+dependencies:
+- TASK-NC05
+- TASK-NC06
+- TASK-NC07
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T22:05:44.395493'
+  last_updated: '2026-04-08T22:13:32.207300'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T22:05:44.395493'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Integration tests (NATSClient — all 33 BDD scenarios)

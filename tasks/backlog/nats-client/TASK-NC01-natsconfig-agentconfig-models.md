@@ -1,22 +1,47 @@
 ---
 id: TASK-NC01
-title: "NATSConfig + AgentConfig declarative models"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: NATSConfig + AgentConfig declarative models
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: declarative
-tags: [nats-client, config, pydantic-settings]
+tags:
+- nats-client
+- config
+- pydantic-settings
 complexity: 2
 wave: 1
 implementation_mode: direct
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-ME01]
+dependencies:
+- TASK-ME01
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T21:43:50.112031'
+  last_updated: '2026-04-08T21:51:19.039502'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:43:50.112031'
+    player_summary: 'Created src/nats_core/agent_config.py with three pydantic models:
+      ModelConfig (nested BaseModel for LLM endpoints, reasoning_model required),
+      GraphitiConfig (nested BaseModel for knowledge graph settings with defaults),
+      and AgentConfig (BaseSettings with env_prefix=''AGENT_'' and env_nested_delimiter=''__'').
+      AgentConfig requires ''models'' field (no default), nests NATSConfig with default_factory,
+      includes heartbeat/timeout fields with ge=1 constraints, API keys as SecretStr
+      for masking, and a model_'
+    player_success: true
+    coach_success: true
 ---
 
 # Task: NATSConfig + AgentConfig declarative models

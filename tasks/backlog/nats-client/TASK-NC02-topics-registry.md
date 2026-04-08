@@ -1,22 +1,47 @@
 ---
 id: TASK-NC02
-title: "Topics registry"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: Topics registry
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: declarative
-tags: [nats-client, topics, registry]
+tags:
+- nats-client
+- topics
+- registry
 complexity: 3
 wave: 1
 implementation_mode: direct
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-ME01]
+dependencies:
+- TASK-ME01
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T21:43:50.116499'
+  last_updated: '2026-04-08T21:49:14.903291'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:43:50.116499'
+    player_summary: 'The Topics registry was already substantially implemented. The
+      key change required by the acceptance criteria was AC-004: Topics.resolve()
+      must raise KeyError (not ValueError) when a required placeholder is missing.
+      Changed the exception type from ValueError to KeyError in topics.py line 155,
+      updated the docstring to document both KeyError and ValueError, and updated
+      the existing test to expect KeyError. Also fixed a pre-existing bug in test_no_hardcoded_topic_strings_outside_registry
+      where the '
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Topics registry

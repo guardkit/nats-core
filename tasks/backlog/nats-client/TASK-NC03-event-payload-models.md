@@ -1,28 +1,56 @@
 ---
 id: TASK-NC03
-title: "Event payload models (events/ package)"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: Event payload models (events/ package)
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: declarative
-tags: [nats-client, events, pydantic, payload-models]
+tags:
+- nats-client
+- events
+- pydantic
+- payload-models
 complexity: 3
 wave: 2
 implementation_mode: direct
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-ME02]
+dependencies:
+- TASK-ME02
 consumer_context:
-  - task: TASK-ME02
-    consumes: MessageEnvelope
-    framework: "Pydantic BaseModel (nats_core.envelope)"
-    driver: "pydantic"
-    format_note: "All payload models must be importable from nats_core.events.<domain>; they are carried in MessageEnvelope.payload and must be valid Pydantic BaseModel subclasses with ConfigDict(extra='ignore')"
+- task: TASK-ME02
+  consumes: MessageEnvelope
+  framework: Pydantic BaseModel (nats_core.envelope)
+  driver: pydantic
+  format_note: All payload models must be importable from nats_core.events.<domain>;
+    they are carried in MessageEnvelope.payload and must be valid Pydantic BaseModel
+    subclasses with ConfigDict(extra='ignore')
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T21:43:50.118876'
+  last_updated: '2026-04-08T21:50:36.660156'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:43:50.118876'
+    player_summary: 'The events/ package already contained all 13 payload classes
+      with correct patterns (ConfigDict(extra=''ignore''), Field(description=...),
+      from __future__ import annotations). Two gaps were identified and fixed: (1)
+      BuildCompletePayload was missing ''repo'' and ''branch'' fields required by
+      the wire format in API-message-contracts.md, and (2) AgentHeartbeatPayload was
+      missing a ''metadata'' field with default_factory=dict. Both fields were added
+      as optional with defaults (None for repo/branch, empty dict'
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Event payload models (events/ package)

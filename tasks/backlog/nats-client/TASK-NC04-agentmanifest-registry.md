@@ -1,28 +1,56 @@
 ---
 id: TASK-NC04
-title: "AgentManifest + ManifestRegistry"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
+title: AgentManifest + ManifestRegistry
+status: in_review
+created: 2026-04-08 00:00:00+00:00
+updated: 2026-04-08 00:00:00+00:00
 priority: high
 task_type: declarative
-tags: [nats-client, manifest, registry, fleet]
+tags:
+- nats-client
+- manifest
+- registry
+- fleet
 complexity: 4
 wave: 3
 implementation_mode: direct
 parent_review: TASK-1T1W
 feature_id: FEAT-1T1W
-dependencies: [TASK-NC03]
+dependencies:
+- TASK-NC03
 consumer_context:
-  - task: TASK-NC03
-    consumes: EventPayloadModels
-    framework: "Pydantic BaseModel (nats_core.events)"
-    driver: "pydantic"
-    format_note: "AgentManifest.intents uses IntentCapability (not an events model) but manifest.py must not import from events/ — keep dependency direction: events depend on envelope, manifest is standalone"
+- task: TASK-NC03
+  consumes: EventPayloadModels
+  framework: Pydantic BaseModel (nats_core.events)
+  driver: pydantic
+  format_note: "AgentManifest.intents uses IntentCapability (not an events model)\
+    \ but manifest.py must not import from events/ \u2014 keep dependency direction:\
+    \ events depend on envelope, manifest is standalone"
 test_results:
   status: pending
   coverage: null
   last_run: null
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-3845
+  base_branch: main
+  started_at: '2026-04-08T21:51:19.080298'
+  last_updated: '2026-04-08T21:57:45.098421'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:51:19.080298'
+    player_summary: Added ConfigDict(extra='ignore') to IntentCapability and ToolCapability
+      models. Created abstract ManifestRegistry base class with abc.ABC and five abstract
+      methods (register, deregister, get, find_by_intent, find_by_tool). Implemented
+      InMemoryManifestRegistry using a dict[str, AgentManifest] store with fnmatch-based
+      glob matching for find_by_intent. Updated __init__.py exports with ManifestRegistry
+      and InMemoryManifestRegistry. Added factory functions to conftest.py for test
+      data creation.
+    player_success: true
+    coach_success: true
 ---
 
 # Task: AgentManifest + ManifestRegistry
