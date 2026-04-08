@@ -1,18 +1,18 @@
 ---
-id: TASK-FR-002
-title: Fleet Registration Pydantic models
-status: backlog
-task_type: declarative
-priority: high
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
 complexity: 4
-parent_review: TASK-B5F3
-feature_id: FEAT-FR01
-wave: 2
-implementation_mode: task-work
+created: 2026-04-08 00:00:00+00:00
 dependencies:
-  - TASK-FR-001
+- TASK-FR-001
+feature_id: FEAT-FR01
+id: TASK-FR-002
+implementation_mode: task-work
+parent_review: TASK-B5F3
+priority: high
+status: design_approved
+task_type: declarative
+title: Fleet Registration Pydantic models
+updated: 2026-04-08 00:00:00+00:00
+wave: 2
 ---
 
 # TASK-FR-002: Fleet Registration Pydantic models

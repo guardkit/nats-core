@@ -14,9 +14,10 @@ from __future__ import annotations
 
 import abc
 import fnmatch
+import json
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class IntentCapability(BaseModel):
@@ -143,6 +144,25 @@ class AgentManifest(BaseModel):
         default_factory=dict,
         description="Arbitrary key-value metadata",
     )
+
+    @field_validator("metadata")
+    @classmethod
+    def metadata_size_must_not_exceed_64kb(cls, v: dict[str, str]) -> dict[str, str]:
+        """Reject metadata payloads larger than 64KB when JSON-encoded.
+
+        Args:
+            v: The metadata dictionary to validate.
+
+        Returns:
+            The validated metadata dictionary.
+
+        Raises:
+            ValueError: If the JSON-encoded metadata exceeds 65536 bytes.
+        """
+        if len(json.dumps(v).encode()) > 65536:
+            msg = "metadata exceeds the maximum allowed size of 64KB"
+            raise ValueError(msg)
+        return v
 
 
 # ---------------------------------------------------------------------------

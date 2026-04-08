@@ -459,6 +459,91 @@ class TestRegistryFindByTool:
 
 
 # ===========================================================================
+# AC-FR002-005: metadata validator rejects payloads > 64KB
+# ===========================================================================
+
+
+class TestMetadataValidator:
+    """AC-FR002-005: metadata validator rejects payloads > 64KB with descriptive error."""
+
+    @pytest.mark.smoke
+    def test_small_metadata_accepted(self) -> None:
+        """Small metadata dict is accepted."""
+        m = _make_manifest(metadata={"key": "value"})
+        assert m.metadata == {"key": "value"}
+
+    @pytest.mark.smoke
+    def test_empty_metadata_accepted(self) -> None:
+        """Empty metadata dict is accepted."""
+        m = _make_manifest(metadata={})
+        assert m.metadata == {}
+
+    @pytest.mark.boundary
+    def test_metadata_just_under_64kb_accepted(self) -> None:
+        """Metadata payload just under 64KB is accepted."""
+        import json
+
+        # Build a dict that serialises to just under 64KB
+        # We need the JSON-encoded bytes to be <= 65536
+        base = {"k": "x" * 60000}
+        # Verify it's under 64KB
+        assert len(json.dumps(base).encode()) <= 65536
+        m = _make_manifest(metadata=base)
+        assert m.metadata == base
+
+    @pytest.mark.negative
+    def test_metadata_over_64kb_rejected(self) -> None:
+        """Metadata payload over 64KB is rejected with ValidationError."""
+        import json
+
+        # Build a dict that serialises to more than 64KB
+        big = {"data": "x" * 70000}
+        assert len(json.dumps(big).encode()) > 65536
+        with pytest.raises(ValidationError, match="64KB"):
+            _make_manifest(metadata=big)
+
+    @pytest.mark.negative
+    def test_metadata_exactly_at_boundary_accepted(self) -> None:
+        """Metadata payload exactly at 64KB boundary is accepted."""
+        import json
+
+        # Build payload that is exactly 65536 bytes when JSON-encoded
+        # {"k": "xxx..."} -> we need to find the right padding
+        prefix = '{"k": "'
+        suffix = '"}'
+        overhead = len(prefix.encode()) + len(suffix.encode())
+        padding = 65536 - overhead
+        payload = {"k": "x" * padding}
+        assert len(json.dumps(payload).encode()) == 65536
+        m = _make_manifest(metadata=payload)
+        assert m.metadata == payload
+
+    @pytest.mark.negative
+    def test_metadata_one_byte_over_rejected(self) -> None:
+        """Metadata payload one byte over 64KB is rejected."""
+        import json
+
+        prefix = '{"k": "'
+        suffix = '"}'
+        overhead = len(prefix.encode()) + len(suffix.encode())
+        padding = 65536 - overhead + 1
+        payload = {"k": "x" * padding}
+        assert len(json.dumps(payload).encode()) == 65537
+        with pytest.raises(ValidationError, match="64KB"):
+            _make_manifest(metadata=payload)
+
+    @pytest.mark.key_example
+    def test_metadata_error_message_is_descriptive(self) -> None:
+        """Error message mentions the 64KB size limit."""
+        import json
+
+        big = {"data": "x" * 70000}
+        assert len(json.dumps(big).encode()) > 65536
+        with pytest.raises(ValidationError, match="64KB"):
+            _make_manifest(metadata=big)
+
+
+# ===========================================================================
 # AC-008: All models use ConfigDict(extra="ignore")
 # ===========================================================================
 
