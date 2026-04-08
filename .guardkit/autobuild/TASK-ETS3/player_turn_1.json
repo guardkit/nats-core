@@ -1,0 +1,105 @@
+{
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "src/nats_core/events/_jarvis.py created with from __future__ import annotations",
+      "status": "complete",
+      "evidence": "File created at src/nats_core/events/_jarvis.py with 'from __future__ import annotations' on line 13. Verified via py_compile and mypy --strict.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "IntentClassifiedPayload implemented with input_text: str, intent: str, confidence: float (ge=0.0, le=1.0), target_agent: str, correlation_id: str | None (default None)",
+      "status": "complete",
+      "evidence": "IntentClassifiedPayload has all 5 fields with correct types and constraints. confidence uses Field(ge=0.0, le=1.0). correlation_id defaults to None. Tests verify valid construction, boundary values (0.0, 1.0), rejection of out-of-range values (-0.1, 1.1), missing required fields, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "DispatchPayload implemented with intent: str, target_agent: str, input_text: str, correlation_id: str (required), context: dict[str, Any] (default {})",
+      "status": "complete",
+      "evidence": "DispatchPayload has all 5 fields. correlation_id is required (str, no default). context uses default_factory=dict. Tests verify valid construction, context with data, rejection of missing correlation_id, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "AgentResultPayload implemented with agent_id: str, intent: str, result: dict[str, Any], correlation_id: str, success: bool — all required",
+      "status": "complete",
+      "evidence": "AgentResultPayload has all 5 fields, all required (no defaults). Tests verify valid construction, failure result scenario, rejection of missing required fields, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "NotificationPayload implemented with message: str, level: Literal['info', 'warning', 'error'] (default 'info'), adapter: str, correlation_id: str | None (default None)",
+      "status": "complete",
+      "evidence": "NotificationPayload has all 4 fields with correct types. level uses Literal['info', 'warning', 'error'] with default='info'. Tests verify valid construction, all 3 valid levels, rejection of invalid level 'debug', default level, optional correlation_id, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "All models use ConfigDict(extra='ignore') (ADR-002)",
+      "status": "complete",
+      "evidence": "All 4 models have model_config = ConfigDict(extra='ignore'). Tests verify extra fields are silently ignored for each model (test_extra_fields_ignored tests).",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "All fields have Field(description=...) annotations",
+      "status": "complete",
+      "evidence": "Every field on all 4 models uses Field(description=...). Tests verify this programmatically via test_field_descriptions_present for each model, asserting all fields have non-None, non-empty descriptions.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/_jarvis.py"]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All classes exported in src/nats_core/events/__init__.py",
+      "status": "complete",
+      "evidence": "events/__init__.py imports and re-exports IntentClassifiedPayload, DispatchPayload, AgentResultPayload, NotificationPayload in __all__. Tests verify import and __all__ membership.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": ["src/nats_core/events/__init__.py"]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check on all 3 files (source, init, test) returns 'All checks passed!' with zero errors after auto-fix of import ordering.",
+      "test_file": null,
+      "implementation_files": ["src/nats_core/events/_jarvis.py", "src/nats_core/events/__init__.py", "tests/test_jarvis_events.py"]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "mypy src/ passes with zero errors",
+      "status": "complete",
+      "evidence": "mypy --strict on _jarvis.py and __init__.py returns 'Success: no issues found in 2 source files'.",
+      "test_file": null,
+      "implementation_files": ["src/nats_core/events/_jarvis.py", "src/nats_core/events/__init__.py"]
+    }
+  ],
+  "task_id": "TASK-ETS3",
+  "turn": 1,
+  "files_modified": ["src/nats_core/events/__init__.py"],
+  "files_created": ["src/nats_core/events/_jarvis.py", "tests/test_jarvis_events.py"],
+  "tests_written": ["tests/test_jarvis_events.py"],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "29 tests passed, 0 failed. Coverage: 100% on src/nats_core/events/_jarvis.py (30 stmts, 0 missed).",
+  "implementation_notes": "Implemented 4 Jarvis domain event payload Pydantic models in _jarvis.py following TDD (RED→GREEN→REFACTOR). All models use ConfigDict(extra='ignore') per ADR-002, Field(description=...) on all fields, and Google-style docstrings. IntentClassifiedPayload.confidence constrained to 0.0-1.0 via ge/le. NotificationPayload.level uses Literal type for 'info'/'warning'/'error'. Re-exports added to events/__init__.py. Pattern mirrors existing _agent.py module exactly.",
+  "concerns": [],
+  "requirements_addressed": [
+    "IntentClassifiedPayload with confidence 0.0-1.0 constraint",
+    "DispatchPayload with required correlation_id and default empty context",
+    "AgentResultPayload with all required fields",
+    "NotificationPayload with Literal level and default 'info'",
+    "ConfigDict(extra='ignore') on all models (ADR-002)",
+    "Field(description=...) on all fields",
+    "Re-export from events/__init__.py",
+    "Lint/format and mypy --strict pass"
+  ],
+  "requirements_remaining": []
+}

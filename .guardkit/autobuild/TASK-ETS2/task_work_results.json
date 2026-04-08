@@ -1,6 +1,26 @@
 {
   "task_id": "TASK-ETS2",
-  "turn": 1,
+  "timestamp": "2026-04-08T20:05:05.703214",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation",
+      "completed": false
+    },
+    "phase_4": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 75,
+    "tests_failed": 0,
+    "coverage": 100.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
   "files_modified": [
     ".claude/task-plans/TASK-ETS1-implementation-plan.md",
     ".claude/task-plans/TASK-ETS2-implementation-plan.md",
@@ -72,29 +92,18 @@
     "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/events/_agent.py"
   ],
   "tests_written": [],
-  "tests_run": true,
-  "tests_passed": true,
-  "test_output_summary": "",
-  "implementation_notes": "Implementation via task-work delegation",
-  "concerns": [],
-  "requirements_addressed": [
-    "src/nats_core/events/_agent.py created with from __future__ import annotations",
-    "AgentStatusPayload implemented with all fields and types",
-    "ApprovalRequestPayload implemented with all fields and types",
-    "ApprovalResponsePayload implemented with all fields and types",
-    "CommandPayload implemented with all fields and types",
-    "ResultPayload implemented with all fields and types",
-    "All models use ConfigDict(extra='ignore')",
-    "All fields have Field(description=...) annotations",
-    "All classes exported in events/__init__.py",
-    "All files pass ruff lint/format checks",
-    "mypy src/ passes with zero errors"
-  ],
-  "requirements_remaining": [],
-  "sdk_turns_used": 77,
-  "sdk_max_turns": 100,
-  "sdk_ceiling_hit": false,
-  "tests_passed_count": 75,
+  "summary": "75 tests passed, 100.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 77,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "code_review": {
+    "score": 95,
+    "solid": 95,
+    "dry": 95,
+    "yagni": 100
+  },
   "completion_promises": [
     {
       "criterion_id": "AC-001",
