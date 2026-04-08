@@ -1,22 +1,30 @@
 ---
-id: TASK-NC09
-title: "Integration tests (NATSClient — all 33 BDD scenarios)"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
-priority: high
-task_type: testing
-tags: [nats-client, integration-tests, pytest, bdd, natsclient]
 complexity: 6
-wave: 6
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-NC05
+- TASK-NC06
+- TASK-NC07
+feature_id: FEAT-1T1W
+id: TASK-NC09
 implementation_mode: task-work
 parent_review: TASK-1T1W
-feature_id: FEAT-1T1W
-dependencies: [TASK-NC05, TASK-NC06, TASK-NC07]
+priority: high
+status: design_approved
+tags:
+- nats-client
+- integration-tests
+- pytest
+- bdd
+- natsclient
+task_type: testing
 test_results:
-  status: pending
   coverage: null
   last_run: null
+  status: pending
+title: Integration tests (NATSClient — all 33 BDD scenarios)
+updated: 2026-04-08 00:00:00+00:00
+wave: 6
 ---
 
 # Task: Integration tests (NATSClient — all 33 BDD scenarios)
