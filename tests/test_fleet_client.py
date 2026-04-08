@@ -18,7 +18,6 @@ from nats_core.events._fleet import AgentDeregistrationPayload, AgentHeartbeatPa
 from nats_core.manifest import AgentManifest, ManifestRegistry
 from nats_core.topics import Topics
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
