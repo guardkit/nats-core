@@ -1,0 +1,213 @@
+{
+  "task_id": "TASK-NC04",
+  "turn": 1,
+  "decision": "approve",
+  "validation_results": {
+    "quality_gates": {
+      "tests_passed": true,
+      "coverage_met": true,
+      "arch_review_passed": true,
+      "plan_audit_passed": true,
+      "all_gates_passed": true
+    },
+    "independent_tests": {
+      "tests_passed": true,
+      "test_command": "pytest tests/test_manifest.py -v --tb=short",
+      "test_output_summary": "Result:\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_tool_capability_ignores_extra PASSED [ 92%]\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_all_models_have_extra_ignore_config PASSED [ 95%]\ntests/test_manifest.py::TestFutureAnnotations::test_manifest_module_has_future_annotations PASSED [ 97%]\ntests/test_manifest.py::TestNoCircularImport::test_no_events_import PASSED [100%]\n============================== 41 passed in 0.06s ==============================",
+      "duration_seconds": 8.657243013381958
+    },
+    "requirements": {
+      "criteria_total": 11,
+      "criteria_met": 11,
+      "all_criteria_met": true,
+      "missing": []
+    }
+  },
+  "criteria_verification": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "`AgentManifest(agent_id=\"x\", name=\"X Agent\", template=\"basic\")` instantiates with defaults",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "AgentManifest already accepted these three required fields. Tests verify instantiation with defaults (version='0.1.0', intents=[], tools=[], max_concurrent=1, status='ready', trust_tier='specialist', etc.). 7 tests in TestAgentManifestInstantiation class.",
+      "notes": "AgentManifest already accepted these three required fields. Tests verify instantiation with defaults (version='0.1.0', intents=[], tools=[], max_concurrent=1, status='ready', trust_tier='specialist', etc.). 7 tests in TestAgentManifestInstantiation class."
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "`IntentCapability.confidence` is validated `ge=0.0, le=1.0`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "IntentCapability.confidence field uses Field(default=1.0, ge=0.0, le=1.0). Tests verify boundaries: 0.0 accepted, 1.0 accepted, 0.5 accepted, -0.1 rejected with ValidationError, 1.1 rejected with ValidationError, 5.0 rejected. 7 tests in TestIntentCapabilityConfidence.",
+      "notes": "IntentCapability.confidence field uses Field(default=1.0, ge=0.0, le=1.0). Tests verify boundaries: 0.0 accepted, 1.0 accepted, 0.5 accepted, -0.1 rejected with ValidationError, 1.1 rejected with ValidationError, 5.0 rejected. 7 tests in TestIntentCapabilityConfidence."
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "`ManifestRegistry` is abstract \u2014 instantiating it directly raises `TypeError`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "ManifestRegistry uses abc.ABC with 5 @abc.abstractmethod decorators (register, deregister, get, find_by_intent, find_by_tool). Test confirms ManifestRegistry() raises TypeError and verifies all 5 abstract methods in __abstractmethods__.",
+      "notes": "ManifestRegistry uses abc.ABC with 5 @abc.abstractmethod decorators (register, deregister, get, find_by_intent, find_by_tool). Test confirms ManifestRegistry() raises TypeError and verifies all 5 abstract methods in __abstractmethods__."
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "`InMemoryManifestRegistry.register()` stores manifest keyed by `agent_id`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "InMemoryManifestRegistry._store is a dict[str, AgentManifest]. register() stores manifest at _store[manifest.agent_id]. Tests verify register+get round-trip, multiple registrations, overwrite behavior, and get of unknown returns None.",
+      "notes": "InMemoryManifestRegistry._store is a dict[str, AgentManifest]. register() stores manifest at _store[manifest.agent_id]. Tests verify register+get round-trip, multiple registrations, overwrite behavior, and get of unknown returns None."
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`InMemoryManifestRegistry.deregister(\"unknown\")` does not raise",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "deregister() uses self._store.pop(agent_id, None) which is a no-op for missing keys. Tests verify: deregister('unknown') does not raise, deregister existing key removes it, deregistering same key twice does not raise.",
+      "notes": "deregister() uses self._store.pop(agent_id, None) which is a no-op for missing keys. Tests verify: deregister('unknown') does not raise, deregister existing key removes it, deregistering same key twice does not raise."
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`InMemoryManifestRegistry.find_by_intent(\"software.build\")` returns agents with matching intent pattern",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "find_by_intent uses fnmatch.fnmatch(intent, cap.pattern) for glob matching. Tests verify: exact match 'software.build', glob match 'software.*' matches 'software.build', non-matching pattern returns empty, multiple agents returned, empty registry returns empty, agent with multiple matching intents appears only once.",
+      "notes": "find_by_intent uses fnmatch.fnmatch(intent, cap.pattern) for glob matching. Tests verify: exact match 'software.build', glob match 'software.*' matches 'software.build', non-matching pattern returns empty, multiple agents returned, empty registry returns empty, agent with multiple matching intents appears only once."
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "`InMemoryManifestRegistry.find_by_tool(\"lint\")` returns agents with that tool",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "find_by_tool iterates all manifests checking tool.name == tool_name. Tests verify: matching tool found, non-matching tool returns empty, multiple agents with same tool returned, empty registry returns empty, agent with multiple tools appears once.",
+      "notes": "find_by_tool iterates all manifests checking tool.name == tool_name. Tests verify: matching tool found, non-matching tool returns empty, multiple agents with same tool returned, empty registry returns empty, agent with multiple tools appears once."
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All models use `ConfigDict(extra=\"ignore\")`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Added model_config = ConfigDict(extra='ignore') to IntentCapability and ToolCapability (AgentManifest already had it). Tests verify all three models ignore extra fields and confirm model_config['extra'] == 'ignore' via integration_contract test.",
+      "notes": "Added model_config = ConfigDict(extra='ignore') to IntentCapability and ToolCapability (AgentManifest already had it). Tests verify all three models ignore extra fields and confirm model_config['extra'] == 'ignore' via integration_contract test."
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All models use `from __future__ import annotations`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "manifest.py has 'from __future__ import annotations' at line 13. Test uses AST parsing to verify the import exists in the module source file.",
+      "notes": "manifest.py has 'from __future__ import annotations' at line 13. Test uses AST parsing to verify the import exists in the module source file."
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "`manifest.py` does NOT import from `nats_core.events` (no circular dependency)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "manifest.py imports only from __future__, abc, fnmatch, typing, and pydantic. No nats_core.events imports. Test uses AST parsing to verify no ImportFrom or Import nodes reference nats_core.events.",
+      "notes": "manifest.py imports only from __future__, abc, fnmatch, typing, and pydantic. No nats_core.events imports. Test uses AST parsing to verify no ImportFrom or Import nodes reference nats_core.events."
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "ruff check on all 4 modified/created files (manifest.py, __init__.py, conftest.py, test_manifest.py) returns 'All checks passed!'. mypy --strict on manifest.py returns 'Success: no issues found'.",
+      "notes": "ruff check on all 4 modified/created files (manifest.py, __init__.py, conftest.py, test_manifest.py) returns 'All checks passed!'. mypy --strict on manifest.py returns 'Success: no issues found'."
+    }
+  ],
+  "acceptance_criteria_verification": {
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`AgentManifest(agent_id=\"x\", name=\"X Agent\", template=\"basic\")` instantiates with defaults",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "AgentManifest already accepted these three required fields. Tests verify instantiation with defaults (version='0.1.0', intents=[], tools=[], max_concurrent=1, status='ready', trust_tier='specialist', etc.). 7 tests in TestAgentManifestInstantiation class.",
+        "notes": "AgentManifest already accepted these three required fields. Tests verify instantiation with defaults (version='0.1.0', intents=[], tools=[], max_concurrent=1, status='ready', trust_tier='specialist', etc.). 7 tests in TestAgentManifestInstantiation class."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "`IntentCapability.confidence` is validated `ge=0.0, le=1.0`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "IntentCapability.confidence field uses Field(default=1.0, ge=0.0, le=1.0). Tests verify boundaries: 0.0 accepted, 1.0 accepted, 0.5 accepted, -0.1 rejected with ValidationError, 1.1 rejected with ValidationError, 5.0 rejected. 7 tests in TestIntentCapabilityConfidence.",
+        "notes": "IntentCapability.confidence field uses Field(default=1.0, ge=0.0, le=1.0). Tests verify boundaries: 0.0 accepted, 1.0 accepted, 0.5 accepted, -0.1 rejected with ValidationError, 1.1 rejected with ValidationError, 5.0 rejected. 7 tests in TestIntentCapabilityConfidence."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "`ManifestRegistry` is abstract \u2014 instantiating it directly raises `TypeError`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "ManifestRegistry uses abc.ABC with 5 @abc.abstractmethod decorators (register, deregister, get, find_by_intent, find_by_tool). Test confirms ManifestRegistry() raises TypeError and verifies all 5 abstract methods in __abstractmethods__.",
+        "notes": "ManifestRegistry uses abc.ABC with 5 @abc.abstractmethod decorators (register, deregister, get, find_by_intent, find_by_tool). Test confirms ManifestRegistry() raises TypeError and verifies all 5 abstract methods in __abstractmethods__."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "`InMemoryManifestRegistry.register()` stores manifest keyed by `agent_id`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "InMemoryManifestRegistry._store is a dict[str, AgentManifest]. register() stores manifest at _store[manifest.agent_id]. Tests verify register+get round-trip, multiple registrations, overwrite behavior, and get of unknown returns None.",
+        "notes": "InMemoryManifestRegistry._store is a dict[str, AgentManifest]. register() stores manifest at _store[manifest.agent_id]. Tests verify register+get round-trip, multiple registrations, overwrite behavior, and get of unknown returns None."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`InMemoryManifestRegistry.deregister(\"unknown\")` does not raise",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "deregister() uses self._store.pop(agent_id, None) which is a no-op for missing keys. Tests verify: deregister('unknown') does not raise, deregister existing key removes it, deregistering same key twice does not raise.",
+        "notes": "deregister() uses self._store.pop(agent_id, None) which is a no-op for missing keys. Tests verify: deregister('unknown') does not raise, deregister existing key removes it, deregistering same key twice does not raise."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "`InMemoryManifestRegistry.find_by_intent(\"software.build\")` returns agents with matching intent pattern",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "find_by_intent uses fnmatch.fnmatch(intent, cap.pattern) for glob matching. Tests verify: exact match 'software.build', glob match 'software.*' matches 'software.build', non-matching pattern returns empty, multiple agents returned, empty registry returns empty, agent with multiple matching intents appears only once.",
+        "notes": "find_by_intent uses fnmatch.fnmatch(intent, cap.pattern) for glob matching. Tests verify: exact match 'software.build', glob match 'software.*' matches 'software.build', non-matching pattern returns empty, multiple agents returned, empty registry returns empty, agent with multiple matching intents appears only once."
+      },
+      {
+        "criterion_id": "AC-007",
+        "criterion_text": "`InMemoryManifestRegistry.find_by_tool(\"lint\")` returns agents with that tool",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "find_by_tool iterates all manifests checking tool.name == tool_name. Tests verify: matching tool found, non-matching tool returns empty, multiple agents with same tool returned, empty registry returns empty, agent with multiple tools appears once.",
+        "notes": "find_by_tool iterates all manifests checking tool.name == tool_name. Tests verify: matching tool found, non-matching tool returns empty, multiple agents with same tool returned, empty registry returns empty, agent with multiple tools appears once."
+      },
+      {
+        "criterion_id": "AC-008",
+        "criterion_text": "All models use `ConfigDict(extra=\"ignore\")`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Added model_config = ConfigDict(extra='ignore') to IntentCapability and ToolCapability (AgentManifest already had it). Tests verify all three models ignore extra fields and confirm model_config['extra'] == 'ignore' via integration_contract test.",
+        "notes": "Added model_config = ConfigDict(extra='ignore') to IntentCapability and ToolCapability (AgentManifest already had it). Tests verify all three models ignore extra fields and confirm model_config['extra'] == 'ignore' via integration_contract test."
+      },
+      {
+        "criterion_id": "AC-009",
+        "criterion_text": "All models use `from __future__ import annotations`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "manifest.py has 'from __future__ import annotations' at line 13. Test uses AST parsing to verify the import exists in the module source file.",
+        "notes": "manifest.py has 'from __future__ import annotations' at line 13. Test uses AST parsing to verify the import exists in the module source file."
+      },
+      {
+        "criterion_id": "AC-010",
+        "criterion_text": "`manifest.py` does NOT import from `nats_core.events` (no circular dependency)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "manifest.py imports only from __future__, abc, fnmatch, typing, and pydantic. No nats_core.events imports. Test uses AST parsing to verify no ImportFrom or Import nodes reference nats_core.events.",
+        "notes": "manifest.py imports only from __future__, abc, fnmatch, typing, and pydantic. No nats_core.events imports. Test uses AST parsing to verify no ImportFrom or Import nodes reference nats_core.events."
+      },
+      {
+        "criterion_id": "AC-011",
+        "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "ruff check on all 4 modified/created files (manifest.py, __init__.py, conftest.py, test_manifest.py) returns 'All checks passed!'. mypy --strict on manifest.py returns 'Success: no issues found'.",
+        "notes": "ruff check on all 4 modified/created files (manifest.py, __init__.py, conftest.py, test_manifest.py) returns 'All checks passed!'. mypy --strict on manifest.py returns 'Success: no issues found'."
+      }
+    ]
+  },
+  "issues": [],
+  "rationale": "All quality gates passed. Independent verification confirmed. All acceptance criteria met. Architecture context: 285 chars provided.",
+  "context_used": "## Job-Specific Context\n\nBudget: 948/5200 tokens\n\n### \ud83c\udfa8 Relevant Patterns\n- HAS_REQUIRED_FIELD\n- DEFINED_BY_CODE_PATTERN\n\n### \u26a0\ufe0f Warnings\n- IS_IMPLEMENTED_AS\n- REQUIRES_USE_OF\n\n### \ud83c\udfad Role Constraints\n- PROJECT_INVOLVES\n- PROJECT_INVOLVES\n\n### \ud83d\udee0\ufe0f Implementation Modes\n- APPLIES_TO_TASK\n",
+  "approved_without_independent_tests": false,
+  "is_configuration_error": false
+}
