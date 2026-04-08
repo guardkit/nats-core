@@ -4,7 +4,7 @@ description: Base MessageEnvelope Pydantic schema serving as wire format for all
   messages, with EventType enum, defaults, serialisation, forward compatibility, and
   test suite
 created: '2026-04-08T18:30:35.491527'
-status: planned
+status: completed
 complexity: 4
 estimated_tasks: 3
 tasks:
@@ -13,30 +13,54 @@ tasks:
   file_path: tasks/backlog/message-envelope/TASK-ME01-project-scaffolding.md
   complexity: 3
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: direct
   estimated_minutes: 33
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:25:28.661540'
+  completed_at: '2026-04-08T19:30:30.928480'
 - id: TASK-ME02
   name: Implement EventType enum and MessageEnvelope model
   file_path: tasks/backlog/message-envelope/TASK-ME02-message-envelope-model.md
   complexity: 4
   dependencies:
   - TASK-ME01
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:30:33.511905'
+  completed_at: '2026-04-08T19:37:51.153618'
 - id: TASK-ME03
   name: Implement MessageEnvelope test suite from BDD scenarios
   file_path: tasks/backlog/message-envelope/TASK-ME03-message-envelope-tests.md
   complexity: 4
   dependencies:
   - TASK-ME01
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:30:33.514097'
+  completed_at: '2026-04-08T19:37:51.155914'
 orchestration:
   parallel_groups:
   - - TASK-ME01
@@ -44,3 +68,17 @@ orchestration:
     - TASK-ME03
   estimated_duration_minutes: 133
   recommended_parallel: 2
+execution:
+  started_at: '2026-04-08T19:25:28.636835'
+  completed_at: '2026-04-08T19:37:51.161092'
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637
+  total_turns: 3
+  tasks_completed: 3
+  tasks_failed: 0
+  current_wave: 2
+  completed_waves:
+  - 1
+  - 2
+  last_updated: '2026-04-08T19:37:51.158254'
+  archived_at: null
+  archived_to: null
