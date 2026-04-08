@@ -1,0 +1,227 @@
+{
+  "task_id": "TASK-ETS4",
+  "turn": 1,
+  "files_modified": [
+    ".claude/task-plans/TASK-ETS1-implementation-plan.md",
+    ".claude/task-plans/TASK-ETS2-implementation-plan.md",
+    ".claude/task-plans/TASK-ETS3-implementation-plan.md",
+    ".claude/task-plans/TASK-ETS4-implementation-plan.md",
+    ".claude/task-plans/TASK-ME02-implementation-plan.md",
+    ".claude/task-plans/TASK-ME03-implementation-plan.md",
+    ".guardkit-git.lock",
+    ".guardkit/autobuild/TASK-ETS1/checkpoints.json",
+    ".guardkit/autobuild/TASK-ETS1/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS1/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS1/task_work_results.json",
+    ".guardkit/autobuild/TASK-ETS1/turn_context.json",
+    ".guardkit/autobuild/TASK-ETS1/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS2/checkpoints.json",
+    ".guardkit/autobuild/TASK-ETS2/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS2/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS2/task_work_results.json",
+    ".guardkit/autobuild/TASK-ETS2/turn_context.json",
+    ".guardkit/autobuild/TASK-ETS2/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS3/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS3/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS3/task_work_results.json",
+    ".guardkit/autobuild/TASK-ETS3/turn_context.json",
+    ".guardkit/autobuild/TASK-ETS3/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS4/turn_context.json",
+    ".guardkit/autobuild/TASK-ME01/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME01/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME01/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME01/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME01/turn_context.json",
+    ".guardkit/autobuild/TASK-ME01/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME02/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME02/turn_context.json",
+    ".guardkit/autobuild/TASK-ME02/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME03/turn_context.json",
+    ".guardkit/autobuild/TASK-ME03/turn_state_turn_1.json",
+    ".guardkit/bootstrap_state.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/__init__.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/events/__init__.py",
+    "coverage.json",
+    "pyproject.toml",
+    "src/nats_core/__init__.py",
+    "src/nats_core/envelope.py",
+    "src/nats_core/events/__init__.py",
+    "src/nats_core/events/_agent.py",
+    "src/nats_core/events/_fleet.py",
+    "src/nats_core/events/_jarvis.py",
+    "src/nats_core/events/_pipeline.py",
+    "src/nats_core/manifest.py",
+    "src/nats_core/py.typed",
+    "tasks/backlog/TASK-ETS5-dispatcher-and-tests.md",
+    "tasks/backlog/TASK-ME01-project-scaffolding.md",
+    "tasks/design_approved/TASK-ETS1-pipeline-event-payloads.md",
+    "tasks/design_approved/TASK-ETS2-agent-event-payloads.md",
+    "tasks/design_approved/TASK-ETS3-jarvis-event-payloads.md",
+    "tasks/design_approved/TASK-ETS4-fleet-event-payloads.md",
+    "tasks/design_approved/TASK-ME02-message-envelope-model.md",
+    "tasks/design_approved/TASK-ME03-message-envelope-tests.md",
+    "tests/__init__.py",
+    "tests/conftest.py",
+    "tests/test_envelope.py",
+    "tests/test_fleet_events.py",
+    "tests/test_jarvis_events.py",
+    "tests/test_pipeline_payloads.py",
+    "tests/test_scaffolding.py"
+  ],
+  "files_created": [
+    ".guardkit/autobuild/TASK-ETS3/checkpoints.json",
+    ".guardkit/autobuild/TASK-ETS4/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS4/task_work_results.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/.guardkit/autobuild/TASK-ETS4/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/events/__init__.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/events/_fleet.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/manifest.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_fleet_events.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_fleet_events.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "",
+  "implementation_notes": "Implementation via task-work delegation",
+  "concerns": [],
+  "requirements_addressed": [
+    "IntentCapability model with pattern, signals, confidence, description fields",
+    "ToolCapability model with name, description, parameters, returns, risk_level, async_mode, requires_approval fields",
+    "AgentManifest model with all 12 fields including kebab-case agent_id validation",
+    "AgentManifest ConfigDict(extra='ignore') for ADR-002 schema versioning",
+    "AgentManifest, IntentCapability, ToolCapability exported from nats_core",
+    "AgentHeartbeatPayload with all 7 fields and constraints",
+    "AgentDeregistrationPayload with kebab-case agent_id and default reason",
+    "Both fleet payloads use ConfigDict(extra='ignore')",
+    "Both fleet payloads exported from nats_core.events",
+    "All files pass ruff lint with zero errors",
+    "mypy src/ passes with zero errors"
+  ],
+  "requirements_remaining": [],
+  "sdk_turns_used": 49,
+  "sdk_max_turns": 100,
+  "sdk_ceiling_hit": false,
+  "tests_passed_count": 29,
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "IntentCapability implemented: pattern (str, required, non-empty), signals (list[str], default []), confidence (float, ge=0.0, le=1.0), description (str, required)",
+      "status": "complete",
+      "evidence": "IntentCapability class defined in src/nats_core/manifest.py with pattern=Field(min_length=1), signals=Field(default_factory=list), confidence=Field(default=1.0, ge=0.0, le=1.0), description=Field(...). Tests verify all fields, empty pattern rejection, and confidence boundary validation.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "ToolCapability implemented: name (str, required, non-empty), description (str, required), parameters (dict[str, Any], required), returns (str, required), risk_level (Literal, default read_only), async_mode (bool, default False), requires_approval (bool, default False)",
+      "status": "complete",
+      "evidence": "ToolCapability class defined in src/nats_core/manifest.py with all fields matching the specification exactly. Tests verify valid construction with defaults, full field construction, and empty name rejection.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "AgentManifest implemented with all 12 fields: agent_id (kebab-case pattern), name, version (default 0.1.0), intents, tools, template, max_concurrent (ge=1, default 1), status (Literal), trust_tier (Literal), required_permissions, container_id (optional), metadata",
+      "status": "complete",
+      "evidence": "AgentManifest class defined in src/nats_core/manifest.py with agent_id=Field(pattern=r'^[a-z][a-z0-9-]*$'), all 12 fields matching spec. Tests verify minimal construction, full construction, invalid agent_id rejection (uppercase, spaces, leading digit), max_concurrent ge=1, and valid kebab-case IDs.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "AgentManifest uses ConfigDict(extra='ignore') (ADR-002)",
+      "status": "complete",
+      "evidence": "model_config = ConfigDict(extra='ignore') set on AgentManifest class (line 94 of manifest.py). Test test_agent_manifest_extra_fields_ignored verifies unknown fields are silently dropped.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "AgentManifest, IntentCapability, ToolCapability exported from src/nats_core/__init__.py",
+      "status": "complete",
+      "evidence": "src/nats_core/__init__.py imports and re-exports all three classes in __all__. Test test_manifest_models_exported_from_nats_core confirms they are importable from nats_core.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/__init__.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "AgentHeartbeatPayload implemented: agent_id (str, required), status (Literal, required), queue_depth (int, ge=0, default 0), active_tasks (int, ge=0, default 0), uptime_seconds (int, required, ge=0), last_task_completed_at (datetime|None, default None), active_workflow_states (dict[str,str], default {})",
+      "status": "complete",
+      "evidence": "AgentHeartbeatPayload class in src/nats_core/events/_fleet.py with all 7 fields matching spec. Tests verify minimal construction, full construction, non-negative boundary validation for queue_depth/active_tasks/uptime_seconds, invalid status rejection, and extra field ignoring.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "AgentDeregistrationPayload implemented: agent_id (str, required, kebab-case pattern), reason (str, default 'shutdown')",
+      "status": "complete",
+      "evidence": "AgentDeregistrationPayload class in src/nats_core/events/_fleet.py with agent_id=Field(pattern=r'^[a-z][a-z0-9-]*$') and reason=Field(default='shutdown'). Tests verify default reason, custom reason, invalid agent_id rejection (uppercase, leading digit), and extra field ignoring.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "Both fleet payloads use ConfigDict(extra='ignore') (ADR-002)",
+      "status": "complete",
+      "evidence": "Both AgentHeartbeatPayload (line 32) and AgentDeregistrationPayload (line 70) in _fleet.py have model_config = ConfigDict(extra='ignore'). Tests test_heartbeat_extra_fields_ignored and test_deregistration_extra_fields_ignored verify this behavior.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "Both fleet payloads exported in src/nats_core/events/__init__.py",
+      "status": "complete",
+      "evidence": "src/nats_core/events/__init__.py imports AgentDeregistrationPayload and AgentHeartbeatPayload from _fleet and includes them in __all__. Test test_fleet_payloads_exported_from_events verifies they are importable from nats_core.events.",
+      "test_file": "tests/test_fleet_events.py",
+      "implementation_files": [
+        "src/nats_core/events/__init__.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check on manifest.py and _fleet.py returned 'All checks passed!' with zero errors.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/manifest.py",
+        "src/nats_core/events/_fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "mypy src/ passes with zero errors",
+      "status": "complete",
+      "evidence": "python -m mypy src/ returned 'Success: no issues found in 8 source files' with zero errors.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/manifest.py",
+        "src/nats_core/events/_fleet.py"
+      ]
+    }
+  ]
+}
