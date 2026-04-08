@@ -1,6 +1,26 @@
 {
   "task_id": "TASK-ETS3",
-  "turn": 1,
+  "timestamp": "2026-04-08T20:05:28.321061",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation",
+      "completed": false
+    },
+    "phase_4": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 29,
+    "tests_failed": 0,
+    "coverage": 100.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
   "files_modified": [
     ".claude/task-plans/TASK-ETS1-implementation-plan.md",
     ".claude/task-plans/TASK-ETS2-implementation-plan.md",
@@ -83,26 +103,18 @@
   "tests_written": [
     "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_jarvis_events.py"
   ],
-  "tests_run": true,
-  "tests_passed": true,
-  "test_output_summary": "",
-  "implementation_notes": "Implementation via task-work delegation",
-  "concerns": [],
-  "requirements_addressed": [
-    "IntentClassifiedPayload with confidence 0.0-1.0 constraint",
-    "DispatchPayload with required correlation_id and default empty context",
-    "AgentResultPayload with all required fields",
-    "NotificationPayload with Literal level and default 'info'",
-    "ConfigDict(extra='ignore') on all models (ADR-002)",
-    "Field(description=...) on all fields",
-    "Re-export from events/__init__.py",
-    "Lint/format and mypy --strict pass"
-  ],
-  "requirements_remaining": [],
-  "sdk_turns_used": 83,
-  "sdk_max_turns": 100,
-  "sdk_ceiling_hit": false,
-  "tests_passed_count": 29,
+  "summary": "29 tests passed, 100.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 83,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "code_review": {
+    "score": 95,
+    "solid": 95,
+    "dry": 95,
+    "yagni": 100
+  },
   "completion_promises": [
     {
       "criterion_id": "AC-001",
