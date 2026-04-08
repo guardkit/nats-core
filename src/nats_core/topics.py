@@ -142,8 +142,9 @@ class Topics:
             The fully-resolved NATS subject string.
 
         Raises:
-            ValueError: If a required placeholder is missing, an unexpected
-                kwarg is provided, or any value fails identifier validation.
+            KeyError: If a required placeholder is missing from *kwargs*.
+            ValueError: If an unexpected kwarg is provided, or any value
+                fails identifier validation.
         """
         expected = set(_PLACEHOLDER_RE.findall(template))
         provided = set(kwargs)
@@ -151,7 +152,7 @@ class Topics:
         missing = expected - provided
         if missing:
             msg = f"Missing required placeholder(s): {', '.join(sorted(missing))}"
-            raise ValueError(msg)
+            raise KeyError(msg)
 
         unexpected = provided - expected
         if unexpected:

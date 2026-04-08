@@ -315,9 +315,7 @@ class TestBoundary:
     @pytest.mark.parametrize("conf", [0.0, 0.5, 1.0])
     def test_intent_capability_confidence_valid_values(self, conf: float) -> None:
         """IntentCapability.confidence valid at 0.0, 0.5, 1.0."""
-        cap = IntentCapability(
-            pattern="test.*", confidence=conf, description="test"
-        )
+        cap = IntentCapability(pattern="test.*", confidence=conf, description="test")
         assert cap.confidence == pytest.approx(conf)
 
     @pytest.mark.boundary
@@ -339,9 +337,7 @@ class TestBoundary:
             _make_intent_classified(confidence=1.5)
 
     @pytest.mark.boundary
-    @pytest.mark.parametrize(
-        "state", ["running", "idle", "awaiting_approval", "error", "paused"]
-    )
+    @pytest.mark.parametrize("state", ["running", "idle", "awaiting_approval", "error", "paused"])
     def test_agent_status_accepts_valid_states(self, state: str) -> None:
         """AgentStatusPayload accepts state in valid set."""
         payload = _make_agent_status(state=state)
@@ -408,9 +404,7 @@ class TestNegative:
     def test_approval_response_rejects_ignore(self) -> None:
         """ApprovalResponsePayload rejects decision 'ignore' (ValidationError)."""
         with pytest.raises(ValidationError):
-            ApprovalResponsePayload(
-                request_id="REQ-001", decision="ignore", decided_by="human"
-            )
+            ApprovalResponsePayload(request_id="REQ-001", decision="ignore", decided_by="human")
 
     @pytest.mark.negative
     def test_agent_heartbeat_rejects_offline(self) -> None:
@@ -502,6 +496,7 @@ class TestEdgeCase:
             ("ResultPayload", "result"),
             ("AgentResultPayload", "result"),
             ("DispatchPayload", "context"),
+            ("AgentHeartbeatPayload", "metadata"),
         }
         for class_name, cls in all_payload_classes:
             for field_name, field_info in cls.model_fields.items():
@@ -541,9 +536,7 @@ class TestEdgeCase:
             ),
             _make_agent_status(),
             _make_approval_request(),
-            ApprovalResponsePayload(
-                request_id="REQ-001", decision="approve", decided_by="human"
-            ),
+            ApprovalResponsePayload(request_id="REQ-001", decision="approve", decided_by="human"),
             CommandPayload(command="deploy", args={"env": "staging"}),
             ResultPayload(command="deploy", result={"status": "ok"}, success=True),
             _make_intent_classified(),

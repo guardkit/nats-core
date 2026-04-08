@@ -148,7 +148,7 @@ class TestNegative:
     @pytest.mark.negative
     @pytest.mark.smoke
     def test_missing_template_variable_raises(self) -> None:
-        with pytest.raises(ValueError, match="(?i)missing|required"):
+        with pytest.raises(KeyError, match="(?i)missing|required"):
             Topics.resolve(Topics.Pipeline.BUILD_STARTED)
 
     @pytest.mark.negative
@@ -372,7 +372,7 @@ class TestNoHardcodedStrings:
                 capture_output=True,
                 text=True,
                 cwd="/Users/richardwoollcott/Projects/appmilla_github/nats-core/"
-                ".guardkit/worktrees/FEAT-DCBD",
+                ".guardkit/worktrees/FEAT-3845",
                 check=False,
             )
             # Filter out lines that are purely in docstrings or comments
@@ -532,3 +532,123 @@ class TestSeam:
         # Constants are strings (not None, not instances)
         assert isinstance(TopicsFromModule.Pipeline.BUILD_STARTED, str)
         assert isinstance(TopicsFromModule.Fleet.REGISTER, str)
+
+
+# ---------------------------------------------------------------------------
+# TASK-NC02 Acceptance Criteria — Exact resolution tests
+# ---------------------------------------------------------------------------
+
+
+class TestTaskNC02AcceptanceCriteria:
+    """Tests that map 1:1 to TASK-NC02 acceptance criteria."""
+
+    @pytest.mark.smoke
+    def test_ac_001_all_constants_from_all_five_domains_present(self) -> None:
+        """AC-001: All constants from all 5 domains are present."""
+        # Pipeline domain (8 constants including wildcards)
+        assert hasattr(Topics.Pipeline, "FEATURE_PLANNED")
+        assert hasattr(Topics.Pipeline, "FEATURE_READY_FOR_BUILD")
+        assert hasattr(Topics.Pipeline, "BUILD_STARTED")
+        assert hasattr(Topics.Pipeline, "BUILD_PROGRESS")
+        assert hasattr(Topics.Pipeline, "BUILD_COMPLETE")
+        assert hasattr(Topics.Pipeline, "BUILD_FAILED")
+        assert hasattr(Topics.Pipeline, "ALL")
+        assert hasattr(Topics.Pipeline, "ALL_BUILDS")
+
+        # Agents domain (8 constants including wildcards)
+        assert hasattr(Topics.Agents, "STATUS")
+        assert hasattr(Topics.Agents, "STATUS_ALL")
+        assert hasattr(Topics.Agents, "APPROVAL_REQUEST")
+        assert hasattr(Topics.Agents, "APPROVAL_RESPONSE")
+        assert hasattr(Topics.Agents, "COMMAND")
+        assert hasattr(Topics.Agents, "RESULT")
+        assert hasattr(Topics.Agents, "TOOLS")
+        assert hasattr(Topics.Agents, "TOOLS_ALL")
+
+        # Fleet domain (5 constants including wildcards)
+        assert hasattr(Topics.Fleet, "REGISTER")
+        assert hasattr(Topics.Fleet, "DEREGISTER")
+        assert hasattr(Topics.Fleet, "HEARTBEAT")
+        assert hasattr(Topics.Fleet, "HEARTBEAT_ALL")
+        assert hasattr(Topics.Fleet, "ALL")
+
+        # Jarvis domain (4 constants)
+        assert hasattr(Topics.Jarvis, "COMMAND")
+        assert hasattr(Topics.Jarvis, "INTENT_CLASSIFIED")
+        assert hasattr(Topics.Jarvis, "DISPATCH")
+        assert hasattr(Topics.Jarvis, "NOTIFICATION")
+
+        # System domain (1 constant)
+        assert hasattr(Topics.System, "HEALTH")
+
+    @pytest.mark.smoke
+    def test_ac_002_resolve_pipeline_build_complete(self) -> None:
+        """AC-002: Topics.resolve(Topics.Pipeline.BUILD_COMPLETE, feature_id="FEAT-001")
+        → "pipeline.build-complete.FEAT-001"."""
+        result = Topics.resolve(Topics.Pipeline.BUILD_COMPLETE, feature_id="FEAT-001")
+        assert result == "pipeline.build-complete.FEAT-001"
+
+    @pytest.mark.smoke
+    def test_ac_003_for_project_scoping(self) -> None:
+        """AC-003: Topics.for_project("finproxy", "pipeline.build-complete.FEAT-001")
+        → "finproxy.pipeline.build-complete.FEAT-001"."""
+        result = Topics.for_project("finproxy", "pipeline.build-complete.FEAT-001")
+        assert result == "finproxy.pipeline.build-complete.FEAT-001"
+
+    @pytest.mark.negative
+    def test_ac_004_missing_placeholder_raises_key_error(self) -> None:
+        """AC-004: Topics.resolve(template) raises KeyError when a required
+        placeholder is missing."""
+        with pytest.raises(KeyError, match="(?i)missing|required"):
+            Topics.resolve(Topics.Pipeline.BUILD_COMPLETE)
+
+    @pytest.mark.smoke
+    def test_ac_005_resolve_agents_approval_response(self) -> None:
+        """AC-005: Topics.resolve(Topics.Agents.APPROVAL_RESPONSE, agent_id="jarvis",
+        task_id="task-99") → "agents.approval.jarvis.task-99.response"."""
+        result = Topics.resolve(
+            Topics.Agents.APPROVAL_RESPONSE, agent_id="jarvis", task_id="task-99"
+        )
+        assert result == "agents.approval.jarvis.task-99.response"
+
+    @pytest.mark.negative
+    def test_ac_006_malicious_identifier_raises_value_error(self) -> None:
+        """AC-006: Topics.resolve(Topics.Agents.TOOLS, agent_id="evil.>", tool_name="x")
+        raises ValueError."""
+        with pytest.raises(ValueError, match="(?i)dot|wildcard|invalid"):
+            Topics.resolve(Topics.Agents.TOOLS, agent_id="evil.>", tool_name="x")
+
+    @pytest.mark.smoke
+    def test_ac_007_all_topics_is_non_empty_list_of_str(self) -> None:
+        """AC-007: Topics.ALL_TOPICS is a non-empty list[str] containing every template."""
+        assert isinstance(Topics.ALL_TOPICS, list)
+        assert len(Topics.ALL_TOPICS) > 0
+        for item in Topics.ALL_TOPICS:
+            assert isinstance(item, str)
+
+    def test_ac_008_no_external_dependencies(self) -> None:
+        """AC-008: No external dependencies (pure Python)."""
+        import importlib
+        import inspect
+
+        mod = importlib.import_module("nats_core.topics")
+        source = inspect.getsource(mod)
+        # Should only import from __future__ and re (stdlib)
+        # No pydantic, no third-party imports
+        import_lines = [
+            line.strip()
+            for line in source.splitlines()
+            if line.strip().startswith(("import ", "from "))
+        ]
+        for line in import_lines:
+            assert "pydantic" not in line, f"External dep found: {line}"
+            assert "nats" not in line or "__future__" in line, f"Unexpected import: {line}"
+
+    def test_ac_009_future_annotations_present(self) -> None:
+        """AC-009: from __future__ import annotations present."""
+        import inspect
+
+        from nats_core import topics as topics_mod
+
+        source = inspect.getsource(topics_mod)
+        assert "from __future__ import annotations" in source

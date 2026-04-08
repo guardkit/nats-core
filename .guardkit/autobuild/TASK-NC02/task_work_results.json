@@ -1,0 +1,158 @@
+{
+  "task_id": "TASK-NC02",
+  "timestamp": "2026-04-08T21:49:04.637239",
+  "completed": true,
+  "success": true,
+  "implementation_mode": "direct",
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "coverage": null,
+    "coverage_met": true,
+    "quality_gates_relaxed": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    "src/nats_core/topics.py",
+    "tests/test_topics.py"
+  ],
+  "files_created": [],
+  "tests_written": [
+    "tests/test_topics.py"
+  ],
+  "requirements_addressed": [
+    "AC-001: All constants from all 5 domains present",
+    "AC-002: Pipeline.BUILD_COMPLETE resolves correctly",
+    "AC-003: for_project scoping works correctly",
+    "AC-004: Missing placeholder raises KeyError",
+    "AC-005: Agents.APPROVAL_RESPONSE resolves correctly",
+    "AC-006: Malicious identifier raises ValueError",
+    "AC-007: ALL_TOPICS is non-empty list[str]",
+    "AC-008: No external dependencies",
+    "AC-009: from __future__ import annotations present",
+    "AC-010: All modified files pass lint/format checks"
+  ],
+  "requirements_met": [
+    "AC-001: All constants from all 5 domains present",
+    "AC-002: Pipeline.BUILD_COMPLETE resolves correctly",
+    "AC-003: for_project scoping works correctly",
+    "AC-004: Missing placeholder raises KeyError",
+    "AC-005: Agents.APPROVAL_RESPONSE resolves correctly",
+    "AC-006: Malicious identifier raises ValueError",
+    "AC-007: ALL_TOPICS is non-empty list[str]",
+    "AC-008: No external dependencies",
+    "AC-009: from __future__ import annotations present",
+    "AC-010: All modified files pass lint/format checks"
+  ],
+  "summary": "Direct mode implementation completed successfully",
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "[ ] All constants from all 5 domains are present",
+      "status": "complete",
+      "evidence": "All 5 namespace classes (Pipeline, Agents, Fleet, Jarvis, System) are defined with all expected string constants: Pipeline has 8 (FEATURE_PLANNED, FEATURE_READY_FOR_BUILD, BUILD_STARTED, BUILD_PROGRESS, BUILD_COMPLETE, BUILD_FAILED, ALL, ALL_BUILDS), Agents has 8 (STATUS, STATUS_ALL, APPROVAL_REQUEST, APPROVAL_RESPONSE, COMMAND, RESULT, TOOLS, TOOLS_ALL), Fleet has 5 (REGISTER, DEREGISTER, HEARTBEAT, HEARTBEAT_ALL, ALL), Jarvis has 4 (COMMAND, INTENT_CLASSIFIED, DISPATCH, NOTIFICATION), System has 1 (HEALTH). Validated by test_ac_001_all_constants_from_all_five_domains_present and TestAllConstantsExist.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "[ ] `Topics.resolve(Topics.Pipeline.BUILD_COMPLETE, feature_id=\"FEAT-001\")` \u2192 `\"pipeline.build-complete.FEAT-001\"`",
+      "status": "complete",
+      "evidence": "Template \"pipeline.build-complete.{feature_id}\" resolves correctly with feature_id=\"FEAT-001\" to produce \"pipeline.build-complete.FEAT-001\". Validated by test_ac_002_resolve_pipeline_build_complete.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "[ ] `Topics.for_project(\"finproxy\", \"pipeline.build-complete.FEAT-001\")` \u2192 `\"finproxy.pipeline.build-complete.FEAT-001\"`",
+      "status": "complete",
+      "evidence": "Topics.for_project() prepends the validated project identifier with a dot separator. for_project(\"finproxy\", \"pipeline.build-complete.FEAT-001\") returns \"finproxy.pipeline.build-complete.FEAT-001\". Validated by test_ac_003_for_project_scoping.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "[ ] `Topics.resolve(template)` raises `KeyError` when a required placeholder is missing",
+      "status": "complete",
+      "evidence": "Changed Topics.resolve() to raise KeyError (was ValueError) when required placeholders are missing from kwargs. Updated docstring to document KeyError for missing placeholders and ValueError for unexpected kwargs/invalid identifiers. Updated existing test and added test_ac_004_missing_placeholder_raises_key_error.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "[ ] `Topics.resolve(Topics.Agents.APPROVAL_RESPONSE, agent_id=\"jarvis\", task_id=\"task-99\")` \u2192 `\"agents.approval.jarvis.task-99.response\"`",
+      "status": "complete",
+      "evidence": "Template \"agents.approval.{agent_id}.{task_id}.response\" resolves correctly with agent_id=\"jarvis\", task_id=\"task-99\" to produce \"agents.approval.jarvis.task-99.response\". Validated by test_ac_005_resolve_agents_approval_response.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "[ ] `Topics.resolve(Topics.Agents.TOOLS, agent_id=\"evil.>\", tool_name=\"x\")` raises `ValueError`",
+      "status": "complete",
+      "evidence": "_validate_identifier() rejects identifiers containing dots and wildcard tokens (\".\", \">\", \"*\"). The value \"evil.>\" contains both a dot and a wildcard, triggering ValueError with message about dots. Validated by test_ac_006_malicious_identifier_raises_value_error.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "[ ] `Topics.ALL_TOPICS` is a non-empty `list[str]` containing every template",
+      "status": "complete",
+      "evidence": "Topics.ALL_TOPICS is a class-level list comprehension that iterates all 5 namespace classes and collects every non-wildcard string constant. Contains 20 templates. Validated by test_ac_007_all_topics_is_non_empty_list_of_str and TestAllTopics class.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "[ ] No external dependencies (pure Python)",
+      "status": "complete",
+      "evidence": "topics.py only imports from __future__ and re (stdlib). No pydantic, no third-party imports. Validated by test_ac_008_no_external_dependencies which inspects the module source for any non-stdlib imports.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "[ ] `from __future__ import annotations` present",
+      "status": "complete",
+      "evidence": "Line 11 of topics.py contains 'from __future__ import annotations'. Line 13 of test_topics.py also contains it. Validated by test_ac_009_future_annotations_present which inspects the module source.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "[ ] All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "Ran 'ruff check src/nats_core/topics.py tests/test_topics.py' \u2014 'All checks passed!'. Ran 'mypy src/nats_core/topics.py' \u2014 'Success: no issues found in 1 source file'. Pre-existing lint errors in test_fleet_events.py (unrelated to this task) are not in modified files.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py",
+        "tests/test_topics.py"
+      ]
+    }
+  ]
+}

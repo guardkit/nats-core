@@ -11,7 +11,7 @@ Note: The agent *registration* payload is ``AgentManifest`` in
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,6 +27,7 @@ class AgentHeartbeatPayload(BaseModel):
         uptime_seconds: Total seconds since the agent started.
         last_task_completed_at: UTC timestamp of the most recently completed task.
         active_workflow_states: Map of workflow ID to current state label.
+        metadata: Extensible key-value metadata for the heartbeat.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -56,6 +57,10 @@ class AgentHeartbeatPayload(BaseModel):
     active_workflow_states: dict[str, str] = Field(
         default_factory=dict,
         description="Map of workflow ID to current state label",
+    )
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Extensible key-value metadata for the heartbeat",
     )
 
 

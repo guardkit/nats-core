@@ -164,6 +164,8 @@ class BuildCompletePayload(BaseModel):
     Attributes:
         feature_id: Unique identifier for the feature.
         build_id: Build identifier.
+        repo: Repository name for the build.
+        branch: Branch name for the build.
         tasks_completed: Number of tasks that completed successfully.
         tasks_failed: Number of tasks that failed.
         tasks_total: Total number of tasks (must equal completed + failed).
@@ -176,12 +178,12 @@ class BuildCompletePayload(BaseModel):
 
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
+    repo: str | None = Field(default=None, description="Repository name for the build")
+    branch: str | None = Field(default=None, description="Branch name for the build")
     tasks_completed: int = Field(ge=0, description="Number of tasks that completed successfully")
     tasks_failed: int = Field(ge=0, description="Number of tasks that failed")
     tasks_total: int = Field(ge=1, description="Total number of tasks")
-    pr_url: str | None = Field(
-        default=None, description="URL of the created pull request, or None"
-    )
+    pr_url: str | None = Field(default=None, description="URL of the created pull request, or None")
     duration_seconds: int = Field(ge=0, description="Total build duration in seconds")
     summary: str = Field(description="Human-readable summary of the build outcome")
 

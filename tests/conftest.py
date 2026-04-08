@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from nats_core.agent_config import AgentConfig, GraphitiConfig, ModelConfig
 from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope
 
@@ -113,3 +114,51 @@ def make_valid_agent_id(**overrides: str) -> str:
         An agent ID string safe for use in topic resolution.
     """
     return overrides.get("agent_id", "guardkit-factory")
+
+
+# ---------------------------------------------------------------------------
+# AgentConfig test helpers
+# ---------------------------------------------------------------------------
+
+
+def make_model_config(**overrides: Any) -> ModelConfig:
+    """Create a ModelConfig with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A ModelConfig instance with defaults plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {"reasoning_model": "gpt-4"}
+    defaults.update(overrides)
+    return ModelConfig(**defaults)
+
+
+def make_graphiti_config(**overrides: Any) -> GraphitiConfig:
+    """Create a GraphitiConfig with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A GraphitiConfig instance with defaults plus any caller-specified overrides.
+    """
+    return GraphitiConfig(**overrides)
+
+
+def make_agent_config(**overrides: Any) -> AgentConfig:
+    """Create an AgentConfig with sensible defaults and optional overrides.
+
+    The ``models`` field is required and defaults to a ModelConfig with
+    ``reasoning_model="gpt-4"`` if not explicitly provided.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        An AgentConfig instance with defaults plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {"models": make_model_config()}
+    defaults.update(overrides)
+    return AgentConfig(**defaults)
