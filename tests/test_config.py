@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
 from nats_core.config import NATSConfig
@@ -31,6 +32,38 @@ class TestNATSConfigSmoke:
         assert mc.get("env_prefix") == "NATS_"
         assert mc.get("env_file") == ".env"
 
+    def test_default_configuration_connects_to_localhost(self) -> None:
+        """Scenario: Default configuration connects to localhost."""
+        cfg = NATSConfig()
+        assert cfg.url == "nats://localhost:4222"
+        assert cfg.connect_timeout == 5.0
+        assert cfg.reconnect_time_wait == 2.0
+        assert cfg.max_reconnect_attempts == 60
+        assert cfg.name == "nats-core-client"
+
+    def test_environment_variable_overrides_default_url(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Scenario: Environment variable overrides the default URL."""
+        monkeypatch.setenv("NATS_URL", "nats://custom-host:4222")
+        cfg = NATSConfig()
+        assert cfg.url == "nats://custom-host:4222"
+
+    def test_constructor_arguments_override_defaults(self) -> None:
+        """Scenario: Constructor arguments override defaults."""
+        cfg = NATSConfig(
+            url="tls://secure-host:4222",
+            connect_timeout=10.0,
+            reconnect_time_wait=5.0,
+            max_reconnect_attempts=100,
+            name="my-custom-client",
+        )
+        assert cfg.url == "tls://secure-host:4222"
+        assert cfg.connect_timeout == 10.0
+        assert cfg.reconnect_time_wait == 5.0
+        assert cfg.max_reconnect_attempts == 100
+        assert cfg.name == "my-custom-client"
+
 
 # ---------------------------------------------------------------------------
 # Key example tests
@@ -52,6 +85,48 @@ class TestNATSConfigExport:
         import nats_core
 
         assert "NATSConfig" in nats_core.__all__
+
+
+# ---------------------------------------------------------------------------
+# Key example: env-var bindings
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.key_example
+class TestNATSConfigEnvBindings:
+    """Each field is bound to the correct NATS_ environment variable."""
+
+    def test_connect_timeout_env_override(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """NATS_CONNECT_TIMEOUT overrides the connect_timeout default."""
+        monkeypatch.setenv("NATS_CONNECT_TIMEOUT", "15.5")
+        cfg = NATSConfig()
+        assert cfg.connect_timeout == 15.5
+
+    def test_reconnect_time_wait_env_override(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """NATS_RECONNECT_TIME_WAIT overrides the reconnect_time_wait default."""
+        monkeypatch.setenv("NATS_RECONNECT_TIME_WAIT", "8.0")
+        cfg = NATSConfig()
+        assert cfg.reconnect_time_wait == 8.0
+
+    def test_max_reconnect_attempts_env_override(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """NATS_MAX_RECONNECT_ATTEMPTS overrides the max_reconnect_attempts default."""
+        monkeypatch.setenv("NATS_MAX_RECONNECT_ATTEMPTS", "200")
+        cfg = NATSConfig()
+        assert cfg.max_reconnect_attempts == 200
+
+    def test_name_env_override(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """NATS_NAME overrides the name default."""
+        monkeypatch.setenv("NATS_NAME", "my-agent")
+        cfg = NATSConfig()
+        assert cfg.name == "my-agent"
 
 
 # ---------------------------------------------------------------------------
@@ -86,3 +161,95 @@ class TestNATSConfigBoundary:
 
         assert mod.__doc__ is not None
         assert len(mod.__doc__.strip()) > 0
+
+    def test_connect_timeout_at_zero_is_accepted(self) -> None:
+        """Scenario: Connect timeout at zero is accepted."""
+        cfg = NATSConfig(connect_timeout=0.0)
+        assert cfg.connect_timeout == 0.0
+
+    def test_reconnect_time_wait_at_zero_is_accepted(self) -> None:
+        """Scenario: Reconnect time wait at zero is accepted."""
+        cfg = NATSConfig(reconnect_time_wait=0.0)
+        assert cfg.reconnect_time_wait == 0.0
+
+    def test_max_reconnect_attempts_at_zero_means_no_retries(self) -> None:
+        """Scenario: Max reconnect attempts at zero means no retries."""
+        cfg = NATSConfig(max_reconnect_attempts=0)
+        assert cfg.max_reconnect_attempts == 0
+
+    def test_tls_scheme_is_accepted(self) -> None:
+        """URL with tls:// scheme should be accepted."""
+        cfg = NATSConfig(url="tls://secure-host:4222")
+        assert cfg.url == "tls://secure-host:4222"
+
+    def test_all_fields_have_descriptions(self) -> None:
+        """All fields must carry Field(description=...) per project model pattern."""
+        for field_name, field_info in NATSConfig.model_fields.items():
+            assert field_info.description is not None, (
+                f"Field '{field_name}' is missing a description"
+            )
+            assert len(field_info.description) > 0, (
+                f"Field '{field_name}' has an empty description"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Negative tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.negative
+class TestNATSConfigNegative:
+    """Invalid input and error-path tests."""
+
+    def test_negative_connect_timeout_is_rejected(self) -> None:
+        """Scenario: Negative connect timeout is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(connect_timeout=-1.0)
+        assert "connect_timeout" in str(exc_info.value)
+
+    def test_negative_reconnect_time_wait_is_rejected(self) -> None:
+        """Scenario: Negative reconnect time wait is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(reconnect_time_wait=-0.1)
+        assert "reconnect_time_wait" in str(exc_info.value)
+
+    def test_negative_max_reconnect_attempts_is_rejected(self) -> None:
+        """Scenario: Negative max reconnect attempts is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(max_reconnect_attempts=-1)
+        assert "max_reconnect_attempts" in str(exc_info.value)
+
+    def test_invalid_url_scheme_is_rejected(self) -> None:
+        """Scenario: Invalid URL scheme is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(url="http://localhost:4222")
+        assert "url" in str(exc_info.value).lower()
+
+    def test_empty_url_is_rejected(self) -> None:
+        """Scenario: Empty URL is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(url="")
+        assert "url" in str(exc_info.value).lower()
+
+    def test_empty_client_name_is_rejected(self) -> None:
+        """Scenario: Empty client name is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(name="")
+        assert "name" in str(exc_info.value).lower()
+
+    def test_blank_client_name_is_rejected(self) -> None:
+        """Blank (whitespace-only) client name is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(name="   ")
+        assert "name" in str(exc_info.value).lower()
+
+    def test_websocket_url_scheme_is_rejected(self) -> None:
+        """ws:// scheme is not a valid NATS URL."""
+        with pytest.raises(ValidationError):
+            NATSConfig(url="ws://localhost:4222")
+
+    def test_ftp_url_scheme_is_rejected(self) -> None:
+        """ftp:// scheme is not a valid NATS URL."""
+        with pytest.raises(ValidationError):
+            NATSConfig(url="ftp://localhost:4222")

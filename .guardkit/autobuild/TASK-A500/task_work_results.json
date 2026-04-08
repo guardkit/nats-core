@@ -1,0 +1,154 @@
+{
+  "task_id": "TASK-A500",
+  "timestamp": "2026-04-08T21:21:13.652648",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation",
+      "completed": false
+    },
+    "phase_4": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 29,
+    "tests_failed": 0,
+    "coverage": 100.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    ".guardkit/bootstrap_state.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/tests/test_config.py",
+    "coverage.json",
+    "src/nats_core/config.py",
+    "tasks/backlog/TASK-A500-core-fields.md",
+    "tests/test_config.py"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-A500-implementation-plan.md",
+    ".guardkit/autobuild/TASK-A3EB/checkpoints.json",
+    ".guardkit/autobuild/TASK-A500/player_turn_1.json",
+    ".guardkit/autobuild/TASK-A500/task_work_results.json",
+    ".guardkit/autobuild/TASK-A500/turn_context.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/.guardkit/autobuild/TASK-A500/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/src/nats_core/config.py",
+    "tasks/design_approved/TASK-A500-core-fields.md"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/tests/test_config.py"
+  ],
+  "summary": "29 tests passed, 100.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 34,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "`url: str` \u2014 default `\"nats://localhost:4222\"`, bound to `NATS_URL`",
+      "status": "complete",
+      "evidence": "Added `url: str = Field(default=\"nats://localhost:4222\", description=...)` to NATSConfig. Tested default value in test_default_configuration_connects_to_localhost and env override in test_environment_variable_overrides_default_url.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "`connect_timeout: float` \u2014 default `5.0`, `ge=0.0`, bound to `NATS_CONNECT_TIMEOUT`",
+      "status": "complete",
+      "evidence": "Added `connect_timeout: float = Field(default=5.0, ge=0.0, description=...)`. Tested default in test_default_configuration_connects_to_localhost, zero boundary in test_connect_timeout_at_zero_is_accepted, negative rejection in test_negative_connect_timeout_is_rejected, env override in test_connect_timeout_env_override.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "`reconnect_time_wait: float` \u2014 default `2.0`, `ge=0.0`, bound to `NATS_RECONNECT_TIME_WAIT`",
+      "status": "complete",
+      "evidence": "Added `reconnect_time_wait: float = Field(default=2.0, ge=0.0, description=...)`. Tested default, zero boundary, negative rejection, and env override.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "`max_reconnect_attempts: int` \u2014 default `60`, `ge=0`, bound to `NATS_MAX_RECONNECT_ATTEMPTS`",
+      "status": "complete",
+      "evidence": "Added `max_reconnect_attempts: int = Field(default=60, ge=0, description=...)`. Tested default, zero boundary (no retries), negative rejection, and env override.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`name: str` \u2014 default `\"nats-core-client\"`, `min_length=1`, bound to `NATS_NAME`",
+      "status": "complete",
+      "evidence": "Added `name: str = Field(default=\"nats-core-client\", min_length=1, description=...)`. Tested default, env override, and empty/blank rejection.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`@field_validator(\"url\")` rejects scheme other than `nats://` or `tls://`",
+      "status": "complete",
+      "evidence": "Implemented url_must_have_valid_scheme validator using urllib.parse.urlparse. Tested with http://, ws://, ftp:// schemes in test_invalid_url_scheme_is_rejected, test_websocket_url_scheme_is_rejected, test_ftp_url_scheme_is_rejected. Also tested tls:// acceptance in test_tls_scheme_is_accepted.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "`@field_validator(\"url\")` rejects empty string",
+      "status": "complete",
+      "evidence": "The url_must_have_valid_scheme validator explicitly checks `if not v` and raises ValueError. Tested in test_empty_url_is_rejected.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "`@field_validator(\"name\")` rejects blank/empty string",
+      "status": "complete",
+      "evidence": "Implemented name_must_not_be_blank validator that checks `v.strip()`. Combined with min_length=1 on the Field. Tested empty string in test_empty_client_name_is_rejected and whitespace-only in test_blank_client_name_is_rejected.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All fields carry `Field(description=...)` per project model pattern",
+      "status": "complete",
+      "evidence": "All 5 fields have Field(description=...) with non-empty descriptions. Verified programmatically in test_all_fields_have_descriptions which iterates model_fields and asserts description is not None and not empty.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "Ran `ruff check src/nats_core/config.py tests/test_config.py` \u2014 'All checks passed!'. Ran `mypy src/nats_core/config.py --strict` \u2014 'Success: no issues found in 1 source file'.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/config.py",
+        "tests/test_config.py"
+      ]
+    }
+  ]
+}

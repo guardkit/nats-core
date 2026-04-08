@@ -1,16 +1,20 @@
 ---
-id: TASK-A500
-title: "Implement NATSConfig core connection fields"
-status: pending
-task_type: declarative
-parent_review: TASK-F7AE
-feature_id: FEAT-NC
-wave: 2
-implementation_mode: task-work
 complexity: 3
-dependencies: [TASK-A3EB]
+dependencies:
+- TASK-A3EB
+feature_id: FEAT-NC
+id: TASK-A500
+implementation_mode: task-work
+parent_review: TASK-F7AE
 priority: high
-tags: [nats-configuration, pydantic-settings, fields]
+status: design_approved
+tags:
+- nats-configuration
+- pydantic-settings
+- fields
+task_type: declarative
+title: Implement NATSConfig core connection fields
+wave: 2
 ---
 
 # Task: Implement NATSConfig core connection fields
