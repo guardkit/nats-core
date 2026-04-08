@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 from pydantic_settings import BaseSettings
 
 from nats_core.config import NATSConfig
@@ -253,3 +253,155 @@ class TestNATSConfigNegative:
         """ftp:// scheme is not a valid NATS URL."""
         with pytest.raises(ValidationError):
             NATSConfig(url="ftp://localhost:4222")
+
+
+# ---------------------------------------------------------------------------
+# Auth fields — smoke / happy-path
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.smoke
+class TestNATSConfigAuthSmoke:
+    """Auth fields default to None and accept valid values."""
+
+    def test_auth_fields_default_to_none(self) -> None:
+        """All auth fields default to None when not provided."""
+        cfg = NATSConfig()
+        assert cfg.user is None
+        assert cfg.password is None
+        assert cfg.creds_file is None
+
+    def test_user_and_password_accepted_together(self) -> None:
+        """Scenario: Configuring user and password authentication."""
+        cfg = NATSConfig(user="admin", password="s3cret")
+        assert cfg.user == "admin"
+        assert isinstance(cfg.password, SecretStr)
+        assert cfg.password.get_secret_value() == "s3cret"
+
+    def test_creds_file_accepted_alone(self) -> None:
+        """Scenario: Configuring NKey credentials file."""
+        cfg = NATSConfig(creds_file="/etc/nats/nkey.creds")
+        assert cfg.creds_file == "/etc/nats/nkey.creds"
+
+
+# ---------------------------------------------------------------------------
+# Auth fields — key-example env-var bindings
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.key_example
+class TestNATSConfigAuthEnvBindings:
+    """Auth fields are bound to NATS_ environment variables."""
+
+    def test_user_env_override(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Scenario: Configuring user and password authentication from environment."""
+        monkeypatch.setenv("NATS_USER", "env-user")
+        monkeypatch.setenv("NATS_PASSWORD", "env-pass")
+        cfg = NATSConfig()
+        assert cfg.user == "env-user"
+        assert cfg.password is not None
+        assert cfg.password.get_secret_value() == "env-pass"
+
+    def test_creds_file_env_override(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Scenario: Configuring NKey credentials file from environment."""
+        monkeypatch.setenv("NATS_CREDS_FILE", "/tmp/nats.creds")
+        cfg = NATSConfig()
+        assert cfg.creds_file == "/tmp/nats.creds"
+
+
+# ---------------------------------------------------------------------------
+# Auth fields — boundary / edge-case
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.boundary
+class TestNATSConfigAuthBoundary:
+    """Boundary and structural checks for auth fields."""
+
+    def test_auth_fields_have_descriptions(self) -> None:
+        """All auth fields must carry Field(description=...) metadata."""
+        auth_fields = ("user", "password", "creds_file")
+        for field_name in auth_fields:
+            field_info = NATSConfig.model_fields[field_name]
+            assert field_info.description is not None, (
+                f"Field '{field_name}' is missing a description"
+            )
+            assert len(field_info.description) > 0, (
+                f"Field '{field_name}' has an empty description"
+            )
+
+    def test_password_is_secret_str_type(self) -> None:
+        """password field should use SecretStr for automatic masking."""
+        cfg = NATSConfig(user="u", password="p")
+        assert isinstance(cfg.password, SecretStr)
+
+    def test_password_masked_in_repr(self) -> None:
+        """Scenario: Sensitive fields are masked in string representation."""
+        cfg = NATSConfig(user="u", password="super-secret")
+        text = repr(cfg)
+        assert "super-secret" not in text
+
+    def test_password_not_exposed_in_model_dump(self) -> None:
+        """Scenario: Password is not exposed when config is serialised to dict."""
+        cfg = NATSConfig(user="u", password="super-secret")
+        dumped = cfg.model_dump()
+        # SecretStr serialises as '**********' by default
+        assert dumped["password"] != "super-secret"
+
+    def test_creds_file_simple_filename_accepted(self) -> None:
+        """A simple filename without path traversal should be accepted."""
+        cfg = NATSConfig(creds_file="nats.creds")
+        assert cfg.creds_file == "nats.creds"
+
+    def test_creds_file_absolute_path_accepted(self) -> None:
+        """An absolute path without traversal should be accepted."""
+        cfg = NATSConfig(creds_file="/var/nats/credentials.creds")
+        assert cfg.creds_file == "/var/nats/credentials.creds"
+
+
+# ---------------------------------------------------------------------------
+# Auth fields — negative tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.negative
+class TestNATSConfigAuthNegative:
+    """Invalid auth configurations are rejected."""
+
+    def test_user_without_password_is_rejected(self) -> None:
+        """Scenario: User without password is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(user="admin")
+        errors = str(exc_info.value)
+        assert "password" in errors.lower() or "user" in errors.lower()
+
+    def test_password_without_user_is_rejected(self) -> None:
+        """Scenario: Password without user is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(password="s3cret")
+        errors = str(exc_info.value)
+        assert "password" in errors.lower() or "user" in errors.lower()
+
+    def test_password_and_creds_file_together_is_rejected(self) -> None:
+        """Scenario: Providing both password auth and creds file is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(user="admin", password="s3cret", creds_file="/tmp/nats.creds")
+        errors = str(exc_info.value)
+        assert "password" in errors.lower() or "creds_file" in errors.lower()
+
+    def test_creds_file_with_path_traversal_is_rejected(self) -> None:
+        """Scenario: Creds file with path traversal is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(creds_file="../../../etc/passwd")
+        assert "creds_file" in str(exc_info.value).lower() or ".." in str(exc_info.value)
+
+    def test_creds_file_with_embedded_traversal_is_rejected(self) -> None:
+        """Path traversal embedded within a path is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            NATSConfig(creds_file="/var/nats/../../etc/passwd")
+        assert ".." in str(exc_info.value)
+
+    def test_creds_file_with_middle_traversal_is_rejected(self) -> None:
+        """Path traversal in the middle of a path is rejected."""
+        with pytest.raises(ValidationError):
+            NATSConfig(creds_file="subdir/../secret.creds")

@@ -7,9 +7,11 @@ NATS-related configuration from environment variables (prefixed with
 
 from __future__ import annotations
 
+import pathlib
 import urllib.parse
+from typing import Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +47,18 @@ class NATSConfig(BaseSettings):
         default="nats-core-client",
         min_length=1,
         description="Client name used to identify this connection",
+    )
+    user: str | None = Field(
+        default=None,
+        description="Username for NATS user/password authentication",
+    )
+    password: SecretStr | None = Field(
+        default=None,
+        description="Password for NATS user/password authentication (masked in output)",
+    )
+    creds_file: str | None = Field(
+        default=None,
+        description="Path to NKey credentials file for NATS authentication",
     )
 
     @field_validator("url")
@@ -88,3 +102,50 @@ class NATSConfig(BaseSettings):
             msg = "name must not be blank"
             raise ValueError(msg)
         return v.strip()
+
+    @field_validator("creds_file")
+    @classmethod
+    def creds_file_must_not_traverse(cls, v: str | None) -> str | None:
+        """Validate that the credentials file path does not contain directory traversal.
+
+        Args:
+            v: The credentials file path to validate.
+
+        Returns:
+            The validated path string, or None if not set.
+
+        Raises:
+            ValueError: If the path contains ``..`` directory traversal.
+        """
+        if v is not None and ".." in pathlib.PurePosixPath(v).parts:
+            msg = "creds_file must not contain '..' path traversal"
+            raise ValueError(msg)
+        return v
+
+    @model_validator(mode="after")
+    def auth_fields_are_consistent(self) -> Self:
+        """Validate mutual-exclusivity rules for authentication fields.
+
+        Rules:
+            1. ``user`` and ``password`` must be provided together (both or neither).
+            2. Password-based auth and ``creds_file`` are mutually exclusive.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If auth field combinations are invalid.
+        """
+        has_user = self.user is not None
+        has_password = self.password is not None
+        has_creds = self.creds_file is not None
+
+        if has_user != has_password:
+            msg = "user and password must be provided together"
+            raise ValueError(msg)
+
+        if has_password and has_creds:
+            msg = "password auth and creds_file are mutually exclusive"
+            raise ValueError(msg)
+
+        return self

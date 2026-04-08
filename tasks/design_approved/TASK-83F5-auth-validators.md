@@ -1,16 +1,20 @@
 ---
-id: TASK-83F5
-title: "Implement auth fields and mutual-exclusivity validators"
-status: pending
-task_type: feature
-parent_review: TASK-F7AE
-feature_id: FEAT-NC
-wave: 3
-implementation_mode: task-work
 complexity: 4
-dependencies: [TASK-A500]
+dependencies:
+- TASK-A500
+feature_id: FEAT-NC
+id: TASK-83F5
+implementation_mode: task-work
+parent_review: TASK-F7AE
 priority: high
-tags: [nats-configuration, auth, validators]
+status: design_approved
+tags:
+- nats-configuration
+- auth
+- validators
+task_type: feature
+title: Implement auth fields and mutual-exclusivity validators
+wave: 3
 ---
 
 # Task: Implement auth fields and mutual-exclusivity validators
