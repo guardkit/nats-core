@@ -1,7 +1,7 @@
 ---
 id: TASK-ETS2
-title: "Implement agent event payload schemas"
-status: pending
+title: Implement agent event payload schemas
+status: in_review
 task_type: declarative
 parent_review: TASK-ETS0
 feature_id: FEAT-ETS
@@ -9,10 +9,28 @@ wave: 1
 implementation_mode: task-work
 complexity: 3
 dependencies:
-  - TASK-ME01
-  - TASK-ME02
+- TASK-ME01
+- TASK-ME02
 priority: high
-tags: [pydantic, events, agent]
+tags:
+- pydantic
+- events
+- agent
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F
+  base_branch: main
+  started_at: '2026-04-08T19:58:25.415954'
+  last_updated: '2026-04-08T20:05:16.316373'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T19:58:25.415954'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Implement agent event payload schemas

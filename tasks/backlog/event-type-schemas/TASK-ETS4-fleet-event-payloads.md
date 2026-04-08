@@ -1,7 +1,7 @@
 ---
 id: TASK-ETS4
-title: "Implement fleet event payloads and agent manifest"
-status: pending
+title: Implement fleet event payloads and agent manifest
+status: in_review
 task_type: declarative
 parent_review: TASK-ETS0
 feature_id: FEAT-ETS
@@ -9,10 +9,29 @@ wave: 1
 implementation_mode: task-work
 complexity: 5
 dependencies:
-  - TASK-ME01
-  - TASK-ME02
+- TASK-ME01
+- TASK-ME02
 priority: high
-tags: [pydantic, events, fleet, manifest]
+tags:
+- pydantic
+- events
+- fleet
+- manifest
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F
+  base_branch: main
+  started_at: '2026-04-08T19:58:25.414471'
+  last_updated: '2026-04-08T20:06:17.803860'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T19:58:25.414471'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Implement fleet event payloads and agent manifest

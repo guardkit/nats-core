@@ -3,7 +3,7 @@ name: Event Type Schemas
 description: Typed payload schemas for every event in the system across pipeline,
   agent, Jarvis, and fleet domains
 created: '2026-04-08T19:08:10.911690'
-status: planned
+status: completed
 complexity: 5
 estimated_tasks: 5
 tasks:
@@ -12,37 +12,69 @@ tasks:
   file_path: tasks/backlog/event-type-schemas/TASK-ETS1-pipeline-event-payloads.md
   complexity: 5
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 75
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:58:25.389315'
+  completed_at: '2026-04-08T20:06:17.806487'
 - id: TASK-ETS2
   name: Implement agent event payload schemas
   file_path: tasks/backlog/event-type-schemas/TASK-ETS2-agent-event-payloads.md
   complexity: 3
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: direct
   estimated_minutes: 33
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:58:25.391667'
+  completed_at: '2026-04-08T20:06:17.809556'
 - id: TASK-ETS3
   name: Implement Jarvis event payload schemas
   file_path: tasks/backlog/event-type-schemas/TASK-ETS3-jarvis-event-payloads.md
   complexity: 3
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: direct
   estimated_minutes: 33
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:58:25.394326'
+  completed_at: '2026-04-08T20:06:17.812140'
 - id: TASK-ETS4
   name: Implement fleet event payloads and agent manifest
   file_path: tasks/backlog/event-type-schemas/TASK-ETS4-fleet-event-payloads.md
   complexity: 5
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 75
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T19:58:25.397893'
+  completed_at: '2026-04-08T20:06:17.814604'
 - id: TASK-ETS5
   name: Complete payload dispatcher and implement full test suite
   file_path: tasks/backlog/event-type-schemas/TASK-ETS5-dispatcher-and-tests.md
@@ -52,10 +84,18 @@ tasks:
   - TASK-ETS2
   - TASK-ETS3
   - TASK-ETS4
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 75
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T20:06:21.211797'
+  completed_at: '2026-04-08T20:13:43.946543'
 orchestration:
   parallel_groups:
   - - TASK-ETS1
@@ -65,3 +105,17 @@ orchestration:
   - - TASK-ETS5
   estimated_duration_minutes: 291
   recommended_parallel: 4
+execution:
+  started_at: '2026-04-08T19:58:25.364593'
+  completed_at: '2026-04-08T20:13:43.953984'
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F
+  total_turns: 5
+  tasks_completed: 5
+  tasks_failed: 0
+  current_wave: 2
+  completed_waves:
+  - 1
+  - 2
+  last_updated: '2026-04-08T20:13:43.950079'
+  archived_at: null
+  archived_to: null
