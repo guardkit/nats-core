@@ -1,22 +1,43 @@
 ---
 id: TASK-TR02
-title: "Test suite — Topic Registry (32 BDD scenarios)"
-status: pending
+title: "Test suite \u2014 Topic Registry (32 BDD scenarios)"
+status: in_review
 task_type: testing
 parent_review: TASK-TR00
 feature_id: FEAT-TR
 wave: 2
 implementation_mode: task-work
 complexity: 4
-dependencies: [TASK-TR01]
+dependencies:
+- TASK-TR01
 priority: high
-tags: [topic-registry, testing, bdd]
+tags:
+- topic-registry
+- testing
+- bdd
 consumer_context:
-  - task: TASK-TR01
-    consumes: nats_core.topics
-    framework: "pytest with asyncio_mode=auto"
-    driver: "pytest"
-    format_note: "Module must be importable as `from nats_core.topics import Topics` after `pip install -e '.[dev]'`; Topics class must expose Pipeline, Agents, Fleet, Jarvis, System as inner classes with string constants"
+- task: TASK-TR01
+  consumes: nats_core.topics
+  framework: pytest with asyncio_mode=auto
+  driver: pytest
+  format_note: Module must be importable as `from nats_core.topics import Topics`
+    after `pip install -e '.[dev]'`; Topics class must expose Pipeline, Agents, Fleet,
+    Jarvis, System as inner classes with string constants
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DCBD
+  base_branch: main
+  started_at: '2026-04-08T20:51:35.475069'
+  last_updated: '2026-04-08T20:58:51.290124'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T20:51:35.475069'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Test suite — Topic Registry (32 BDD scenarios)

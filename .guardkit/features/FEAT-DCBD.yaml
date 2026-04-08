@@ -3,32 +3,62 @@ name: Topic Registry
 description: Typed constants for all NATS subjects across five namespaces with template
   resolution and multi-tenancy project scoping
 created: '2026-04-08T19:07:18.375625'
-status: planned
+status: completed
 complexity: 4
 estimated_tasks: 2
 tasks:
 - id: TASK-TR01
-  name: Implement topics.py — Topic Registry
+  name: "Implement topics.py \u2014 Topic Registry"
   file_path: tasks/backlog/topic-registry/TASK-TR01-implement-topics-module.md
   complexity: 4
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T20:44:24.746287'
+  completed_at: '2026-04-08T20:51:35.460822'
 - id: TASK-TR02
-  name: Test suite — Topic Registry (32 BDD scenarios)
+  name: "Test suite \u2014 Topic Registry (32 BDD scenarios)"
   file_path: tasks/backlog/topic-registry/TASK-TR02-test-suite-topics.md
   complexity: 4
   dependencies:
   - TASK-TR01
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-04-08T20:51:35.469257'
+  completed_at: '2026-04-08T20:58:51.292665'
 orchestration:
   parallel_groups:
   - - TASK-TR01
   - - TASK-TR02
   estimated_duration_minutes: 100
   recommended_parallel: 1
+execution:
+  started_at: '2026-04-08T20:44:24.728792'
+  completed_at: '2026-04-08T20:58:51.297051'
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DCBD
+  total_turns: 2
+  tasks_completed: 2
+  tasks_failed: 0
+  current_wave: 2
+  completed_waves:
+  - 1
+  - 2
+  last_updated: '2026-04-08T20:58:51.294789'
+  archived_at: null
+  archived_to: null
