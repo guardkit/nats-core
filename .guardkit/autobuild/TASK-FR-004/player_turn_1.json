@@ -1,0 +1,173 @@
+{
+  "task_id": "TASK-FR-004",
+  "turn": 1,
+  "files_modified": [
+    ".claude/task-plans/TASK-FR-004-implementation-plan.md",
+    ".claude/task-plans/TASK-FR-005-implementation-plan.md",
+    ".guardkit/autobuild/TASK-FR-003/checkpoints.json",
+    ".guardkit/autobuild/TASK-FR-004/turn_context.json",
+    ".guardkit/autobuild/TASK-FR-005/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-FR-005/player_turn_1.json",
+    ".guardkit/autobuild/TASK-FR-005/task_work_results.json",
+    ".guardkit/autobuild/TASK-FR-005/turn_context.json",
+    ".guardkit/autobuild/TASK-FR-005/turn_state_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/src/nats_core/client.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_client.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_fleet_client.py",
+    "coverage.json",
+    "src/nats_core/_routing.py",
+    "src/nats_core/client.py",
+    "tasks/design_approved/TASK-FR-004-nats-kv-manifest-registry.md",
+    "tasks/design_approved/TASK-FR-005-heartbeat-monitor-and-routing-logic.md",
+    "tests/test_client.py",
+    "tests/test_fleet_client.py",
+    "tests/test_routing.py"
+  ],
+  "files_created": [
+    ".guardkit/autobuild/TASK-FR-004/player_turn_1.json",
+    ".guardkit/autobuild/TASK-FR-004/task_work_results.json",
+    ".guardkit/autobuild/TASK-FR-005/checkpoints.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/.guardkit/autobuild/TASK-FR-004/player_turn_1.json"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_client.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_fleet_client.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "",
+  "implementation_notes": "Implementation via task-work delegation",
+  "concerns": [],
+  "requirements_addressed": [
+    "NATSKVManifestRegistry satisfies ManifestRegistry ABC (mypy strict passes)",
+    "register() upserts via kv.put() using agent_id as key",
+    "register() raises ValueError if manifest.intents is empty",
+    "deregister() is idempotent \u2014 kv.delete() failure silently logged",
+    "get() returns None if key not found (catches all KV exceptions)",
+    "list_all() returns [] if KV unavailable (graceful degradation)",
+    "create() classmethod creates bucket if it does not exist",
+    "Values stored as model_dump_json().encode()",
+    "Values deserialized via model_validate_json()",
+    "Logging uses logger.debug/warning \u2014 never print()",
+    "All modified files pass lint/format checks with zero errors"
+  ],
+  "requirements_remaining": [],
+  "sdk_turns_used": 50,
+  "sdk_max_turns": 100,
+  "sdk_ceiling_hit": false,
+  "tests_passed_count": 713,
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "NATSKVManifestRegistry satisfies the ManifestRegistry ABC (mypy strict passes)",
+      "status": "complete",
+      "evidence": "NATSKVManifestRegistry subclasses ManifestRegistry and implements all 6 abstract methods. mypy --strict passes with zero errors. Seam tests test_is_subclass_of_manifest_registry and test_instance_is_manifest_registry verify this.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "NATSKVManifestRegistry.register() upserts via kv.put() \u2014 uses agent_id as key",
+      "status": "complete",
+      "evidence": "register() calls self._kv.put(manifest.agent_id, payload) where payload is model_dump_json().encode(). Tests test_register_puts_manifest_as_json_bytes and test_register_upserts_on_re_registration verify the key is agent_id and put is called on each register.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "NATSKVManifestRegistry.register() raises ValueError if manifest.intents is empty",
+      "status": "complete",
+      "evidence": "register() checks 'if not manifest.intents' and raises ValueError('at least one intent capability is required') before calling kv.put. Test test_register_raises_value_error_if_intents_empty verifies ValueError is raised and kv.put is not called.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "NATSKVManifestRegistry.deregister() is idempotent \u2014 kv.delete() failure is silently logged, not raised",
+      "status": "complete",
+      "evidence": "deregister() wraps kv.delete() in try/except Exception and logs via logger.debug. Test test_deregister_is_idempotent_on_key_not_found verifies that Exception from kv.delete does not propagate and the agent_id appears in log output.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "NATSKVManifestRegistry.get() returns None if key not found (catches all KV exceptions)",
+      "status": "complete",
+      "evidence": "get() wraps kv.get() and model_validate_json() in try/except Exception, returning None on any failure. Tests test_get_returns_none_for_missing_key (KeyError) and test_get_returns_none_on_any_exception (generic Exception) verify this.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "NATSKVManifestRegistry.list_all() returns [] if KV unavailable (graceful degradation)",
+      "status": "complete",
+      "evidence": "list_all() wraps kv.keys() and per-key get() calls in try/except Exception, logging a warning and returning empty list. Test test_list_all_returns_empty_on_kv_unavailable verifies empty list is returned when keys() raises Exception.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "NATSKVManifestRegistry.create() classmethod creates bucket if it does not exist",
+      "status": "complete",
+      "evidence": "create() classmethod calls nc.jetstream().create_key_value(bucket=AGENT_REGISTRY_BUCKET) and returns cls(kv). Tests test_create_calls_create_key_value and test_create_returns_registry_with_kv verify the bucket name is 'agent-registry' and the returned registry is functional.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "Values stored as model_dump_json().encode() \u2014 JSON bytes, not pickle or repr",
+      "status": "complete",
+      "evidence": "register() computes payload = manifest.model_dump_json().encode() and passes to kv.put(). Test test_register_uses_model_dump_json_encode asserts the stored bytes equal manifest.model_dump_json().encode() exactly.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "Values deserialized via model_validate_json() \u2014 not model_validate(json.loads(...))",
+      "status": "complete",
+      "evidence": "get() calls AgentManifest.model_validate_json(entry.value) directly on the bytes from KV. Test test_get_uses_model_validate_json verifies correct round-trip using model_validate_json.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "Logging uses logger.debug/warning \u2014 never print()",
+      "status": "complete",
+      "evidence": "register() uses logger.debug, deregister() uses logger.debug, list_all() uses logger.warning. No print() statements anywhere. Tests test_register_logs_debug_on_success, test_deregister_is_idempotent_on_key_not_found, and test_list_all_logs_warning_on_kv_unavailable verify logging output via caplog.",
+      "test_file": "tests/test_client.py",
+      "implementation_files": [
+        "src/nats_core/client.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check on all 3 modified files reports 'All checks passed!' with zero errors. mypy --strict on client.py reports 'Success: no issues found in 1 source file'.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/client.py",
+        "tests/test_client.py",
+        "tests/test_fleet_client.py"
+      ]
+    }
+  ]
+}
