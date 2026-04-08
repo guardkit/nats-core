@@ -1,22 +1,28 @@
 ---
-id: TASK-TR02
-title: "Test suite — Topic Registry (32 BDD scenarios)"
-status: pending
-task_type: testing
-parent_review: TASK-TR00
-feature_id: FEAT-TR
-wave: 2
-implementation_mode: task-work
 complexity: 4
-dependencies: [TASK-TR01]
-priority: high
-tags: [topic-registry, testing, bdd]
 consumer_context:
-  - task: TASK-TR01
-    consumes: nats_core.topics
-    framework: "pytest with asyncio_mode=auto"
-    driver: "pytest"
-    format_note: "Module must be importable as `from nats_core.topics import Topics` after `pip install -e '.[dev]'`; Topics class must expose Pipeline, Agents, Fleet, Jarvis, System as inner classes with string constants"
+- consumes: nats_core.topics
+  driver: pytest
+  format_note: Module must be importable as `from nats_core.topics import Topics`
+    after `pip install -e '.[dev]'`; Topics class must expose Pipeline, Agents, Fleet,
+    Jarvis, System as inner classes with string constants
+  framework: pytest with asyncio_mode=auto
+  task: TASK-TR01
+dependencies:
+- TASK-TR01
+feature_id: FEAT-TR
+id: TASK-TR02
+implementation_mode: task-work
+parent_review: TASK-TR00
+priority: high
+status: design_approved
+tags:
+- topic-registry
+- testing
+- bdd
+task_type: testing
+title: Test suite — Topic Registry (32 BDD scenarios)
+wave: 2
 ---
 
 # Task: Test suite — Topic Registry (32 BDD scenarios)

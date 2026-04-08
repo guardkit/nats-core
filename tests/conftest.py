@@ -67,3 +67,32 @@ def make_envelope_json(**overrides: Any) -> str:
     """
     envelope = make_envelope(**overrides)
     return envelope.model_dump_json()
+
+
+# ---------------------------------------------------------------------------
+# Topic Registry test helpers
+# ---------------------------------------------------------------------------
+
+
+def make_valid_feature_id(**overrides: str) -> str:
+    """Create a valid feature ID string for topic resolution tests.
+
+    Args:
+        **overrides: Provide ``feature_id`` to override the default.
+
+    Returns:
+        A feature ID string safe for use in topic resolution.
+    """
+    return overrides.get("feature_id", "FEAT-001")
+
+
+def make_valid_agent_id(**overrides: str) -> str:
+    """Create a valid agent ID string for topic resolution tests.
+
+    Args:
+        **overrides: Provide ``agent_id`` to override the default.
+
+    Returns:
+        An agent ID string safe for use in topic resolution.
+    """
+    return overrides.get("agent_id", "guardkit-factory")

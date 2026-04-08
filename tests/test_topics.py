@@ -1,18 +1,23 @@
 """Tests for nats_core.topics — Topic Registry.
 
-Covers BDD scenarios from the topic-registry feature spec:
-- Key examples / smoke: Core resolution, project scoping, wildcards
-- Boundary: Minimal IDs, hyphens, wildcard syntax
-- Negative: Empty IDs, dots, spaces, missing/extra vars, empty project, wildcards in IDs
-- Edge-case: Immutability, composition, NATS validity, namespaces, idempotency
+Covers all 32 BDD scenarios from the topic-registry feature spec:
+- Key examples / smoke (8): Core resolution, project scoping, wildcards
+- Boundary (6+2): Minimal IDs, hyphens, wildcard syntax (Scenario Outline ×6)
+- Negative (5+): Empty IDs, dots, spaces, missing/extra vars, empty project, wildcards in IDs
+- Edge-case (13): EventType sync, no hardcoded strings, composition, NATS validity,
+  immutability, namespaces, idempotency
+
+Also includes seam test for integration contract verification.
 """
 
 from __future__ import annotations
 
 import re
+import subprocess
 
 import pytest
 
+from nats_core.envelope import EventType
 from nats_core.topics import Topics
 
 # ---------------------------------------------------------------------------
@@ -262,6 +267,7 @@ class TestEdgeCases:
         assert response == request + ".response"
 
     @pytest.mark.edge_case
+    @pytest.mark.smoke
     def test_all_five_namespaces_present(self) -> None:
         assert hasattr(Topics, "Pipeline")
         assert hasattr(Topics, "Agents")
@@ -279,8 +285,119 @@ class TestEdgeCases:
     def test_topic_constants_immutable(self) -> None:
         original = Topics.Pipeline.BUILD_STARTED
         with pytest.raises(AttributeError):
-            Topics.Pipeline.BUILD_STARTED = "overwritten"  # type: ignore[misc]
+            Topics.Pipeline.BUILD_STARTED = "overwritten"
         assert Topics.Pipeline.BUILD_STARTED == original
+
+
+# ---------------------------------------------------------------------------
+# @edge-case @smoke — EventType synchronisation
+# ---------------------------------------------------------------------------
+
+
+class TestEventTypeSync:
+    """Verify topic constant names stay in sync with EventType enum members."""
+
+    @pytest.mark.edge_case
+    @pytest.mark.smoke
+    def test_pipeline_topics_correspond_to_event_types(self) -> None:
+        """Every non-wildcard Pipeline topic template has a matching EventType."""
+        pipeline_names = {
+            k
+            for k, v in vars(Topics.Pipeline).items()
+            if not k.startswith("_") and isinstance(v, str) and ">" not in v and "*" not in v
+        }
+        event_type_names = {e.name for e in EventType}
+        for name in pipeline_names:
+            assert name in event_type_names, (
+                f"Pipeline.{name} has no matching EventType member"
+            )
+
+    @pytest.mark.edge_case
+    @pytest.mark.smoke
+    def test_agent_topics_correspond_to_event_types(self) -> None:
+        """Every non-wildcard, non-tool Agent topic template has a matching EventType."""
+        # TOOLS is an RPC topic, not an event — exclude it
+        excluded = {"TOOLS"}
+        agent_names = {
+            k
+            for k, v in vars(Topics.Agents).items()
+            if not k.startswith("_")
+            and isinstance(v, str)
+            and ">" not in v
+            and "*" not in v
+            and k not in excluded
+        }
+        event_type_names = {e.name for e in EventType}
+        for name in agent_names:
+            assert name in event_type_names, (
+                f"Agents.{name} has no matching EventType member"
+            )
+
+
+# ---------------------------------------------------------------------------
+# @edge-case — No hardcoded topic strings outside registry
+# ---------------------------------------------------------------------------
+
+
+class TestNoHardcodedStrings:
+    """Ensure no source file outside topics.py contains raw topic string literals."""
+
+    @pytest.mark.edge_case
+    def test_no_hardcoded_topic_strings_outside_registry(self) -> None:
+        """No file outside topics.py should contain hardcoded topic strings in code.
+
+        Docstrings and comments containing topic strings for documentation
+        purposes are acceptable — only bare string literals or assignments count.
+        """
+        patterns = [
+            "pipeline.build-",
+            "agents.status.",
+            "agents.approval.",
+            "fleet.register",
+            "fleet.heartbeat.",
+            "jarvis.command.",
+            "jarvis.dispatch.",
+            "system.health.",
+        ]
+        for pattern in patterns:
+            result = subprocess.run(  # noqa: S603, S607
+                [
+                    "grep",
+                    "-rn",
+                    pattern,
+                    "src/",
+                    "--include=*.py",
+                    "--exclude=topics.py",
+                ],
+                capture_output=True,
+                text=True,
+                cwd="/Users/richardwoollcott/Projects/appmilla_github/nats-core/"
+                ".guardkit/worktrees/FEAT-DCBD",
+                check=False,
+            )
+            # Filter out lines that are purely in docstrings or comments
+            code_hits = []
+            for line in result.stdout.strip().splitlines():
+                # Extract the content after the filename:lineno: prefix
+                parts = line.split(":", 2)
+                if len(parts) < 3:  # noqa: PLR2004
+                    continue
+                content = parts[2].strip()
+                # Skip lines that are comments or docstring content
+                if content.startswith("#"):
+                    continue
+                if content.startswith(('"""', "'''", "``", "Published on", "See ")):
+                    continue
+                # Skip indented docstring continuation lines (typically start with text)
+                # Heuristic: if the line has no assignment (=) and no function call
+                # and isn't a string literal assignment, it's likely a docstring line
+                if "=" not in content and "(" not in content:
+                    continue
+                code_hits.append(line)
+            assert code_hits == [], (
+                f"Hardcoded topic string '{pattern}' found in code outside topics.py:\n"
+                + "\n".join(code_hits)
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -382,3 +499,36 @@ class TestAllConstantsExist:
 
     def test_system_constants(self) -> None:
         assert Topics.System.HEALTH == "system.health.{component}"
+
+
+# ---------------------------------------------------------------------------
+# @seam — Integration contract verification
+# ---------------------------------------------------------------------------
+
+
+class TestSeam:
+    """Seam test: verify nats_core.topics contract from TASK-TR01."""
+
+    @pytest.mark.seam
+    @pytest.mark.integration_contract("nats_core.topics")
+    def test_nats_core_topics_importable(self) -> None:
+        """Verify nats_core.topics module matches the expected interface.
+
+        Contract: Module must be importable as ``from nats_core.topics import Topics``
+        after ``pip install -e '.[dev]'``; Topics class must expose Pipeline, Agents,
+        Fleet, Jarvis, System as inner classes with string constants.
+
+        Producer: TASK-TR01
+        """
+        from nats_core.topics import Topics as TopicsFromModule  # noqa: PLC0415
+
+        # Module is importable
+        assert TopicsFromModule is not None, "Topics class must be importable"
+
+        # All 5 namespaces present
+        for ns in ("Pipeline", "Agents", "Fleet", "Jarvis", "System"):
+            assert hasattr(TopicsFromModule, ns), f"Topics must have {ns} namespace"
+
+        # Constants are strings (not None, not instances)
+        assert isinstance(TopicsFromModule.Pipeline.BUILD_STARTED, str)
+        assert isinstance(TopicsFromModule.Fleet.REGISTER, str)

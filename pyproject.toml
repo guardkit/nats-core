@@ -47,4 +47,5 @@ markers = [
     "boundary: boundary and limit condition tests",
     "negative: invalid input and error-path tests",
     "edge_case: edge-case and unusual-input tests",
+    "integration_contract: integration contract verification tests",
 ]
