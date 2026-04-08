@@ -1,0 +1,99 @@
+{
+  "task_id": "TASK-B725",
+  "timestamp": "2026-04-08T21:32:15.280462",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation (TDD Mode)",
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 62,
+    "tests_failed": 0,
+    "coverage": 100.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/src/nats_core/config.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/tests/test_config.py",
+    "coverage.json",
+    "src/nats_core/config.py",
+    "tasks/backlog/TASK-B725-kwargs-and-masking.md",
+    "tests/test_config.py"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-B725-implementation-plan.md",
+    ".guardkit/autobuild/TASK-83F5/checkpoints.json",
+    ".guardkit/autobuild/TASK-B725/player_turn_1.json",
+    ".guardkit/autobuild/TASK-B725/task_work_results.json",
+    ".guardkit/autobuild/TASK-B725/turn_context.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/.guardkit/autobuild/TASK-B725/player_turn_1.json",
+    "tasks/design_approved/TASK-B725-kwargs-and-masking.md"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E/tests/test_config.py"
+  ],
+  "summary": "62 tests passed, 100.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 29,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "to_connect_kwargs() -> dict[str, Any] method added to NATSConfig \u2014 Returns {\"servers\": [self.url], \"connect_timeout\": self.connect_timeout, \"reconnect_time_wait\": self.reconnect_time_wait, \"max_reconnect_attempts\": self.max_reconnect_attempts, \"name\": self.name} \u2014 Includes \"user\": self.user, \"password\": self.password.get_secret_value() when both are set \u2014 Includes \"credentials\": self.creds_file when creds_file is set",
+      "status": "complete",
+      "evidence": "Added to_connect_kwargs() method to NATSConfig (config.py lines 153-178). Method builds a dict with servers (as list), connect_timeout, reconnect_time_wait, max_reconnect_attempts, and name. Conditionally includes user+password (unwrapped from SecretStr) when both are set, and credentials when creds_file is set. Verified by 12 tests in TestToConnectKwargsSmoke, TestToConnectKwargsKeyExample, and TestToConnectKwargsEdgeCase classes \u2014 all passing.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "model_dump() does not expose raw password string \u2014 SecretStr serialises as \"**********\" by default in pydantic v2",
+      "status": "complete",
+      "evidence": "Verified by TestSerialisationMasking::test_model_dump_password_is_masked and pre-existing TestNATSConfigAuthBoundary::test_password_not_exposed_in_model_dump. Both confirm 'super-secret' does not appear in model_dump() output. This is pydantic v2 built-in SecretStr behaviour \u2014 no implementation changes needed, just test verification.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "repr(config) / str(config) does not expose raw password value",
+      "status": "complete",
+      "evidence": "Verified by TestSerialisationMasking::test_repr_password_is_masked and TestSerialisationMasking::test_str_password_is_masked. Both confirm 'super-secret' does not appear in repr() or str() output. Pre-existing test TestNATSConfigAuthBoundary::test_password_masked_in_repr also confirms this. Pydantic v2 SecretStr handles masking automatically.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "to_connect_kwargs() output is accepted by nats-py Client.connect(**kwargs) (verified in integration test)",
+      "status": "complete",
+      "evidence": "Added TestToConnectKwargsIntegration::test_kwargs_accepted_by_nats_client_connect marked with @pytest.mark.integration. The test inspects the Client.connect() signature and verifies all keys from to_connect_kwargs() are accepted parameters. Uses pytest.skip if nats-py is not installed. This does not require a running NATS server.",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "src/nats_core/config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "Ran ruff check on both modified files (config.py and test_config.py) \u2014 'All checks passed!' Ran mypy --strict on config.py \u2014 'Success: no issues found in 1 source file'. Both files compile without errors via py_compile.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/config.py",
+        "tests/test_config.py"
+      ]
+    }
+  ]
+}

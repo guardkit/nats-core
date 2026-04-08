@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pathlib
 import urllib.parse
-from typing import Self
+from typing import Any, Self
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -149,3 +149,30 @@ class NATSConfig(BaseSettings):
             raise ValueError(msg)
 
         return self
+
+    def to_connect_kwargs(self) -> dict[str, Any]:
+        """Build keyword arguments for ``nats.aio.client.Client.connect()``.
+
+        Maps NATSConfig fields to the parameter names expected by the
+        nats-py client library.  Authentication fields are included only
+        when they are set.
+
+        Returns:
+            A dict suitable for unpacking into ``Client.connect(**kwargs)``.
+        """
+        kwargs: dict[str, Any] = {
+            "servers": [self.url],
+            "connect_timeout": self.connect_timeout,
+            "reconnect_time_wait": self.reconnect_time_wait,
+            "max_reconnect_attempts": self.max_reconnect_attempts,
+            "name": self.name,
+        }
+
+        if self.user is not None and self.password is not None:
+            kwargs["user"] = self.user
+            kwargs["password"] = self.password.get_secret_value()
+
+        if self.creds_file is not None:
+            kwargs["credentials"] = self.creds_file
+
+        return kwargs

@@ -405,3 +405,193 @@ class TestNATSConfigAuthNegative:
         """Path traversal in the middle of a path is rejected."""
         with pytest.raises(ValidationError):
             NATSConfig(creds_file="subdir/../secret.creds")
+
+
+# ---------------------------------------------------------------------------
+# to_connect_kwargs() — smoke / happy-path
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.smoke
+class TestToConnectKwargsSmoke:
+    """Core happy-path scenarios for to_connect_kwargs()."""
+
+    def test_to_connect_kwargs_returns_dict(self) -> None:
+        """to_connect_kwargs() must return a plain dict."""
+        cfg = NATSConfig()
+        result = cfg.to_connect_kwargs()
+        assert isinstance(result, dict)
+
+    def test_default_config_kwargs_contain_servers_as_list(self) -> None:
+        """Scenario: Config produces valid nats-py connection kwargs (servers)."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["servers"] == ["nats://localhost:4222"]
+
+    def test_default_config_kwargs_contain_connect_timeout(self) -> None:
+        """Default config kwargs include connect_timeout."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["connect_timeout"] == 5.0
+
+    def test_default_config_kwargs_contain_reconnect_time_wait(self) -> None:
+        """Default config kwargs include reconnect_time_wait."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["reconnect_time_wait"] == 2.0
+
+    def test_default_config_kwargs_contain_max_reconnect_attempts(self) -> None:
+        """Default config kwargs include max_reconnect_attempts."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["max_reconnect_attempts"] == 60
+
+    def test_default_config_kwargs_contain_name(self) -> None:
+        """Default config kwargs include name."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["name"] == "nats-core-client"
+
+
+# ---------------------------------------------------------------------------
+# to_connect_kwargs() — key-example tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.key_example
+class TestToConnectKwargsKeyExample:
+    """Key usage examples for to_connect_kwargs()."""
+
+    def test_kwargs_with_user_password_auth(self) -> None:
+        """Scenario: Config with user/password produces kwargs with auth fields."""
+        cfg = NATSConfig(user="admin", password="s3cret")
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["user"] == "admin"
+        assert kwargs["password"] == "s3cret"
+
+    def test_kwargs_with_creds_file(self) -> None:
+        """Scenario: Config with creds_file produces kwargs with credentials."""
+        cfg = NATSConfig(creds_file="/etc/nats/nkey.creds")
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["credentials"] == "/etc/nats/nkey.creds"
+
+
+# ---------------------------------------------------------------------------
+# to_connect_kwargs() — edge-case tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.edge_case
+class TestToConnectKwargsEdgeCase:
+    """Edge-case scenarios for to_connect_kwargs()."""
+
+    def test_kwargs_without_auth_excludes_user_and_password(self) -> None:
+        """When no auth is configured, user/password keys are absent."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert "user" not in kwargs
+        assert "password" not in kwargs
+
+    def test_kwargs_without_creds_excludes_credentials(self) -> None:
+        """When no creds_file is configured, credentials key is absent."""
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+        assert "credentials" not in kwargs
+
+    def test_kwargs_password_is_raw_string_not_secret_str(self) -> None:
+        """to_connect_kwargs() must unwrap SecretStr to plain string for nats-py."""
+        cfg = NATSConfig(user="u", password="raw-value")
+        kwargs = cfg.to_connect_kwargs()
+        assert isinstance(kwargs["password"], str)
+        assert kwargs["password"] == "raw-value"
+
+    def test_kwargs_with_custom_url(self) -> None:
+        """Custom URL is wrapped in a single-element list."""
+        cfg = NATSConfig(url="tls://secure-host:4222")
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs["servers"] == ["tls://secure-host:4222"]
+
+    def test_kwargs_complete_structure_with_auth(self) -> None:
+        """Full kwargs structure with all expected keys when auth is set."""
+        cfg = NATSConfig(
+            url="nats://prod:4222",
+            connect_timeout=10.0,
+            reconnect_time_wait=5.0,
+            max_reconnect_attempts=100,
+            name="my-client",
+            user="admin",
+            password="s3cret",
+        )
+        kwargs = cfg.to_connect_kwargs()
+        assert kwargs == {
+            "servers": ["nats://prod:4222"],
+            "connect_timeout": 10.0,
+            "reconnect_time_wait": 5.0,
+            "max_reconnect_attempts": 100,
+            "name": "my-client",
+            "user": "admin",
+            "password": "s3cret",
+        }
+
+
+# ---------------------------------------------------------------------------
+# Serialisation masking — edge-case tests (BDD scenarios)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.edge_case
+class TestSerialisationMasking:
+    """BDD scenarios for sensitive field masking in serialisation."""
+
+    def test_model_dump_password_is_masked(self) -> None:
+        """Scenario: Password is not exposed when config is serialised to dict."""
+        cfg = NATSConfig(user="admin", password="super-secret")
+        dumped = cfg.model_dump()
+        assert "super-secret" not in str(dumped)
+
+    def test_repr_password_is_masked(self) -> None:
+        """Scenario: Sensitive fields are masked in string representation."""
+        cfg = NATSConfig(user="admin", password="super-secret")
+        text = repr(cfg)
+        assert "super-secret" not in text
+
+    def test_str_password_is_masked(self) -> None:
+        """Scenario: Sensitive fields are masked in str() output."""
+        cfg = NATSConfig(user="admin", password="super-secret")
+        text = str(cfg)
+        assert "super-secret" not in text
+
+
+# ---------------------------------------------------------------------------
+# Integration test — nats-py Client.connect() compatibility
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestToConnectKwargsIntegration:
+    """Integration test verifying kwargs are accepted by nats-py Client.connect()."""
+
+    def test_kwargs_accepted_by_nats_client_connect(self) -> None:
+        """Scenario: to_connect_kwargs() output is accepted by nats-py Client.connect().
+
+        This test verifies the kwargs structure is compatible with nats-py
+        by inspecting the Client.connect() signature. It does NOT require
+        a running NATS server.
+        """
+        import inspect
+
+        try:
+            from nats.aio.client import Client  # type: ignore[import-untyped]
+        except ImportError:
+            pytest.skip("nats-py not installed")
+
+        cfg = NATSConfig()
+        kwargs = cfg.to_connect_kwargs()
+
+        sig = inspect.signature(Client.connect)
+        params = sig.parameters
+
+        for key in kwargs:
+            assert key in params, (
+                f"to_connect_kwargs() key '{key}' not accepted by Client.connect()"
+            )

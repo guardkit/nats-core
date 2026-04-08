@@ -1,16 +1,20 @@
 ---
-id: TASK-B725
-title: "Implement to_connect_kwargs() and serialisation masking"
-status: pending
-task_type: feature
-parent_review: TASK-F7AE
-feature_id: FEAT-NC
-wave: 4
-implementation_mode: task-work
 complexity: 3
-dependencies: [TASK-83F5]
+dependencies:
+- TASK-83F5
+feature_id: FEAT-NC
+id: TASK-B725
+implementation_mode: task-work
+parent_review: TASK-F7AE
 priority: high
-tags: [nats-configuration, kwargs, masking]
+status: design_approved
+tags:
+- nats-configuration
+- kwargs
+- masking
+task_type: feature
+title: Implement to_connect_kwargs() and serialisation masking
+wave: 4
 ---
 
 # Task: Implement to_connect_kwargs() and serialisation masking
