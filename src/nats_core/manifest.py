@@ -13,7 +13,6 @@ by intent pattern or tool name.
 from __future__ import annotations
 
 import abc
-import fnmatch
 import json
 from typing import Any, Literal
 
@@ -178,15 +177,15 @@ class ManifestRegistry(abc.ABC):
     """
 
     @abc.abstractmethod
-    def register(self, manifest: AgentManifest) -> None:
-        """Store a manifest keyed by its ``agent_id``.
+    async def register(self, manifest: AgentManifest) -> None:
+        """Store or update a manifest. Upserts — re-registration replaces previous entry.
 
         Args:
             manifest: The agent manifest to register.
         """
 
     @abc.abstractmethod
-    def deregister(self, agent_id: str) -> None:
+    async def deregister(self, agent_id: str) -> None:
         """Remove a manifest by ``agent_id``.
 
         If the ``agent_id`` is not present, this method is a no-op.
@@ -196,7 +195,7 @@ class ManifestRegistry(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get(self, agent_id: str) -> AgentManifest | None:
+    async def get(self, agent_id: str) -> AgentManifest | None:
         """Retrieve a manifest by ``agent_id``.
 
         Args:
@@ -207,8 +206,16 @@ class ManifestRegistry(abc.ABC):
         """
 
     @abc.abstractmethod
-    def find_by_intent(self, intent: str) -> list[AgentManifest]:
-        """Return all manifests whose intent patterns match *intent*.
+    async def list_all(self) -> list[AgentManifest]:
+        """Return all registered manifests.
+
+        Returns:
+            A list of all registered manifests.
+        """
+
+    @abc.abstractmethod
+    async def find_by_intent(self, intent: str) -> list[AgentManifest]:
+        """Return all manifests whose intents include the given pattern.
 
         Args:
             intent: The intent string to match against registered patterns.
@@ -218,7 +225,7 @@ class ManifestRegistry(abc.ABC):
         """
 
     @abc.abstractmethod
-    def find_by_tool(self, tool_name: str) -> list[AgentManifest]:
+    async def find_by_tool(self, tool_name: str) -> list[AgentManifest]:
         """Return all manifests that expose a tool named *tool_name*.
 
         Args:
@@ -230,7 +237,7 @@ class ManifestRegistry(abc.ABC):
 
 
 class InMemoryManifestRegistry(ManifestRegistry):
-    """In-memory implementation of :class:`ManifestRegistry`.
+    """Dict-backed manifest registry for testing and NATS-free environments.
 
     Stores manifests in a plain dictionary keyed by ``agent_id``.
     Suitable for testing and single-process deployments.
@@ -239,25 +246,34 @@ class InMemoryManifestRegistry(ManifestRegistry):
     def __init__(self) -> None:
         self._store: dict[str, AgentManifest] = {}
 
-    def register(self, manifest: AgentManifest) -> None:
-        """Store a manifest keyed by its ``agent_id``.
+    async def register(self, manifest: AgentManifest) -> None:
+        """Store or update a manifest keyed by its ``agent_id``.
+
+        Upserts — re-registration replaces the previous entry.
+        Raises :class:`ValueError` if ``manifest.intents`` is empty.
 
         Args:
             manifest: The agent manifest to register.
+
+        Raises:
+            ValueError: If the manifest has no intent capabilities.
         """
+        if not manifest.intents:
+            msg = "at least one intent capability is required"
+            raise ValueError(msg)
         self._store[manifest.agent_id] = manifest
 
-    def deregister(self, agent_id: str) -> None:
+    async def deregister(self, agent_id: str) -> None:
         """Remove a manifest by ``agent_id``.
 
-        If the ``agent_id`` is not present, this method is a no-op.
+        Silently ignored if ``agent_id`` is not found.
 
         Args:
             agent_id: The agent identifier to remove.
         """
         self._store.pop(agent_id, None)
 
-    def get(self, agent_id: str) -> AgentManifest | None:
+    async def get(self, agent_id: str) -> AgentManifest | None:
         """Retrieve a manifest by ``agent_id``.
 
         Args:
@@ -268,11 +284,18 @@ class InMemoryManifestRegistry(ManifestRegistry):
         """
         return self._store.get(agent_id)
 
-    def find_by_intent(self, intent: str) -> list[AgentManifest]:
-        """Return all manifests whose intent patterns match *intent*.
+    async def list_all(self) -> list[AgentManifest]:
+        """Return all registered manifests.
 
-        Uses :func:`fnmatch.fnmatch` for glob-style matching so that
-        patterns like ``software.*`` match ``software.build``.
+        Returns:
+            A list of all currently registered manifests.
+        """
+        return list(self._store.values())
+
+    async def find_by_intent(self, intent: str) -> list[AgentManifest]:
+        """Return all manifests whose intents include the given pattern.
+
+        Matches on ``IntentCapability.pattern`` using exact string comparison.
 
         Args:
             intent: The intent string to match against registered patterns.
@@ -283,13 +306,15 @@ class InMemoryManifestRegistry(ManifestRegistry):
         results: list[AgentManifest] = []
         for manifest in self._store.values():
             for cap in manifest.intents:
-                if fnmatch.fnmatch(intent, cap.pattern):
+                if cap.pattern == intent:
                     results.append(manifest)
                     break
         return results
 
-    def find_by_tool(self, tool_name: str) -> list[AgentManifest]:
+    async def find_by_tool(self, tool_name: str) -> list[AgentManifest]:
         """Return all manifests that expose a tool named *tool_name*.
+
+        Matches on ``ToolCapability.name`` using exact string comparison.
 
         Args:
             tool_name: The tool name to search for.

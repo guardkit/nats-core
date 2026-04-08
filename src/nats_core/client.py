@@ -8,7 +8,6 @@ fleet registry) and the ``NATSKVManifestRegistry`` backed by JetStream KV.
 
 from __future__ import annotations
 
-import fnmatch
 import json
 import logging
 import uuid
@@ -403,7 +402,7 @@ class NATSKVManifestRegistry(ManifestRegistry):
         js = self._client._nc.jetstream()
         return await js.key_value(self._bucket)
 
-    async def register(self, manifest: AgentManifest) -> None:  # type: ignore[override]
+    async def register(self, manifest: AgentManifest) -> None:
         """Store a manifest in the KV bucket keyed by ``agent_id``.
 
         Args:
@@ -412,7 +411,7 @@ class NATSKVManifestRegistry(ManifestRegistry):
         kv = await self._get_kv()
         await kv.put(manifest.agent_id, manifest.model_dump_json().encode())
 
-    async def deregister(self, agent_id: str) -> None:  # type: ignore[override]
+    async def deregister(self, agent_id: str) -> None:
         """Remove a manifest from the KV bucket by ``agent_id``.
 
         If the key is not present, this method is a no-op.
@@ -426,7 +425,7 @@ class NATSKVManifestRegistry(ManifestRegistry):
         except KeyError:
             pass
 
-    async def get(self, agent_id: str) -> AgentManifest | None:  # type: ignore[override]
+    async def get(self, agent_id: str) -> AgentManifest | None:
         """Retrieve a manifest from the KV bucket by ``agent_id``.
 
         Args:
@@ -461,11 +460,10 @@ class NATSKVManifestRegistry(ManifestRegistry):
             results.append(manifest)
         return results
 
-    async def find_by_intent(self, intent: str) -> list[AgentManifest]:  # type: ignore[override]
-        """Return all manifests whose intent patterns match *intent*.
+    async def find_by_intent(self, intent: str) -> list[AgentManifest]:
+        """Return all manifests whose intents include the given pattern.
 
-        Uses :func:`fnmatch.fnmatch` for glob-style matching, consistent
-        with :class:`InMemoryManifestRegistry`.
+        Matches on ``IntentCapability.pattern`` using exact string comparison.
 
         Args:
             intent: The intent string to match against registered patterns.
@@ -477,13 +475,15 @@ class NATSKVManifestRegistry(ManifestRegistry):
         results: list[AgentManifest] = []
         for manifest in all_manifests:
             for cap in manifest.intents:
-                if fnmatch.fnmatch(intent, cap.pattern):
+                if cap.pattern == intent:
                     results.append(manifest)
                     break
         return results
 
-    async def find_by_tool(self, tool_name: str) -> list[AgentManifest]:  # type: ignore[override]
+    async def find_by_tool(self, tool_name: str) -> list[AgentManifest]:
         """Return all manifests that expose a tool named *tool_name*.
+
+        Matches on ``ToolCapability.name`` using exact string comparison.
 
         Args:
             tool_name: The tool name to search for.

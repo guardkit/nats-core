@@ -175,12 +175,12 @@ class TestIntentCapabilityConfidence:
 
 
 # ===========================================================================
-# AC-003: ManifestRegistry is abstract
+# AC-FR003-001: ManifestRegistry is abstract — cannot be instantiated
 # ===========================================================================
 
 
 class TestManifestRegistryAbstract:
-    """AC-003: ManifestRegistry is abstract — instantiating it directly raises TypeError."""
+    """ManifestRegistry is abstract — instantiating it directly raises TypeError."""
 
     @pytest.mark.smoke
     def test_cannot_instantiate_directly(self) -> None:
@@ -195,6 +195,7 @@ class TestManifestRegistryAbstract:
         assert "register" in abstract_methods
         assert "deregister" in abstract_methods
         assert "get" in abstract_methods
+        assert "list_all" in abstract_methods
         assert "find_by_intent" in abstract_methods
         assert "find_by_tool" in abstract_methods
 
@@ -205,141 +206,203 @@ class TestManifestRegistryAbstract:
 
 
 # ===========================================================================
-# AC-004: InMemoryManifestRegistry.register() stores manifest by agent_id
+# AC-FR003-002: register() upserts — re-registration replaces previous entry
 # ===========================================================================
 
 
 class TestRegistryRegister:
-    """AC-004: register() stores manifest keyed by agent_id."""
+    """register() stores manifest keyed by agent_id; re-registration replaces."""
 
     @pytest.mark.smoke
-    def test_register_and_get(self) -> None:
+    async def test_register_and_get(self) -> None:
         """Registered manifest is retrievable via get()."""
         reg = _make_registry()
-        m = _make_manifest(agent_id="build-agent")
-        reg.register(m)
-        result = reg.get("build-agent")
+        m = _make_manifest(
+            agent_id="build-agent",
+            intents=[_make_intent(pattern="build.run")],
+        )
+        await reg.register(m)
+        result = await reg.get("build-agent")
         assert result is not None
         assert result.agent_id == "build-agent"
 
     @pytest.mark.key_example
-    def test_register_multiple(self) -> None:
+    async def test_register_multiple(self) -> None:
         """Multiple manifests can be registered and retrieved independently."""
         reg = _make_registry()
-        m1 = _make_manifest(agent_id="agent-a", name="Agent A")
-        m2 = _make_manifest(agent_id="agent-b", name="Agent B")
-        reg.register(m1)
-        reg.register(m2)
-        assert reg.get("agent-a") is not None
-        assert reg.get("agent-b") is not None
-        assert reg.get("agent-a") is not reg.get("agent-b")
+        m1 = _make_manifest(
+            agent_id="agent-a",
+            name="Agent A",
+            intents=[_make_intent(pattern="a.intent")],
+        )
+        m2 = _make_manifest(
+            agent_id="agent-b",
+            name="Agent B",
+            intents=[_make_intent(pattern="b.intent")],
+        )
+        await reg.register(m1)
+        await reg.register(m2)
+        assert await reg.get("agent-a") is not None
+        assert await reg.get("agent-b") is not None
 
     @pytest.mark.edge_case
-    def test_register_overwrites_existing(self) -> None:
-        """Re-registering with same agent_id overwrites the previous manifest."""
+    async def test_register_overwrites_existing(self) -> None:
+        """Re-registering with same agent_id overwrites the previous manifest (upsert)."""
         reg = _make_registry()
-        m1 = _make_manifest(agent_id="agent-a", name="Version 1")
-        m2 = _make_manifest(agent_id="agent-a", name="Version 2")
-        reg.register(m1)
-        reg.register(m2)
-        result = reg.get("agent-a")
+        m1 = _make_manifest(
+            agent_id="agent-a",
+            name="Version 1",
+            intents=[_make_intent(pattern="a.intent")],
+        )
+        m2 = _make_manifest(
+            agent_id="agent-a",
+            name="Version 2",
+            intents=[_make_intent(pattern="a.intent")],
+        )
+        await reg.register(m1)
+        await reg.register(m2)
+        result = await reg.get("agent-a")
         assert result is not None
         assert result.name == "Version 2"
 
     @pytest.mark.boundary
-    def test_get_unknown_returns_none(self) -> None:
+    async def test_get_unknown_returns_none(self) -> None:
         """get() returns None for an unregistered agent_id."""
         reg = _make_registry()
-        assert reg.get("nonexistent") is None
+        assert await reg.get("nonexistent") is None
 
 
 # ===========================================================================
-# AC-005: InMemoryManifestRegistry.deregister("unknown") does not raise
+# AC-FR003-003: register() raises ValueError if intents is empty
+# ===========================================================================
+
+
+class TestRegistryRegisterValidation:
+    """register() raises ValueError if manifest.intents is empty."""
+
+    @pytest.mark.negative
+    async def test_register_empty_intents_raises(self) -> None:
+        """Registering a manifest with no intents raises ValueError."""
+        reg = _make_registry()
+        m = _make_manifest(agent_id="no-intents", intents=[])
+        with pytest.raises(ValueError, match="at least one intent"):
+            await reg.register(m)
+
+    @pytest.mark.smoke
+    async def test_register_with_intents_succeeds(self) -> None:
+        """Registering a manifest with intents succeeds."""
+        reg = _make_registry()
+        m = _make_manifest(
+            agent_id="has-intents",
+            intents=[_make_intent(pattern="test.intent")],
+        )
+        await reg.register(m)
+        result = await reg.get("has-intents")
+        assert result is not None
+
+
+# ===========================================================================
+# AC-FR003-004: deregister() is idempotent — no error if unknown
 # ===========================================================================
 
 
 class TestRegistryDeregister:
-    """AC-005: deregister("unknown") does not raise."""
+    """deregister() is idempotent — no error if agent_id unknown."""
 
     @pytest.mark.smoke
-    def test_deregister_unknown_no_raise(self) -> None:
+    async def test_deregister_unknown_no_raise(self) -> None:
         """Deregistering an unknown agent_id is a silent no-op."""
         reg = _make_registry()
-        reg.deregister("unknown")  # Should not raise
+        await reg.deregister("unknown")  # Should not raise
 
     @pytest.mark.key_example
-    def test_deregister_existing(self) -> None:
+    async def test_deregister_existing(self) -> None:
         """Deregistering a known agent_id removes it from the registry."""
         reg = _make_registry()
-        m = _make_manifest(agent_id="temp-agent")
-        reg.register(m)
-        assert reg.get("temp-agent") is not None
-        reg.deregister("temp-agent")
-        assert reg.get("temp-agent") is None
+        m = _make_manifest(
+            agent_id="temp-agent",
+            intents=[_make_intent(pattern="temp.intent")],
+        )
+        await reg.register(m)
+        assert await reg.get("temp-agent") is not None
+        await reg.deregister("temp-agent")
+        assert await reg.get("temp-agent") is None
 
     @pytest.mark.edge_case
-    def test_deregister_twice_no_raise(self) -> None:
+    async def test_deregister_twice_no_raise(self) -> None:
         """Deregistering the same agent_id twice does not raise."""
         reg = _make_registry()
-        m = _make_manifest(agent_id="temp-agent")
-        reg.register(m)
-        reg.deregister("temp-agent")
-        reg.deregister("temp-agent")  # Should not raise
+        m = _make_manifest(
+            agent_id="temp-agent",
+            intents=[_make_intent(pattern="temp.intent")],
+        )
+        await reg.register(m)
+        await reg.deregister("temp-agent")
+        await reg.deregister("temp-agent")  # Should not raise
 
 
 # ===========================================================================
-# AC-006: find_by_intent("software.build") returns agents with matching pattern
+# AC-FR003-005: get() returns None for unknown agent_id
+# ===========================================================================
+# (Covered in TestRegistryRegister.test_get_unknown_returns_none)
+
+
+# ===========================================================================
+# AC-FR003-006: find_by_intent() matches on IntentCapability.pattern (exact)
 # ===========================================================================
 
 
 class TestRegistryFindByIntent:
-    """AC-006: find_by_intent() returns agents with matching intent pattern."""
+    """find_by_intent() returns agents with matching intent pattern (exact match)."""
 
     @pytest.mark.smoke
-    def test_find_by_intent_exact_match(self) -> None:
+    async def test_find_by_intent_exact_match(self) -> None:
         """Exact intent pattern match returns the agent."""
         reg = _make_registry()
         m = _make_manifest(
             agent_id="builder",
             intents=[_make_intent(pattern="software.build")],
         )
-        reg.register(m)
-        results = reg.find_by_intent("software.build")
+        await reg.register(m)
+        results = await reg.find_by_intent("software.build")
         assert len(results) == 1
         assert results[0].agent_id == "builder"
 
     @pytest.mark.key_example
-    def test_find_by_intent_glob_match(self) -> None:
-        """Glob pattern software.* matches software.build."""
-        reg = _make_registry()
-        m = _make_manifest(
-            agent_id="builder",
-            intents=[_make_intent(pattern="software.*")],
-        )
-        reg.register(m)
-        results = reg.find_by_intent("software.build")
-        assert len(results) == 1
-        assert results[0].agent_id == "builder"
-
-    @pytest.mark.key_example
-    def test_find_by_intent_no_match(self) -> None:
+    async def test_find_by_intent_no_match(self) -> None:
         """Non-matching intent returns empty list."""
         reg = _make_registry()
         m = _make_manifest(
             agent_id="builder",
-            intents=[_make_intent(pattern="devops.*")],
+            intents=[_make_intent(pattern="devops.deploy")],
         )
-        reg.register(m)
-        results = reg.find_by_intent("software.build")
+        await reg.register(m)
+        results = await reg.find_by_intent("software.build")
         assert results == []
 
+    @pytest.mark.key_example
+    async def test_find_by_intent_exact_not_glob(self) -> None:
+        """Pattern 'software.*' does NOT glob-match 'software.build' — exact match only."""
+        reg = _make_registry()
+        m = _make_manifest(
+            agent_id="glob-agent",
+            intents=[_make_intent(pattern="software.*")],
+        )
+        await reg.register(m)
+        # The pattern "software.*" should NOT match "software.build" with exact matching
+        results = await reg.find_by_intent("software.build")
+        assert results == []
+        # But it SHOULD match "software.*" exactly
+        results = await reg.find_by_intent("software.*")
+        assert len(results) == 1
+
     @pytest.mark.boundary
-    def test_find_by_intent_multiple_agents(self) -> None:
-        """Multiple agents matching the same intent are all returned."""
+    async def test_find_by_intent_multiple_agents(self) -> None:
+        """Multiple agents with the same exact pattern are all returned."""
         reg = _make_registry()
         m1 = _make_manifest(
             agent_id="builder-a",
-            intents=[_make_intent(pattern="software.*")],
+            intents=[_make_intent(pattern="software.build")],
         )
         m2 = _make_manifest(
             agent_id="builder-b",
@@ -347,115 +410,228 @@ class TestRegistryFindByIntent:
         )
         m3 = _make_manifest(
             agent_id="unrelated",
-            intents=[_make_intent(pattern="devops.*")],
+            intents=[_make_intent(pattern="devops.deploy")],
         )
-        reg.register(m1)
-        reg.register(m2)
-        reg.register(m3)
-        results = reg.find_by_intent("software.build")
+        await reg.register(m1)
+        await reg.register(m2)
+        await reg.register(m3)
+        results = await reg.find_by_intent("software.build")
         ids = {r.agent_id for r in results}
         assert ids == {"builder-a", "builder-b"}
 
     @pytest.mark.boundary
-    def test_find_by_intent_empty_registry(self) -> None:
+    async def test_find_by_intent_empty_registry(self) -> None:
         """Empty registry returns empty list."""
         reg = _make_registry()
-        assert reg.find_by_intent("software.build") == []
+        assert await reg.find_by_intent("software.build") == []
 
     @pytest.mark.edge_case
-    def test_find_by_intent_agent_with_multiple_intents(self) -> None:
-        """Agent with multiple intents appears only once if multiple match."""
+    async def test_find_by_intent_agent_with_multiple_intents(self) -> None:
+        """Agent with multiple intents appears only once if one matches."""
         reg = _make_registry()
         m = _make_manifest(
             agent_id="multi-intent",
             intents=[
-                _make_intent(pattern="software.*"),
                 _make_intent(pattern="software.build"),
+                _make_intent(pattern="software.test"),
             ],
         )
-        reg.register(m)
-        results = reg.find_by_intent("software.build")
+        await reg.register(m)
+        results = await reg.find_by_intent("software.build")
         assert len(results) == 1
         assert results[0].agent_id == "multi-intent"
 
 
 # ===========================================================================
-# AC-007: find_by_tool("lint") returns agents with that tool
+# AC-FR003-007: find_by_tool() matches on ToolCapability.name (exact match)
 # ===========================================================================
 
 
 class TestRegistryFindByTool:
-    """AC-007: find_by_tool() returns agents with the named tool."""
+    """find_by_tool() returns agents with the named tool (exact match)."""
 
     @pytest.mark.smoke
-    def test_find_by_tool_match(self) -> None:
+    async def test_find_by_tool_match(self) -> None:
         """Agent with a 'lint' tool is returned by find_by_tool('lint')."""
         reg = _make_registry()
         m = _make_manifest(
             agent_id="linter",
+            intents=[_make_intent(pattern="lint.run")],
             tools=[_make_tool(name="lint")],
         )
-        reg.register(m)
-        results = reg.find_by_tool("lint")
+        await reg.register(m)
+        results = await reg.find_by_tool("lint")
         assert len(results) == 1
         assert results[0].agent_id == "linter"
 
     @pytest.mark.key_example
-    def test_find_by_tool_no_match(self) -> None:
+    async def test_find_by_tool_no_match(self) -> None:
         """Agent without the named tool is not returned."""
         reg = _make_registry()
         m = _make_manifest(
             agent_id="builder",
+            intents=[_make_intent(pattern="build.run")],
             tools=[_make_tool(name="compile")],
         )
-        reg.register(m)
-        results = reg.find_by_tool("lint")
+        await reg.register(m)
+        results = await reg.find_by_tool("lint")
         assert results == []
 
     @pytest.mark.boundary
-    def test_find_by_tool_multiple_agents(self) -> None:
+    async def test_find_by_tool_multiple_agents(self) -> None:
         """Multiple agents with the same tool are all returned."""
         reg = _make_registry()
         m1 = _make_manifest(
             agent_id="linter-a",
+            intents=[_make_intent(pattern="lint.a")],
             tools=[_make_tool(name="lint")],
         )
         m2 = _make_manifest(
             agent_id="linter-b",
+            intents=[_make_intent(pattern="lint.b")],
             tools=[_make_tool(name="lint")],
         )
         m3 = _make_manifest(
             agent_id="other",
+            intents=[_make_intent(pattern="other.run")],
             tools=[_make_tool(name="test")],
         )
-        reg.register(m1)
-        reg.register(m2)
-        reg.register(m3)
-        results = reg.find_by_tool("lint")
+        await reg.register(m1)
+        await reg.register(m2)
+        await reg.register(m3)
+        results = await reg.find_by_tool("lint")
         ids = {r.agent_id for r in results}
         assert ids == {"linter-a", "linter-b"}
 
     @pytest.mark.boundary
-    def test_find_by_tool_empty_registry(self) -> None:
+    async def test_find_by_tool_empty_registry(self) -> None:
         """Empty registry returns empty list."""
         reg = _make_registry()
-        assert reg.find_by_tool("lint") == []
+        assert await reg.find_by_tool("lint") == []
 
     @pytest.mark.edge_case
-    def test_find_by_tool_agent_with_multiple_tools(self) -> None:
+    async def test_find_by_tool_agent_with_multiple_tools(self) -> None:
         """Agent with multiple tools appears once if it has the named tool."""
         reg = _make_registry()
         m = _make_manifest(
             agent_id="multi-tool",
+            intents=[_make_intent(pattern="multi.run")],
             tools=[
                 _make_tool(name="lint"),
                 _make_tool(name="test"),
             ],
         )
-        reg.register(m)
-        results = reg.find_by_tool("lint")
+        await reg.register(m)
+        results = await reg.find_by_tool("lint")
         assert len(results) == 1
         assert results[0].agent_id == "multi-tool"
+
+
+# ===========================================================================
+# AC-FR003-008: All methods are async — awaitable even without I/O
+# ===========================================================================
+
+
+class TestRegistryMethodsAreAsync:
+    """All ManifestRegistry methods are async — must be awaitable."""
+
+    @pytest.mark.smoke
+    async def test_register_is_awaitable(self) -> None:
+        """register() returns a coroutine that can be awaited."""
+        reg = _make_registry()
+        m = _make_manifest(
+            agent_id="async-agent",
+            intents=[_make_intent(pattern="async.test")],
+        )
+        coro = reg.register(m)
+        # Must be a coroutine (awaitable)
+        assert inspect.iscoroutine(coro)
+        await coro
+
+    @pytest.mark.smoke
+    async def test_deregister_is_awaitable(self) -> None:
+        """deregister() returns a coroutine that can be awaited."""
+        reg = _make_registry()
+        coro = reg.deregister("any-id")
+        assert inspect.iscoroutine(coro)
+        await coro
+
+    @pytest.mark.smoke
+    async def test_get_is_awaitable(self) -> None:
+        """get() returns a coroutine that can be awaited."""
+        reg = _make_registry()
+        coro = reg.get("any-id")
+        assert inspect.iscoroutine(coro)
+        await coro
+
+    @pytest.mark.smoke
+    async def test_list_all_is_awaitable(self) -> None:
+        """list_all() returns a coroutine that can be awaited."""
+        reg = _make_registry()
+        coro = reg.list_all()
+        assert inspect.iscoroutine(coro)
+        await coro
+
+    @pytest.mark.smoke
+    async def test_find_by_intent_is_awaitable(self) -> None:
+        """find_by_intent() returns a coroutine that can be awaited."""
+        reg = _make_registry()
+        coro = reg.find_by_intent("test")
+        assert inspect.iscoroutine(coro)
+        await coro
+
+    @pytest.mark.smoke
+    async def test_find_by_tool_is_awaitable(self) -> None:
+        """find_by_tool() returns a coroutine that can be awaited."""
+        reg = _make_registry()
+        coro = reg.find_by_tool("test")
+        assert inspect.iscoroutine(coro)
+        await coro
+
+
+# ===========================================================================
+# list_all() tests
+# ===========================================================================
+
+
+class TestRegistryListAll:
+    """list_all() returns all registered manifests."""
+
+    @pytest.mark.smoke
+    async def test_list_all_empty(self) -> None:
+        """Empty registry returns empty list."""
+        reg = _make_registry()
+        assert await reg.list_all() == []
+
+    @pytest.mark.key_example
+    async def test_list_all_returns_all(self) -> None:
+        """list_all() returns all registered manifests."""
+        reg = _make_registry()
+        m1 = _make_manifest(
+            agent_id="agent-a",
+            intents=[_make_intent(pattern="a.intent")],
+        )
+        m2 = _make_manifest(
+            agent_id="agent-b",
+            intents=[_make_intent(pattern="b.intent")],
+        )
+        await reg.register(m1)
+        await reg.register(m2)
+        results = await reg.list_all()
+        ids = {r.agent_id for r in results}
+        assert ids == {"agent-a", "agent-b"}
+
+    @pytest.mark.edge_case
+    async def test_list_all_after_deregister(self) -> None:
+        """list_all() reflects deregistration."""
+        reg = _make_registry()
+        m = _make_manifest(
+            agent_id="temp",
+            intents=[_make_intent(pattern="temp.intent")],
+        )
+        await reg.register(m)
+        await reg.deregister("temp")
+        assert await reg.list_all() == []
 
 
 # ===========================================================================
@@ -647,3 +823,33 @@ class TestNoCircularImport:
                     assert not alias.name.startswith("nats_core.events"), (
                         f"manifest.py imports {alias.name} — circular dependency!"
                     )
+
+
+# ===========================================================================
+# Seam Test: AgentManifest contract from TASK-FR-002
+# ===========================================================================
+
+
+@pytest.mark.seam
+@pytest.mark.integration_contract
+async def test_agent_manifest_storable_in_registry() -> None:
+    """Verify AgentManifest produced by TASK-FR-002 is accepted by ManifestRegistry.
+
+    Contract: AgentManifest from nats_core.manifest, pydantic BaseModel
+    Producer: TASK-FR-002
+    """
+    from nats_core.manifest import AgentManifest, InMemoryManifestRegistry, IntentCapability
+
+    manifest = AgentManifest(
+        agent_id="test-agent",
+        name="Test Agent",
+        template="base",
+        intents=[IntentCapability(pattern="test.intent", confidence=0.9, description="test")],
+    )
+
+    registry = InMemoryManifestRegistry()
+    await registry.register(manifest)
+
+    result = await registry.get("test-agent")
+    assert result is not None
+    assert result.agent_id == "test-agent"

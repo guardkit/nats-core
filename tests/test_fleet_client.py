@@ -443,19 +443,19 @@ class TestNATSKVManifestRegistry:
         assert ids == {"agent-a", "agent-b"}
 
     async def test_find_by_intent(self) -> None:
-        """find_by_intent() filters manifests by intent pattern."""
+        """find_by_intent() filters manifests by exact intent pattern match."""
         from nats_core.manifest import IntentCapability
 
         m1 = _make_manifest(
             "agent-a",
             intents=[
-                IntentCapability(pattern="software.*", description="Software tasks")
+                IntentCapability(pattern="software.build", description="Software tasks")
             ],
         )
         m2 = _make_manifest(
             "agent-b",
             intents=[
-                IntentCapability(pattern="data.*", description="Data tasks")
+                IntentCapability(pattern="data.ingest", description="Data tasks")
             ],
         )
         entries = {

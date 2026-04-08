@@ -1,24 +1,25 @@
 ---
-id: TASK-FR-003
-title: ManifestRegistry ABC and InMemoryManifestRegistry
-status: backlog
-task_type: feature
-priority: high
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
 complexity: 4
-parent_review: TASK-B5F3
-feature_id: FEAT-FR01
-wave: 3
-implementation_mode: task-work
-dependencies:
-  - TASK-FR-002
 consumer_context:
-  - task: TASK-FR-002
-    consumes: AgentManifest
-    framework: "Pydantic BaseModel from nats_core.manifest"
-    driver: "pydantic>=2.0"
-    format_note: "Import as: from nats_core.manifest import AgentManifest — model is produced by TASK-FR-002 and stored/retrieved by this registry"
+- consumes: AgentManifest
+  driver: pydantic>=2.0
+  format_note: 'Import as: from nats_core.manifest import AgentManifest — model is
+    produced by TASK-FR-002 and stored/retrieved by this registry'
+  framework: Pydantic BaseModel from nats_core.manifest
+  task: TASK-FR-002
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-FR-002
+feature_id: FEAT-FR01
+id: TASK-FR-003
+implementation_mode: task-work
+parent_review: TASK-B5F3
+priority: high
+status: design_approved
+task_type: feature
+title: ManifestRegistry ABC and InMemoryManifestRegistry
+updated: 2026-04-08 00:00:00+00:00
+wave: 3
 ---
 
 # TASK-FR-003: ManifestRegistry ABC and InMemoryManifestRegistry
