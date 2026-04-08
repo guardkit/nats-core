@@ -1,0 +1,41 @@
+{
+  "id": "TURN-FEAT-2637-1",
+  "feature_id": "FEAT-2637",
+  "task_id": "TASK-ME01",
+  "turn_number": 1,
+  "player_summary": "Implementation attempt",
+  "player_decision": "approve",
+  "coach_decision": "approve",
+  "coach_feedback": null,
+  "mode": "fresh_start",
+  "blockers_found": [],
+  "progress_summary": "Turn 1: approve",
+  "acceptance_criteria_status": {
+    "AC-001": "verified",
+    "AC-002": "verified",
+    "AC-003": "verified",
+    "AC-004": "verified",
+    "AC-005": "verified",
+    "AC-006": "verified",
+    "AC-007": "verified",
+    "AC-008": "verified"
+  },
+  "files_modified": [
+    "pyproject.toml",
+    "src/nats_core/__init__.py",
+    "src/nats_core/py.typed",
+    "src/nats_core/events/__init__.py",
+    "tests/__init__.py",
+    "tests/conftest.py",
+    "tests/test_scaffolding.py"
+  ],
+  "tests_passed": null,
+  "tests_failed": null,
+  "coverage": null,
+  "arch_score": null,
+  "started_at": "2026-04-08T19:30:30.830057",
+  "completed_at": "2026-04-08T19:30:30.830057",
+  "duration_seconds": null,
+  "lessons_from_turn": [],
+  "what_to_try_next": null
+}
