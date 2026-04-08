@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "MCP tool definition template for nats-core fleet agents. Each ToolCapability in an AgentManifest maps 1:1 to an MCP tool using this structure.",
+  "version": "1.0.0",
+  "date": "2026-04-07",
+  "derivation_pattern": {
+    "description": "How ToolCapability maps to MCP tool definition",
+    "naming": "{agent_id}:{tool_name}",
+    "example": {
+      "name": "architect-agent:run_architecture_session",
+      "description": "Run a full architecture design session for a project",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "docs_path": {
+            "type": "string",
+            "description": "Path to project documentation directory"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Architecture scope (e.g., 'full', 'component')"
+          }
+        },
+        "required": ["docs_path", "scope"]
+      },
+      "annotations": {
+        "risk_level": "mutating",
+        "requires_approval": false,
+        "async_mode": true
+      }
+    }
+  },
+  "adapter_code": {
+    "description": "Pattern for MCP server implementations that wrap fleet agent tools",
+    "pattern": "For each tool in manifest.tools, register an MCP tool handler that calls client.call_agent_tool(agent_id, tool_name, params) via NATS request-reply."
+  },
+  "transport_mapping": {
+    "nats_topic": "agents.{agent_id}.tools.{tool_name}",
+    "nats_pattern": "request-reply",
+    "timeout_default": 30.0
+  }
+}

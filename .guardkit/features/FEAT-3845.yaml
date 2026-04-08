@@ -1,0 +1,118 @@
+id: FEAT-3845
+name: NATS Client
+description: Typed publish/subscribe wrapper around nats-py with MessageEnvelope auto-wrapping,
+  Topics registry, fleet registration, and request-reply agent tool invocation
+created: '2026-04-08T19:13:18.922418'
+status: planned
+complexity: 6
+estimated_tasks: 9
+tasks:
+- id: TASK-NC01
+  name: NATSConfig and AgentConfig models
+  file_path: tasks/backlog/nats-client/TASK-NC01-natsconfig-agentconfig-models.md
+  complexity: 2
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: direct
+  estimated_minutes: 22
+- id: TASK-NC02
+  name: Topics registry
+  file_path: tasks/backlog/nats-client/TASK-NC02-topics-registry.md
+  complexity: 3
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: direct
+  estimated_minutes: 33
+- id: TASK-NC03
+  name: Event payload models
+  file_path: tasks/backlog/nats-client/TASK-NC03-event-payload-models.md
+  complexity: 3
+  dependencies:
+  - TASK-ME02
+  status: pending
+  description: ''
+  implementation_mode: direct
+  estimated_minutes: 33
+- id: TASK-NC04
+  name: AgentManifest and ManifestRegistry
+  file_path: tasks/backlog/nats-client/TASK-NC04-agentmanifest-registry.md
+  complexity: 4
+  dependencies:
+  - TASK-NC03
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-NC05
+  name: NATSClient core connect publish subscribe
+  file_path: tasks/backlog/nats-client/TASK-NC05-natsclient-core.md
+  complexity: 6
+  dependencies:
+  - TASK-NC01
+  - TASK-NC02
+  - TASK-ME02
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 113
+- id: TASK-NC06
+  name: Fleet methods and NATSKVManifestRegistry
+  file_path: tasks/backlog/nats-client/TASK-NC06-fleet-methods-kv-registry.md
+  complexity: 5
+  dependencies:
+  - TASK-NC04
+  - TASK-NC05
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 75
+- id: TASK-NC07
+  name: call_agent_tool request reply
+  file_path: tasks/backlog/nats-client/TASK-NC07-call-agent-tool.md
+  complexity: 4
+  dependencies:
+  - TASK-NC05
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-NC08
+  name: Unit tests config topics events manifest
+  file_path: tasks/backlog/nats-client/TASK-NC08-unit-tests.md
+  complexity: 4
+  dependencies:
+  - TASK-NC01
+  - TASK-NC02
+  - TASK-NC03
+  - TASK-NC04
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-NC09
+  name: Integration tests NATSClient all BDD scenarios
+  file_path: tasks/backlog/nats-client/TASK-NC09-integration-tests.md
+  complexity: 6
+  dependencies:
+  - TASK-NC05
+  - TASK-NC06
+  - TASK-NC07
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 113
+orchestration:
+  parallel_groups:
+  - - TASK-NC01
+    - TASK-NC02
+    - TASK-NC03
+  - - TASK-NC04
+    - TASK-NC05
+  - - TASK-NC06
+    - TASK-NC07
+    - TASK-NC08
+  - - TASK-NC09
+  estimated_duration_minutes: 539
+  recommended_parallel: 3

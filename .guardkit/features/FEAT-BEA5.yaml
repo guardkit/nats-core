@@ -1,0 +1,80 @@
+id: FEAT-BEA5
+name: Fleet Registration
+description: 'CAN bus-style dynamic agent discovery: agents self-announce capabilities,
+  heartbeat liveness, NATS KV-backed routing table with confidence-based routing and
+  queue-depth tiebreaking'
+created: '2026-04-08T19:10:13.603621'
+status: planned
+complexity: 6
+estimated_tasks: 6
+tasks:
+- id: TASK-FR-001
+  name: Fleet Registration scaffolding
+  file_path: tasks/backlog/fleet-registration/TASK-FR-001-fleet-registration-scaffolding.md
+  complexity: 2
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: direct
+  estimated_minutes: 22
+- id: TASK-FR-002
+  name: Fleet Registration Pydantic models
+  file_path: tasks/backlog/fleet-registration/TASK-FR-002-fleet-registration-pydantic-models.md
+  complexity: 4
+  dependencies:
+  - TASK-FR-001
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-FR-003
+  name: ManifestRegistry ABC and InMemoryManifestRegistry
+  file_path: tasks/backlog/fleet-registration/TASK-FR-003-manifest-registry-abc-and-inmemory.md
+  complexity: 4
+  dependencies:
+  - TASK-FR-002
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-FR-004
+  name: NATSKVManifestRegistry
+  file_path: tasks/backlog/fleet-registration/TASK-FR-004-nats-kv-manifest-registry.md
+  complexity: 6
+  dependencies:
+  - TASK-FR-003
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 113
+- id: TASK-FR-005
+  name: Heartbeat monitor and routing logic
+  file_path: tasks/backlog/fleet-registration/TASK-FR-005-heartbeat-monitor-and-routing-logic.md
+  complexity: 6
+  dependencies:
+  - TASK-FR-003
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 113
+- id: TASK-FR-006
+  name: Fleet Registration test suite 28 BDD scenarios
+  file_path: tasks/backlog/fleet-registration/TASK-FR-006-fleet-registration-test-suite.md
+  complexity: 4
+  dependencies:
+  - TASK-FR-004
+  - TASK-FR-005
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+orchestration:
+  parallel_groups:
+  - - TASK-FR-001
+  - - TASK-FR-002
+  - - TASK-FR-003
+  - - TASK-FR-004
+    - TASK-FR-005
+  - - TASK-FR-006
+  estimated_duration_minutes: 398
+  recommended_parallel: 2

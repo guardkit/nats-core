@@ -1,0 +1,34 @@
+id: FEAT-DCBD
+name: Topic Registry
+description: Typed constants for all NATS subjects across five namespaces with template
+  resolution and multi-tenancy project scoping
+created: '2026-04-08T19:07:18.375625'
+status: planned
+complexity: 4
+estimated_tasks: 2
+tasks:
+- id: TASK-TR01
+  name: Implement topics.py — Topic Registry
+  file_path: tasks/backlog/topic-registry/TASK-TR01-implement-topics-module.md
+  complexity: 4
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-TR02
+  name: Test suite — Topic Registry (32 BDD scenarios)
+  file_path: tasks/backlog/topic-registry/TASK-TR02-test-suite-topics.md
+  complexity: 4
+  dependencies:
+  - TASK-TR01
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+orchestration:
+  parallel_groups:
+  - - TASK-TR01
+  - - TASK-TR02
+  estimated_duration_minutes: 100
+  recommended_parallel: 1

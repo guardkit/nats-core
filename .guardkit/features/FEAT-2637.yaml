@@ -1,0 +1,46 @@
+id: FEAT-2637
+name: Message Envelope
+description: Base MessageEnvelope Pydantic schema serving as wire format for all NATS
+  messages, with EventType enum, defaults, serialisation, forward compatibility, and
+  test suite
+created: '2026-04-08T18:30:35.491527'
+status: planned
+complexity: 4
+estimated_tasks: 3
+tasks:
+- id: TASK-ME01
+  name: Create nats-core project scaffolding
+  file_path: tasks/backlog/message-envelope/TASK-ME01-project-scaffolding.md
+  complexity: 3
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: direct
+  estimated_minutes: 33
+- id: TASK-ME02
+  name: Implement EventType enum and MessageEnvelope model
+  file_path: tasks/backlog/message-envelope/TASK-ME02-message-envelope-model.md
+  complexity: 4
+  dependencies:
+  - TASK-ME01
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-ME03
+  name: Implement MessageEnvelope test suite from BDD scenarios
+  file_path: tasks/backlog/message-envelope/TASK-ME03-message-envelope-tests.md
+  complexity: 4
+  dependencies:
+  - TASK-ME01
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+orchestration:
+  parallel_groups:
+  - - TASK-ME01
+  - - TASK-ME02
+    - TASK-ME03
+  estimated_duration_minutes: 133
+  recommended_parallel: 2

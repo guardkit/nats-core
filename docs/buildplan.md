@@ -25,8 +25,24 @@ Before running commands, verify:
 |-------|------|--------|------|
 | 1 | `/system-arch` | **Complete** | 2026-04-07 |
 | 1 | `/system-design` | Not started | — |
-| 2 | Feature specs (1-6) | Not started | — |
+| 2 | Feature 1 — Message Envelope `/feature-spec` | **Complete** | 2026-04-08 |
+| 2 | Feature 2 — Event Type Schemas `/feature-spec` | **Complete** | 2026-04-08 |
+| 2 | Feature 3 — Topic Registry `/feature-spec` | **Complete** | 2026-04-08 |
+| 2 | Feature 4 — Configuration `/feature-spec` | **Complete** | 2026-04-08 |
+| 2 | Feature 5 — NATS Client `/feature-spec` | **Complete** | 2026-04-08 |
+| 2 | Feature 6 — Fleet Registration `/feature-spec` | **Complete** | 2026-04-08 |
 | 3 | Feature plans & AutoBuild | Not started | — |
+
+### Decisions Made
+
+| Date | Decision | Context |
+|------|----------|---------|
+| 2026-04-08 | Feature 1 spec: all 4 groups accepted (A A A A), edge case expansion included (Y), all 3 assumptions confirmed (high confidence) | 23 scenarios total, 0 low-confidence assumptions |
+| 2026-04-08 | Feature 2 spec: all 4 groups accepted (A A A A), edge case expansion included (Y), all 8 assumptions confirmed (2 high, 4 medium, 2 low) | 46 scenarios total, 2 low-confidence assumptions (no max_length on strings, kebab-case agent_id) |
+| 2026-04-08 | Feature 3 spec: all 4 groups accepted (A A A A), edge case expansion included (Y, 5 additional scenarios), all 5 assumptions confirmed (3 high, 2 medium, 0 low) | 32 scenarios total, 0 low-confidence assumptions |
+| 2026-04-08 | Feature 4 spec: all 4 groups accepted (A A A A), edge case expansion included (Y, 4 additional scenarios), all 6 assumptions confirmed (0 high, 3 medium, 3 low) | 23 scenarios total, 3 low-confidence assumptions (all confirmed: user/password pairing, secret masking, auth mutual exclusivity) |
+| 2026-04-08 | Feature 5 spec: all 4 groups accepted (A A A A), edge case expansion included (Y, 6 additional scenarios — security, concurrency, integration boundaries), all 4 assumptions confirmed (0 high, 3 medium, 1 low) | 33 scenarios total, 1 low-confidence assumption (confirmed: partial auth is an error) |
+| 2026-04-08 | Feature 6 spec: all 4 groups accepted (A A A A), edge case expansion included (Y, 6 additional scenarios — security, concurrency, integration boundaries), all 8 assumptions confirmed (2 high, 5 medium, 1 low) | 28 scenarios total, 1 low-confidence assumption (confirmed: no auth on registration — trust-based CAN bus pattern) |
 
 ---
 
@@ -87,7 +103,7 @@ module interfaces, Pydantic schema definitions, topic registry API.
 Each feature uses `/feature-spec` because nats-core has behavioural contracts
 that benefit from BDD scenarios (specification by example with Gherkin).
 
-### Feature 1 — Message Envelope (Foundation)
+### Feature 1 — Message Envelope (Foundation) — COMPLETE (2026-04-08)
 
 ```bash
 /feature-spec "Message Envelope: base MessageEnvelope schema with versioning and correlation" \
@@ -98,7 +114,16 @@ Covers: `envelope.py` — MessageEnvelope Pydantic model, UUID v4 message_id def
 UTC timestamps, version field, correlation_id for request-response linking,
 `extra="ignore"` forward compatibility. No dependencies — this is the foundation.
 
-### Feature 2 — Event Type Schemas
+**Produced:** `features/message-envelope/` — 23 scenarios (5 key, 6 boundary, 4 negative, 8 edge),
+3 assumptions (all high confidence, confirmed). 4 smoke scenarios for CI gating.
+
+| File | Description |
+|------|-------------|
+| `features/message-envelope/message-envelope.feature` | Gherkin spec (23 scenarios) |
+| `features/message-envelope/message-envelope_assumptions.yaml` | 3 assumptions manifest |
+| `features/message-envelope/message-envelope_summary.md` | Summary for `/feature-plan` |
+
+### Feature 2 — Event Type Schemas — COMPLETE (2026-04-08)
 
 ```bash
 /feature-spec "Event Type Schemas: typed payloads for pipeline, agent, jarvis, and fleet events" \
@@ -111,7 +136,16 @@ ApprovalResponse), `events/jarvis.py` (IntentClassified, Dispatch),
 `events/fleet.py` (AgentRegistration, AgentHeartbeat, AgentDeregistration,
 IntentCapability). EventType enum. Depends on Feature 1 (envelope).
 
-### Feature 3 — Topic Registry
+**Produced:** `features/event-type-schemas/` — 46 scenarios (10 key, 14 boundary, 8 negative, 14 edge),
+8 assumptions (2 high, 4 medium, 2 low confidence — all confirmed). 10 smoke scenarios for CI gating.
+
+| File | Description |
+|------|-------------|
+| `features/event-type-schemas/event-type-schemas.feature` | Gherkin spec (46 scenarios) |
+| `features/event-type-schemas/event-type-schemas_assumptions.yaml` | 8 assumptions manifest |
+| `features/event-type-schemas/event-type-schemas_summary.md` | Summary for `/feature-plan` |
+
+### Feature 3 — Topic Registry — COMPLETE (2026-04-08)
 
 ```bash
 /feature-spec "Topic Registry: typed constants for all NATS subjects with resolution and project scoping" \
@@ -123,7 +157,16 @@ Topics.System classes with typed string constants. `resolve()` for template
 substitution. `for_project()` for multi-tenancy scoping. No magic strings.
 Depends on Feature 2 (event types map to topics).
 
-### Feature 4 — Configuration
+**Produced:** `features/topic-registry/` — 32 scenarios (8 key, 6 boundary, 5 negative, 13 edge),
+5 assumptions (3 high, 2 medium confidence — all confirmed). 8 smoke scenarios for CI gating.
+
+| File | Description |
+|------|-------------|
+| `features/topic-registry/topic-registry.feature` | Gherkin spec (32 scenarios) |
+| `features/topic-registry/topic-registry_assumptions.yaml` | 5 assumptions manifest |
+| `features/topic-registry/topic-registry_summary.md` | Summary for `/feature-plan` |
+
+### Feature 4 — Configuration — COMPLETE (2026-04-08)
 
 ```bash
 /feature-spec "NATS Configuration: pydantic-settings for connection management" \
@@ -131,9 +174,21 @@ Depends on Feature 2 (event types map to topics).
 ```
 
 Covers: `config.py` — NATSConfig with env_prefix="NATS_", url, timeouts,
-reconnect settings, credentials file support. Independent of other features.
+reconnect settings, credentials file support, URL scheme validation (nats/tls),
+auth mutual exclusivity (user/password vs creds_file), secret masking in
+repr/serialisation, .env file loading, nats-py kwargs production.
+Independent of other features.
 
-### Feature 5 — NATS Client
+**Produced:** `features/nats-configuration/` — 23 scenarios (5 key, 6 boundary, 8 negative, 8 edge),
+6 assumptions (0 high, 3 medium, 3 low confidence — all confirmed). 2 smoke scenarios for CI gating.
+
+| File | Description |
+|------|-------------|
+| `features/nats-configuration/nats-configuration.feature` | Gherkin spec (23 scenarios) |
+| `features/nats-configuration/nats-configuration_assumptions.yaml` | 6 assumptions manifest |
+| `features/nats-configuration/nats-configuration_summary.md` | Summary for `/feature-plan` |
+
+### Feature 5 — NATS Client — COMPLETE (2026-04-08)
 
 ```bash
 /feature-spec "NATS Client: typed publish/subscribe wrapper with automatic envelope handling" \
@@ -143,9 +198,20 @@ reconnect settings, credentials file support. Independent of other features.
 Covers: `client.py` — NATSClient wrapping nats-py with typed convenience methods
 per event type (publish_build_complete, publish_build_progress, etc.), automatic
 MessageEnvelope wrapping/unwrapping, connection with retry, graceful disconnect,
-project-scoped publish. Depends on Features 1-4 (envelope, events, topics, config).
+project-scoped publish. Fleet convenience methods (register_agent, deregister_agent,
+heartbeat, get_fleet_registry, watch_fleet, call_agent_tool). Depends on
+Features 1-4 (envelope, events, topics, config).
 
-### Feature 6 — Fleet Registration (CAN Bus Pattern)
+**Produced:** `features/nats-client/` — 33 scenarios (8 key, 6 boundary, 6 negative, 13 edge),
+4 assumptions (0 high, 3 medium, 1 low confidence — all confirmed). 6 smoke scenarios for CI gating.
+
+| File | Description |
+|------|-------------|
+| `features/nats-client/nats-client.feature` | Gherkin spec (33 scenarios) |
+| `features/nats-client/nats-client_assumptions.yaml` | 4 assumptions manifest |
+| `features/nats-client/nats-client_summary.md` | Summary for `/feature-plan` |
+
+### Feature 6 — Fleet Registration (CAN Bus Pattern) — COMPLETE (2026-04-08)
 
 ```bash
 /feature-spec "Fleet Registration: CAN bus agent discovery with KV-backed routing table" \
@@ -153,22 +219,54 @@ project-scoped publish. Depends on Features 1-4 (envelope, events, topics, confi
   --context docs/design/decisions/ADR-004-dynamic-fleet-registration.md
 ```
 
-Covers: NATSClient convenience methods — `register_agent()`, `deregister_agent()`,
-`heartbeat()`, `get_fleet_registry()`, `watch_fleet()`. AgentRegistrationPayload
-with IntentCapability list and confidence scores. KV bucket interaction for
-`agent-registry`. Heartbeat lifecycle. Depends on Feature 5 (client).
+Covers: CAN bus-style dynamic agent discovery — agents self-announce capabilities
+on startup via `fleet.register`, maintain liveness via periodic heartbeats to
+`fleet.heartbeat.{agent_id}`, and are tracked in a NATS KV-backed routing table
+(`agent-registry` bucket). Confidence-based routing with queue-depth tiebreaking.
+Concurrency limits via `max_concurrent`. Failure modes including heartbeat timeout,
+KV unavailability, and concurrent registration races. Depends on Feature 5 (client).
+
+**Produced:** `features/fleet-registration/` — 28 scenarios (6 key, 6 boundary, 5 negative, 11 edge),
+8 assumptions (2 high, 5 medium, 1 low confidence — all confirmed). 3 smoke scenarios for CI gating.
+
+| File | Description |
+|------|-------------|
+| `features/fleet-registration/fleet-registration.feature` | Gherkin spec (28 scenarios) |
+| `features/fleet-registration/fleet-registration_assumptions.yaml` | 8 assumptions manifest |
+| `features/fleet-registration/fleet-registration_summary.md` | Summary for `/feature-plan` |
 
 ---
 
 ## Phase 3: Feature Plans & AutoBuild
 
-After all feature specs are created, run `/feature-plan` for each, then AutoBuild.
+After each feature spec is created, run `/feature-plan` with the summary as context, then AutoBuild.
 
 ```bash
-# For each feature (1-6):
-/feature-plan
-# Review the generated task breakdown
-# Then:
+# Feature 1 (Envelope) — spec complete
+/feature-plan "Message Envelope" \
+  --context features/message-envelope/message-envelope_summary.md
+
+# Feature 2 (Events) — after feature-spec completes
+/feature-plan "Event Type Schemas" \
+  --context features/event-type-schemas/event-type-schemas_summary.md
+
+# Feature 3 (Topics) — after feature-spec completes
+/feature-plan "Topic Registry" \
+  --context features/topic-registry/topic-registry_summary.md
+
+# Feature 4 (Config) — after feature-spec completes
+/feature-plan "NATS Configuration" \
+  --context features/nats-configuration/nats-configuration_summary.md
+
+# Feature 5 (Client) — after feature-spec completes
+/feature-plan "NATS Client" \
+  --context features/nats-client/nats-client_summary.md
+
+# Feature 6 (Fleet Reg) — after feature-spec completes
+/feature-plan "Fleet Registration" \
+  --context features/fleet-registration/fleet-registration_summary.md
+
+# Then for each planned feature:
 autobuild
 ```
 
