@@ -14,6 +14,30 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from nats_core.events._agent import (
+    AgentStatusPayload,
+    ApprovalRequestPayload,
+    ApprovalResponsePayload,
+    CommandPayload,
+    ResultPayload,
+)
+from nats_core.events._fleet import AgentDeregistrationPayload, AgentHeartbeatPayload
+from nats_core.events._jarvis import (
+    AgentResultPayload,
+    DispatchPayload,
+    IntentClassifiedPayload,
+    NotificationPayload,
+)
+from nats_core.events._pipeline import (
+    BuildCompletePayload,
+    BuildFailedPayload,
+    BuildProgressPayload,
+    BuildStartedPayload,
+    FeaturePlannedPayload,
+    FeatureReadyForBuildPayload,
+)
+from nats_core.manifest import AgentManifest
+
 
 class EventType(str, Enum):
     """Enumeration of all event types across fleet domains.
@@ -49,6 +73,35 @@ class EventType(str, Enum):
     AGENT_REGISTER = "agent_register"
     AGENT_HEARTBEAT = "agent_heartbeat"
     AGENT_DEREGISTER = "agent_deregister"
+
+
+# Module-level registry mapping every EventType member to its payload class.
+# ERROR reuses AgentStatusPayload (with state="error") per the agent domain spec.
+_EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
+    # Pipeline domain
+    EventType.FEATURE_PLANNED: FeaturePlannedPayload,
+    EventType.FEATURE_READY_FOR_BUILD: FeatureReadyForBuildPayload,
+    EventType.BUILD_STARTED: BuildStartedPayload,
+    EventType.BUILD_PROGRESS: BuildProgressPayload,
+    EventType.BUILD_COMPLETE: BuildCompletePayload,
+    EventType.BUILD_FAILED: BuildFailedPayload,
+    # Agent domain
+    EventType.STATUS: AgentStatusPayload,
+    EventType.APPROVAL_REQUEST: ApprovalRequestPayload,
+    EventType.APPROVAL_RESPONSE: ApprovalResponsePayload,
+    EventType.COMMAND: CommandPayload,
+    EventType.RESULT: ResultPayload,
+    EventType.ERROR: AgentStatusPayload,
+    # Jarvis domain
+    EventType.INTENT_CLASSIFIED: IntentClassifiedPayload,
+    EventType.DISPATCH: DispatchPayload,
+    EventType.AGENT_RESULT: AgentResultPayload,
+    EventType.NOTIFICATION: NotificationPayload,
+    # Fleet domain
+    EventType.AGENT_REGISTER: AgentManifest,
+    EventType.AGENT_HEARTBEAT: AgentHeartbeatPayload,
+    EventType.AGENT_DEREGISTER: AgentDeregistrationPayload,
+}
 
 
 class MessageEnvelope(BaseModel):
@@ -106,17 +159,20 @@ class MessageEnvelope(BaseModel):
 def payload_class_for_event_type(event_type: EventType) -> type[BaseModel]:
     """Return the Pydantic model class for the given event type's payload.
 
-    This is a forward-looking hook that will be implemented once per-event
-    payload models are defined. For now it raises ``NotImplementedError``.
+    Looks up the payload class from the module-level ``_EVENT_TYPE_REGISTRY``
+    dictionary. Every ``EventType`` member has a registered class.
 
     Args:
         event_type: The event type whose payload class is requested.
 
+    Returns:
+        The Pydantic ``BaseModel`` subclass for the given event type.
+
     Raises:
-        NotImplementedError: Always, until per-event payload models exist.
+        KeyError: If ``event_type`` is not registered in the registry.
     """
-    msg = (
-        f"Payload model for event type '{event_type.value}' is not yet implemented. "
-        "Per-event payload models will be added in a future task."
-    )
-    raise NotImplementedError(msg)
+    try:
+        return _EVENT_TYPE_REGISTRY[event_type]
+    except KeyError:
+        msg = f"No payload class registered for event type '{event_type.value}'"
+        raise KeyError(msg) from None

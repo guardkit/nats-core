@@ -1,41 +1,49 @@
 ---
-id: TASK-ETS5
-title: "Complete payload dispatcher and implement full test suite"
-status: pending
-task_type: feature
-parent_review: TASK-ETS0
-feature_id: FEAT-ETS
-wave: 2
-implementation_mode: task-work
 complexity: 5
-dependencies:
-  - TASK-ETS1
-  - TASK-ETS2
-  - TASK-ETS3
-  - TASK-ETS4
-priority: high
-tags: [dispatcher, tests, pytest, coverage]
 consumer_context:
-  - task: TASK-ETS1
-    consumes: PIPELINE_PAYLOAD_CLASSES
-    framework: "Pydantic BaseModel (payload_class_for_event_type registry)"
-    driver: "nats_core.events._pipeline"
-    format_note: "All pipeline payload classes must be importable from nats_core.events and registered against their EventType enum member"
-  - task: TASK-ETS2
-    consumes: AGENT_PAYLOAD_CLASSES
-    framework: "Pydantic BaseModel (payload_class_for_event_type registry)"
-    driver: "nats_core.events._agent"
-    format_note: "All agent payload classes must be importable from nats_core.events and registered against their EventType enum member"
-  - task: TASK-ETS3
-    consumes: JARVIS_PAYLOAD_CLASSES
-    framework: "Pydantic BaseModel (payload_class_for_event_type registry)"
-    driver: "nats_core.events._jarvis"
-    format_note: "All Jarvis payload classes must be importable from nats_core.events and registered against their EventType enum member"
-  - task: TASK-ETS4
-    consumes: FLEET_PAYLOAD_CLASSES
-    framework: "Pydantic BaseModel + AgentManifest (payload_class_for_event_type registry)"
-    driver: "nats_core.events._fleet, nats_core.manifest"
-    format_note: "AgentManifest registered for EventType.AGENT_REGISTER; AgentHeartbeatPayload and AgentDeregistrationPayload registered for their respective EventType members"
+- consumes: PIPELINE_PAYLOAD_CLASSES
+  driver: nats_core.events._pipeline
+  format_note: All pipeline payload classes must be importable from nats_core.events
+    and registered against their EventType enum member
+  framework: Pydantic BaseModel (payload_class_for_event_type registry)
+  task: TASK-ETS1
+- consumes: AGENT_PAYLOAD_CLASSES
+  driver: nats_core.events._agent
+  format_note: All agent payload classes must be importable from nats_core.events
+    and registered against their EventType enum member
+  framework: Pydantic BaseModel (payload_class_for_event_type registry)
+  task: TASK-ETS2
+- consumes: JARVIS_PAYLOAD_CLASSES
+  driver: nats_core.events._jarvis
+  format_note: All Jarvis payload classes must be importable from nats_core.events
+    and registered against their EventType enum member
+  framework: Pydantic BaseModel (payload_class_for_event_type registry)
+  task: TASK-ETS3
+- consumes: FLEET_PAYLOAD_CLASSES
+  driver: nats_core.events._fleet, nats_core.manifest
+  format_note: AgentManifest registered for EventType.AGENT_REGISTER; AgentHeartbeatPayload
+    and AgentDeregistrationPayload registered for their respective EventType members
+  framework: Pydantic BaseModel + AgentManifest (payload_class_for_event_type registry)
+  task: TASK-ETS4
+dependencies:
+- TASK-ETS1
+- TASK-ETS2
+- TASK-ETS3
+- TASK-ETS4
+feature_id: FEAT-ETS
+id: TASK-ETS5
+implementation_mode: task-work
+parent_review: TASK-ETS0
+priority: high
+status: design_approved
+tags:
+- dispatcher
+- tests
+- pytest
+- coverage
+task_type: feature
+title: Complete payload dispatcher and implement full test suite
+wave: 2
 ---
 
 # Task: Complete payload dispatcher and implement full test suite

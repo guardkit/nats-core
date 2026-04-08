@@ -222,12 +222,13 @@ class TestMessageEnvelopeConfig:
 class TestPayloadClassForEventType:
     """Verify payload_class_for_event_type helper function."""
 
-    def test_raises_not_implemented_error(self) -> None:
-        """AC-006: payload_class_for_event_type raises NotImplementedError."""
+    def test_returns_payload_class_for_registered_event_type(self) -> None:
+        """AC-006: payload_class_for_event_type returns the correct class."""
         from nats_core.envelope import payload_class_for_event_type
 
-        with pytest.raises(NotImplementedError):
-            payload_class_for_event_type(EventType.BUILD_STARTED)
+        cls = payload_class_for_event_type(EventType.BUILD_STARTED)
+        assert cls is not None
+        assert hasattr(cls, "model_fields")
 
 
 class TestPublicApiReExport:
