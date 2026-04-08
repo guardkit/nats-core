@@ -1,0 +1,126 @@
+{
+  "task_id": "TASK-ME03",
+  "timestamp": "2026-04-08T19:37:50.125756",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation",
+      "completed": false
+    },
+    "phase_4": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 75,
+    "tests_failed": 0,
+    "coverage": 100.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    ".claude/task-plans/TASK-ME02-implementation-plan.md",
+    ".claude/task-plans/TASK-ME03-implementation-plan.md",
+    ".guardkit/autobuild/TASK-ME01/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME02/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME02/turn_context.json",
+    ".guardkit/autobuild/TASK-ME02/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/turn_context.json",
+    ".guardkit/bootstrap_state.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/pyproject.toml",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/tests/test_envelope.py",
+    "coverage.json",
+    "pyproject.toml",
+    "src/nats_core/__init__.py",
+    "src/nats_core/envelope.py",
+    "tasks/design_approved/TASK-ME02-message-envelope-model.md",
+    "tasks/design_approved/TASK-ME03-message-envelope-tests.md",
+    "tests/conftest.py",
+    "tests/test_envelope.py"
+  ],
+  "files_created": [
+    ".guardkit/autobuild/TASK-ME02/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME03/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/task_work_results.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/.guardkit/autobuild/TASK-ME03/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/tests/conftest.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/tests/test_envelope.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/tests/test_envelope.py"
+  ],
+  "summary": "75 tests passed, 100.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 41,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "tests/conftest.py includes factory functions for creating test MessageEnvelope instances: make_envelope(**overrides) -> MessageEnvelope with sensible defaults, make_envelope_json(**overrides) -> str for JSON deserialisation tests",
+      "status": "complete",
+      "evidence": "Added make_envelope() and make_envelope_json() to tests/conftest.py. make_envelope defaults source_id='test-agent', event_type=EventType.STATUS, payload={'key': 'value'}. make_envelope_json serialises a make_envelope() result to JSON string. Both accept **overrides. Original MockEnvelopeData and make_envelope_data preserved for backward compatibility with TASK-ME01 scaffolding tests.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "tests/conftest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "tests/test_envelope.py implements all 23 BDD scenarios: 4 smoke tests, 5 key-example tests, 6 boundary tests, 4 negative tests, 8 edge-case tests",
+      "status": "complete",
+      "evidence": "Implemented all 23 BDD scenarios in tests/test_envelope.py across 5 test classes: TestBddSmoke (4 tests), TestBddKeyExample (2 unique + 3 dual-tagged in smoke = 5 key-example scenarios), TestBddBoundary (6 scenarios including parametrized optional None x2), TestBddNegative (3 unique + 1 dual-tagged in smoke = 4 negative scenarios), TestBddEdgeCase (8 tests). Each test maps to a specific BDD scenario with assertions matching all 'Then' clauses. Total: 4+2+6+3+8 = 23 unique BDD scenarios.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "tests/test_envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "Tests use pytest markers matching BDD tags: @pytest.mark.smoke, @pytest.mark.boundary, @pytest.mark.negative, @pytest.mark.edge_case",
+      "status": "complete",
+      "evidence": "All BDD test methods are decorated with appropriate pytest markers: @pytest.mark.smoke (4 tests), @pytest.mark.key_example (6 tests), @pytest.mark.boundary (7 test functions), @pytest.mark.negative (6 test functions), @pytest.mark.edge_case (8 tests). Dual-tagged scenarios (e.g. smoke+negative, boundary+negative) carry both markers.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "tests/test_envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "pytest marker configuration added to pyproject.toml",
+      "status": "complete",
+      "evidence": "Added 5 new markers to pyproject.toml [tool.pytest.ini_options].markers: smoke, key_example, boundary, negative, edge_case \u2014 each with descriptive text. Existing markers (slow, integration, seam) preserved.",
+      "test_file": null,
+      "implementation_files": [
+        "pyproject.toml"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "All tests pass with pytest tests/ -v",
+      "status": "complete",
+      "evidence": "Ran 'python -m pytest tests/ -v --cov=src/nats_core --cov-report=term --cov-report=json'. Result: 75 passed, 0 failed in 0.11s. All pre-existing TASK-ME01 and TASK-ME02 tests continue to pass alongside the 23 new BDD scenario tests.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "tests/test_envelope.py",
+        "tests/conftest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "Test coverage for envelope.py >= 95%",
+      "status": "complete",
+      "evidence": "Coverage for src/nats_core/envelope.py: 39 statements, 0 missed, 100% coverage. Total project coverage: 44 statements, 0 missed, 100%. Exceeds the 95% threshold.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "tests/test_envelope.py"
+      ]
+    }
+  ]
+}
