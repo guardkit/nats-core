@@ -1,16 +1,20 @@
 ---
-id: TASK-132C
-title: "Create NATSConfig test suite"
-status: pending
-task_type: testing
-parent_review: TASK-F7AE
-feature_id: FEAT-NC
-wave: 5
-implementation_mode: task-work
 complexity: 3
-dependencies: [TASK-B725]
+dependencies:
+- TASK-B725
+feature_id: FEAT-NC
+id: TASK-132C
+implementation_mode: task-work
+parent_review: TASK-F7AE
 priority: high
-tags: [nats-configuration, testing, pytest]
+status: design_approved
+tags:
+- nats-configuration
+- testing
+- pytest
+task_type: testing
+title: Create NATSConfig test suite
+wave: 5
 ---
 
 # Task: Create NATSConfig test suite

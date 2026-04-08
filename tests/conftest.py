@@ -5,7 +5,24 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope
+
+# ---------------------------------------------------------------------------
+# NATSConfig test helpers
+# ---------------------------------------------------------------------------
+
+
+def make_nats_config(**overrides: Any) -> NATSConfig:
+    """Create a NATSConfig with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A NATSConfig instance with defaults plus any caller-specified overrides.
+    """
+    return NATSConfig(**overrides)
 
 
 @dataclass
