@@ -1,17 +1,20 @@
 ---
-id: TASK-ME03
-title: "Implement MessageEnvelope test suite from BDD scenarios"
-status: pending
-task_type: testing
-parent_review: TASK-40B8
-feature_id: FEAT-ME
-wave: 2
-implementation_mode: task-work
 complexity: 4
 dependencies:
-  - TASK-ME01
+- TASK-ME01
+feature_id: FEAT-ME
+id: TASK-ME03
+implementation_mode: task-work
+parent_review: TASK-40B8
 priority: high
-tags: [testing, bdd, envelope]
+status: design_approved
+tags:
+- testing
+- bdd
+- envelope
+task_type: testing
+title: Implement MessageEnvelope test suite from BDD scenarios
+wave: 2
 ---
 
 # Task: Implement MessageEnvelope test suite from BDD scenarios

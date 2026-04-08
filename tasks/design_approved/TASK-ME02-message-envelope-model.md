@@ -1,17 +1,20 @@
 ---
-id: TASK-ME02
-title: "Implement EventType enum and MessageEnvelope model"
-status: pending
-task_type: declarative
-parent_review: TASK-40B8
-feature_id: FEAT-ME
-wave: 2
-implementation_mode: task-work
 complexity: 4
 dependencies:
-  - TASK-ME01
+- TASK-ME01
+feature_id: FEAT-ME
+id: TASK-ME02
+implementation_mode: task-work
+parent_review: TASK-40B8
 priority: high
-tags: [pydantic, model, envelope]
+status: design_approved
+tags:
+- pydantic
+- model
+- envelope
+task_type: declarative
+title: Implement EventType enum and MessageEnvelope model
+wave: 2
 ---
 
 # Task: Implement EventType enum and MessageEnvelope model

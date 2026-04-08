@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
+
+from nats_core.envelope import EventType, MessageEnvelope
 
 
 @dataclass
@@ -32,3 +35,35 @@ def make_envelope_data(**overrides: object) -> MockEnvelopeData:
     }
     defaults.update(overrides)
     return MockEnvelopeData(**defaults)  # type: ignore[arg-type]
+
+
+def make_envelope(**overrides: Any) -> MessageEnvelope:
+    """Create a MessageEnvelope with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A MessageEnvelope instance with defaults for source_id, event_type,
+        and payload, plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {
+        "source_id": "test-agent",
+        "event_type": EventType.STATUS,
+        "payload": {"key": "value"},
+    }
+    defaults.update(overrides)
+    return MessageEnvelope(**defaults)
+
+
+def make_envelope_json(**overrides: Any) -> str:
+    """Create a JSON string representing a MessageEnvelope with sensible defaults.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A JSON string that can be parsed as a MessageEnvelope.
+    """
+    envelope = make_envelope(**overrides)
+    return envelope.model_dump_json()

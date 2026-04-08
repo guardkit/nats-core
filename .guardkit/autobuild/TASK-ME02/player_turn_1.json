@@ -1,0 +1,171 @@
+{
+  "task_id": "TASK-ME02",
+  "turn": 1,
+  "files_modified": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/src/nats_core/__init__.py",
+    "pyproject.toml",
+    "src/nats_core/__init__.py",
+    "tasks/backlog/TASK-ME02-message-envelope-model.md",
+    "tasks/backlog/TASK-ME03-message-envelope-tests.md",
+    "tests/conftest.py"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-ME02-implementation-plan.md",
+    ".claude/task-plans/TASK-ME03-implementation-plan.md",
+    ".guardkit/autobuild/TASK-ME01/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME02/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME02/turn_context.json",
+    ".guardkit/autobuild/TASK-ME03/turn_context.json",
+    ".guardkit/bootstrap_state.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/.guardkit/autobuild/TASK-ME02/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/src/nats_core/envelope.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/tests/test_envelope.py",
+    "coverage.json",
+    "src/nats_core/envelope.py",
+    "tasks/design_approved/TASK-ME02-message-envelope-model.md",
+    "tasks/design_approved/TASK-ME03-message-envelope-tests.md",
+    "tests/test_envelope.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-2637/tests/test_envelope.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "",
+  "implementation_notes": "Implementation via task-work delegation",
+  "concerns": [],
+  "requirements_addressed": [
+    "EventType enum with all 19 values across 4 domains",
+    "MessageEnvelope model with all 8 fields and correct defaults/validation",
+    "ConfigDict extra=ignore for forward compatibility",
+    "Field descriptions on all fields",
+    "ISO 8601 JSON timestamp serialization",
+    "payload_class_for_event_type helper (NotImplementedError stub)",
+    "Public API re-export from __init__.py",
+    "from __future__ import annotations",
+    "Google-style docstrings",
+    "Lint and type check passing"
+  ],
+  "requirements_remaining": [],
+  "sdk_turns_used": 30,
+  "sdk_max_turns": 100,
+  "sdk_ceiling_hit": false,
+  "tests_passed_count": 51,
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "EventType enum implemented as str, Enum subclass with all 16 values across 4 domains: Pipeline (6), Agent (6), Jarvis (4), Fleet (3)",
+      "status": "complete",
+      "evidence": "EventType(str, Enum) in envelope.py with 19 members across 4 domains. Note: the task title says 16 but the AC lists 19 values (6+6+4+3). All 19 values are implemented and tested. Tests verify each domain's values and total count.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "MessageEnvelope Pydantic BaseModel implemented with fields: message_id (uuid4 default), timestamp (UTC now default), version (default '1.0'), source_id (required, min_length=1), event_type (required), project (optional), correlation_id (optional), payload (required dict)",
+      "status": "complete",
+      "evidence": "MessageEnvelope class in envelope.py with all 8 fields, correct types, defaults and constraints. Tests cover: auto-generated UUID, unique IDs, UTC timestamp, version default, optional fields, required field validation, min_length on source_id.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "model_config = ConfigDict(extra='ignore') set for forward compatibility (ADR-002)",
+      "status": "complete",
+      "evidence": "ConfigDict(extra='ignore') set on MessageEnvelope. Test test_extra_fields_ignored verifies unknown fields are silently discarded.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "All fields have Field(description=...) annotations",
+      "status": "complete",
+      "evidence": "All 8 fields use Field(description=...). Test test_all_fields_have_descriptions programmatically verifies every field has a non-empty description.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "JSON serialisation uses ISO 8601 for timestamps",
+      "status": "complete",
+      "evidence": "Pydantic v2 serializes datetime as ISO 8601 by default. Test test_json_serialisation_iso8601_timestamp verifies the timestamp in JSON output parses as ISO 8601. Test test_json_roundtrip verifies full serialization/deserialization cycle.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "payload_class_for_event_type() helper function stubbed (returns NotImplementedError for now)",
+      "status": "complete",
+      "evidence": "Function implemented in envelope.py raising NotImplementedError with descriptive message. Test test_raises_not_implemented_error verifies the behavior. This stub is explicitly permitted by the AC.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "Public API re-exported from src/nats_core/__init__.py",
+      "status": "complete",
+      "evidence": "EventType, MessageEnvelope, and payload_class_for_event_type imported and listed in __all__ in __init__.py. Three tests verify importability from nats_core root.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/__init__.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "from __future__ import annotations at top of module",
+      "status": "complete",
+      "evidence": "Both envelope.py and __init__.py have 'from __future__ import annotations'. Test test_envelope_has_future_annotations verifies envelope.py.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py",
+        "src/nats_core/__init__.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "Google-style docstrings on all public API",
+      "status": "complete",
+      "evidence": "EventType class has Google-style docstring. MessageEnvelope has Google-style docstring with Attributes section. payload_class_for_event_type has Google-style docstring with Args and Raises sections.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check . returned 'All checks passed!' with zero errors.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/envelope.py",
+        "src/nats_core/__init__.py",
+        "tests/test_envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "mypy src/ passes with zero errors",
+      "status": "complete",
+      "evidence": "mypy src/ returned 'Success: no issues found in 3 source files'.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/envelope.py",
+        "src/nats_core/__init__.py"
+      ]
+    }
+  ]
+}
