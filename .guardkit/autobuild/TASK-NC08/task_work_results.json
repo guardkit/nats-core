@@ -1,0 +1,146 @@
+{
+  "task_id": "TASK-NC08",
+  "timestamp": "2026-04-08T22:02:35.502067",
+  "completed": true,
+  "success": true,
+  "implementation_mode": "direct",
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 5,
+    "tests_failed": 0,
+    "coverage": null,
+    "coverage_met": true,
+    "quality_gates_relaxed": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    "pyproject.toml",
+    "tests/test_agent_config.py",
+    "tests/test_config.py",
+    "tests/test_manifest.py",
+    "tests/test_topics.py"
+  ],
+  "files_created": [
+    "tests/test_events.py"
+  ],
+  "tests_written": [
+    "tests/test_agent_config.py",
+    "tests/test_config.py",
+    "tests/test_events.py",
+    "tests/test_manifest.py",
+    "tests/test_topics.py"
+  ],
+  "requirements_addressed": [
+    "AC-001: All tests pass with pytest tests/ -m unit -v (196 passed)",
+    "AC-002: No tests use pytest.fixture with mutable state \u2014 all use factory functions",
+    "AC-003: test_events.py verifies mutable default isolation for AgentHeartbeatPayload.metadata",
+    "AC-004: test_manifest.py verifies abstract base raises TypeError",
+    "AC-005: test_topics.py covers wildcard rejection scenarios from BDD spec",
+    "AC-006: test_config.py uses monkeypatch.setenv for env var tests",
+    "AC-007: Coverage for declarative modules >= 90% (95.37%)"
+  ],
+  "requirements_met": [
+    "AC-001: All tests pass with pytest tests/ -m unit -v (196 passed)",
+    "AC-002: No tests use pytest.fixture with mutable state \u2014 all use factory functions",
+    "AC-003: test_events.py verifies mutable default isolation for AgentHeartbeatPayload.metadata",
+    "AC-004: test_manifest.py verifies abstract base raises TypeError",
+    "AC-005: test_topics.py covers wildcard rejection scenarios from BDD spec",
+    "AC-006: test_config.py uses monkeypatch.setenv for env var tests",
+    "AC-007: Coverage for declarative modules >= 90% (95.37%)"
+  ],
+  "summary": "Direct mode implementation completed successfully",
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "[ ] All tests pass with `pytest tests/ -m unit -v`",
+      "status": "complete",
+      "evidence": "Added 'unit' marker to pyproject.toml and applied pytestmark=pytest.mark.unit to all five test files. Running `pytest tests/ -m unit -v` results in 196 passed, 395 deselected in 0.29s.",
+      "test_file": "tests/test_config.py, tests/test_topics.py, tests/test_events.py, tests/test_manifest.py, tests/test_agent_config.py",
+      "implementation_files": [
+        "pyproject.toml",
+        "tests/test_config.py",
+        "tests/test_topics.py",
+        "tests/test_events.py",
+        "tests/test_manifest.py",
+        "tests/test_agent_config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "[ ] No tests use `pytest.fixture` with mutable state \u2014 use factory functions from `conftest.py`",
+      "status": "complete",
+      "evidence": "Grep for 'pytest.fixture' in tests/ returns no fixtures with mutable state in the five relevant test files. All test data is created via factory functions (_make(), _make_heartbeat(), _make_manifest(), etc.) and conftest.py factory helpers (make_nats_config, make_envelope, etc.).",
+      "test_file": "tests/conftest.py",
+      "implementation_files": [
+        "tests/conftest.py",
+        "tests/test_config.py",
+        "tests/test_topics.py",
+        "tests/test_events.py",
+        "tests/test_manifest.py",
+        "tests/test_agent_config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "[ ] `test_events.py` verifies mutable default isolation for `AgentHeartbeatPayload.metadata`",
+      "status": "complete",
+      "evidence": "Created tests/test_events.py with TestHeartbeatMetadataMutableDefaultIsolation class containing 6 tests: (1) metadata defaults to empty dict, (2) two instances have distinct metadata objects (is not), (3) mutating one does not affect other, (4) metadata field uses default_factory, (5) metadata accepts arbitrary values, (6) many instances all independent. Also tests active_workflow_states isolation.",
+      "test_file": "tests/test_events.py",
+      "implementation_files": [
+        "tests/test_events.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "[ ] `test_manifest.py` verifies abstract base raises `TypeError`",
+      "status": "complete",
+      "evidence": "TestManifestRegistryAbstract class in test_manifest.py contains test_cannot_instantiate_directly() which asserts `with pytest.raises(TypeError): ManifestRegistry()`. Also verifies abstract methods and InMemoryManifestRegistry subclass relationship.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "tests/test_manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "[ ] `test_topics.py` covers wildcard rejection scenarios from BDD spec",
+      "status": "complete",
+      "evidence": "TestNegative class in test_topics.py contains test_identifier_with_wildcard_star_rejected() and test_identifier_with_wildcard_gt_rejected() which verify that identifiers containing '*' or '>' raise ValueError with match='(?i)wildcard|invalid'. These map directly to BDD Scenario 'Identifiers containing NATS wildcards are rejected'.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "tests/test_topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "[ ] `test_config.py` uses `monkeypatch.setenv` for env var tests",
+      "status": "complete",
+      "evidence": "test_config.py uses monkeypatch.setenv in 5 tests: test_env_url_override, test_env_user_password, test_env_creds_file, test_env_precedence, test_instances_independent. test_agent_config.py also uses monkeypatch.setenv in 6 tests for AGENT_* env vars. All env var tests correctly use monkeypatch.setenv (not os.environ).",
+      "test_file": "tests/test_config.py",
+      "implementation_files": [
+        "tests/test_config.py",
+        "tests/test_agent_config.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "[ ] Coverage for declarative modules >= 90% (enforce with `--cov-fail-under=90`)",
+      "status": "complete",
+      "evidence": "Running pytest with --cov=nats_core.config --cov=nats_core.topics --cov=nats_core.events --cov=nats_core.manifest --cov=nats_core.agent_config --cov-fail-under=90 reports TOTAL 95.37% coverage. Per-module: config 92%, topics 99%, manifest 100%, agent_config 100%, events/__init__ 100%, events/_agent 100%, events/_fleet 100%, events/_jarvis 100%, events/_pipeline 83%. Overall 95% exceeds the 90% threshold.",
+      "test_file": "tests/test_config.py, tests/test_topics.py, tests/test_events.py, tests/test_manifest.py, tests/test_agent_config.py",
+      "implementation_files": [
+        "pyproject.toml",
+        "tests/test_config.py",
+        "tests/test_topics.py",
+        "tests/test_events.py",
+        "tests/test_manifest.py",
+        "tests/test_agent_config.py"
+      ]
+    }
+  ]
+}
