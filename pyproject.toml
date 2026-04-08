@@ -10,6 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
+    "nats-py>=2.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
 ]

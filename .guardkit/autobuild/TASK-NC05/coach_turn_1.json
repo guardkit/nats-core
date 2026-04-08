@@ -1,0 +1,299 @@
+{
+  "task_id": "TASK-NC05",
+  "turn": 1,
+  "decision": "approve",
+  "validation_results": {
+    "quality_gates": {
+      "tests_passed": true,
+      "coverage_met": true,
+      "arch_review_passed": true,
+      "plan_audit_passed": true,
+      "all_gates_passed": true
+    },
+    "independent_tests": {
+      "tests_passed": true,
+      "test_command": "pytest tests/test_client.py tests/test_manifest.py -v --tb=short",
+      "test_output_summary": "Result:\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_tool_capability_ignores_extra PASSED [ 95%]\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_all_models_have_extra_ignore_config PASSED [ 96%]\ntests/test_manifest.py::TestFutureAnnotations::test_manifest_module_has_future_annotations PASSED [ 98%]\ntests/test_manifest.py::TestNoCircularImport::test_no_events_import PASSED [100%]\n============================== 65 passed in 0.11s ==============================",
+      "duration_seconds": 10.510494947433472
+    },
+    "requirements": {
+      "criteria_total": 16,
+      "criteria_met": 16,
+      "all_criteria_met": true,
+      "missing": []
+    }
+  },
+  "criteria_verification": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "`await client.connect()` establishes connection to NATS (test with nats-server or mock)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestConnect::test_connect_establishes_connection verifies connect() calls nats.connect() with config kwargs (servers, connect_timeout, etc.) and stores the connection. Mock-based test passes.",
+      "notes": "TestConnect::test_connect_establishes_connection verifies connect() calls nats.connect() with config kwargs (servers, connect_timeout, etc.) and stores the connection. Mock-based test passes."
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "`client.publish()` before `connect()` raises `RuntimeError` with \"not connected\" in message",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestNotConnectedErrors::test_publish_before_connect_raises asserts RuntimeError with match='not connected' is raised when publish() is called before connect().",
+      "notes": "TestNotConnectedErrors::test_publish_before_connect_raises asserts RuntimeError with match='not connected' is raised when publish() is called before connect()."
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "`client.subscribe()` before `connect()` raises `RuntimeError` with \"not connected\" in message",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestNotConnectedErrors::test_subscribe_before_connect_raises asserts RuntimeError with match='not connected' is raised when subscribe() is called before connect().",
+      "notes": "TestNotConnectedErrors::test_subscribe_before_connect_raises asserts RuntimeError with match='not connected' is raised when subscribe() is called before connect()."
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "Published message arrives as valid JSON-serialised `MessageEnvelope`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_published_message_is_valid_envelope captures the bytes passed to nc.publish(), deserialises as JSON, and validates it as a MessageEnvelope via model_validate().",
+      "notes": "TestPublish::test_published_message_is_valid_envelope captures the bytes passed to nc.publish(), deserialises as JSON, and validates it as a MessageEnvelope via model_validate()."
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`envelope.source_id` matches the `source_id` arg",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_envelope_source_id_matches_arg publishes with source_id='my-special-agent' and asserts the envelope's source_id field matches.",
+      "notes": "TestPublish::test_envelope_source_id_matches_arg publishes with source_id='my-special-agent' and asserts the envelope's source_id field matches."
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`envelope.event_type` matches the `event_type` arg",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_envelope_event_type_matches_arg publishes with EventType.BUILD_STARTED and asserts the envelope's event_type field matches.",
+      "notes": "TestPublish::test_envelope_event_type_matches_arg publishes with EventType.BUILD_STARTED and asserts the envelope's event_type field matches."
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "`envelope.message_id` is a valid UUID v4 string",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_envelope_message_id_is_valid_uuid4 parses the message_id field with UUID(value, version=4) and asserts round-trip equality.",
+      "notes": "TestPublish::test_envelope_message_id_is_valid_uuid4 parses the message_id field with UUID(value, version=4) and asserts round-trip equality."
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "`envelope.timestamp` is within 1 second of now in UTC",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_envelope_timestamp_within_1s_of_now captures before/after timestamps and asserts the envelope timestamp falls between them.",
+      "notes": "TestPublish::test_envelope_timestamp_within_1s_of_now captures before/after timestamps and asserts the envelope timestamp falls between them."
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "`envelope.version` == `\"1.0\"`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_envelope_version_is_1_0 asserts data['version'] == '1.0' from the captured published bytes.",
+      "notes": "TestPublish::test_envelope_version_is_1_0 asserts data['version'] == '1.0' from the captured published bytes."
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "`envelope.payload` contains the serialised payload fields",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_envelope_payload_contains_serialised_fields asserts payload contains feature_id='FEAT-001' and status='ok' from the _SamplePayload model.",
+      "notes": "TestPublish::test_envelope_payload_contains_serialised_fields asserts payload contains feature_id='FEAT-001' and status='ok' from the _SamplePayload model."
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "Project arg prefixes topic: `project=\"finproxy\"` \u2192 topic `\"finproxy.pipeline.build-complete.FEAT-001\"`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_project_arg_prefixes_topic publishes with project='finproxy' and asserts the NATS publish call used topic 'finproxy.pipeline.build-complete.FEAT-001'.",
+      "notes": "TestPublish::test_project_arg_prefixes_topic publishes with project='finproxy' and asserts the NATS publish call used topic 'finproxy.pipeline.build-complete.FEAT-001'."
+    },
+    {
+      "criterion_id": "AC-012",
+      "criterion_text": "`correlation_id` arg is present in envelope",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestPublish::test_correlation_id_in_envelope publishes with correlation_id='corr-123' and asserts the envelope's correlation_id field matches.",
+      "notes": "TestPublish::test_correlation_id_in_envelope publishes with correlation_id='corr-123' and asserts the envelope's correlation_id field matches."
+    },
+    {
+      "criterion_id": "AC-013",
+      "criterion_text": "`disconnect()` drains all subscriptions before close (no message loss mid-drain)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestDisconnect::test_disconnect_drains_then_closes tracks call order via side_effects and asserts drain() is called before close().",
+      "notes": "TestDisconnect::test_disconnect_drains_then_closes tracks call order via side_effects and asserts drain() is called before close()."
+    },
+    {
+      "criterion_id": "AC-014",
+      "criterion_text": "Received invalid JSON does not crash subscriber \u2014 error logged to stderr",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestSubscribe::test_invalid_json_does_not_crash_subscriber sends invalid JSON bytes, asserts user callback is NOT called, and verifies error was logged via caplog.",
+      "notes": "TestSubscribe::test_invalid_json_does_not_crash_subscriber sends invalid JSON bytes, asserts user callback is NOT called, and verifies error was logged via caplog."
+    },
+    {
+      "criterion_id": "AC-015",
+      "criterion_text": "`NATSClient` with `source_id=\"\"` raises validation error at creation (validate in `__init__`)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "TestSourceIdValidation::test_empty_source_id_raises_at_init creates NATSClient(config, source_id='') and asserts ValueError with match='source_id'. Coach validation command also confirms: NATSClient(NATSConfig(), source_id='') raises ValueError.",
+      "notes": "TestSourceIdValidation::test_empty_source_id_raises_at_init creates NATSClient(config, source_id='') and asserts ValueError with match='source_id'. Coach validation command also confirms: NATSClient(NATSConfig(), source_id='') raises ValueError."
+    },
+    {
+      "criterion_id": "AC-016",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "ruff check src/nats_core/client.py returns 'All checks passed!'. mypy src/nats_core/client.py returns 'Success: no issues found in 1 source file'.",
+      "notes": "ruff check src/nats_core/client.py returns 'All checks passed!'. mypy src/nats_core/client.py returns 'Success: no issues found in 1 source file'."
+    }
+  ],
+  "acceptance_criteria_verification": {
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`await client.connect()` establishes connection to NATS (test with nats-server or mock)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestConnect::test_connect_establishes_connection verifies connect() calls nats.connect() with config kwargs (servers, connect_timeout, etc.) and stores the connection. Mock-based test passes.",
+        "notes": "TestConnect::test_connect_establishes_connection verifies connect() calls nats.connect() with config kwargs (servers, connect_timeout, etc.) and stores the connection. Mock-based test passes."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "`client.publish()` before `connect()` raises `RuntimeError` with \"not connected\" in message",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestNotConnectedErrors::test_publish_before_connect_raises asserts RuntimeError with match='not connected' is raised when publish() is called before connect().",
+        "notes": "TestNotConnectedErrors::test_publish_before_connect_raises asserts RuntimeError with match='not connected' is raised when publish() is called before connect()."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "`client.subscribe()` before `connect()` raises `RuntimeError` with \"not connected\" in message",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestNotConnectedErrors::test_subscribe_before_connect_raises asserts RuntimeError with match='not connected' is raised when subscribe() is called before connect().",
+        "notes": "TestNotConnectedErrors::test_subscribe_before_connect_raises asserts RuntimeError with match='not connected' is raised when subscribe() is called before connect()."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "Published message arrives as valid JSON-serialised `MessageEnvelope`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_published_message_is_valid_envelope captures the bytes passed to nc.publish(), deserialises as JSON, and validates it as a MessageEnvelope via model_validate().",
+        "notes": "TestPublish::test_published_message_is_valid_envelope captures the bytes passed to nc.publish(), deserialises as JSON, and validates it as a MessageEnvelope via model_validate()."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`envelope.source_id` matches the `source_id` arg",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_envelope_source_id_matches_arg publishes with source_id='my-special-agent' and asserts the envelope's source_id field matches.",
+        "notes": "TestPublish::test_envelope_source_id_matches_arg publishes with source_id='my-special-agent' and asserts the envelope's source_id field matches."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "`envelope.event_type` matches the `event_type` arg",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_envelope_event_type_matches_arg publishes with EventType.BUILD_STARTED and asserts the envelope's event_type field matches.",
+        "notes": "TestPublish::test_envelope_event_type_matches_arg publishes with EventType.BUILD_STARTED and asserts the envelope's event_type field matches."
+      },
+      {
+        "criterion_id": "AC-007",
+        "criterion_text": "`envelope.message_id` is a valid UUID v4 string",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_envelope_message_id_is_valid_uuid4 parses the message_id field with UUID(value, version=4) and asserts round-trip equality.",
+        "notes": "TestPublish::test_envelope_message_id_is_valid_uuid4 parses the message_id field with UUID(value, version=4) and asserts round-trip equality."
+      },
+      {
+        "criterion_id": "AC-008",
+        "criterion_text": "`envelope.timestamp` is within 1 second of now in UTC",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_envelope_timestamp_within_1s_of_now captures before/after timestamps and asserts the envelope timestamp falls between them.",
+        "notes": "TestPublish::test_envelope_timestamp_within_1s_of_now captures before/after timestamps and asserts the envelope timestamp falls between them."
+      },
+      {
+        "criterion_id": "AC-009",
+        "criterion_text": "`envelope.version` == `\"1.0\"`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_envelope_version_is_1_0 asserts data['version'] == '1.0' from the captured published bytes.",
+        "notes": "TestPublish::test_envelope_version_is_1_0 asserts data['version'] == '1.0' from the captured published bytes."
+      },
+      {
+        "criterion_id": "AC-010",
+        "criterion_text": "`envelope.payload` contains the serialised payload fields",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_envelope_payload_contains_serialised_fields asserts payload contains feature_id='FEAT-001' and status='ok' from the _SamplePayload model.",
+        "notes": "TestPublish::test_envelope_payload_contains_serialised_fields asserts payload contains feature_id='FEAT-001' and status='ok' from the _SamplePayload model."
+      },
+      {
+        "criterion_id": "AC-011",
+        "criterion_text": "Project arg prefixes topic: `project=\"finproxy\"` \u2192 topic `\"finproxy.pipeline.build-complete.FEAT-001\"`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_project_arg_prefixes_topic publishes with project='finproxy' and asserts the NATS publish call used topic 'finproxy.pipeline.build-complete.FEAT-001'.",
+        "notes": "TestPublish::test_project_arg_prefixes_topic publishes with project='finproxy' and asserts the NATS publish call used topic 'finproxy.pipeline.build-complete.FEAT-001'."
+      },
+      {
+        "criterion_id": "AC-012",
+        "criterion_text": "`correlation_id` arg is present in envelope",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestPublish::test_correlation_id_in_envelope publishes with correlation_id='corr-123' and asserts the envelope's correlation_id field matches.",
+        "notes": "TestPublish::test_correlation_id_in_envelope publishes with correlation_id='corr-123' and asserts the envelope's correlation_id field matches."
+      },
+      {
+        "criterion_id": "AC-013",
+        "criterion_text": "`disconnect()` drains all subscriptions before close (no message loss mid-drain)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestDisconnect::test_disconnect_drains_then_closes tracks call order via side_effects and asserts drain() is called before close().",
+        "notes": "TestDisconnect::test_disconnect_drains_then_closes tracks call order via side_effects and asserts drain() is called before close()."
+      },
+      {
+        "criterion_id": "AC-014",
+        "criterion_text": "Received invalid JSON does not crash subscriber \u2014 error logged to stderr",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestSubscribe::test_invalid_json_does_not_crash_subscriber sends invalid JSON bytes, asserts user callback is NOT called, and verifies error was logged via caplog.",
+        "notes": "TestSubscribe::test_invalid_json_does_not_crash_subscriber sends invalid JSON bytes, asserts user callback is NOT called, and verifies error was logged via caplog."
+      },
+      {
+        "criterion_id": "AC-015",
+        "criterion_text": "`NATSClient` with `source_id=\"\"` raises validation error at creation (validate in `__init__`)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "TestSourceIdValidation::test_empty_source_id_raises_at_init creates NATSClient(config, source_id='') and asserts ValueError with match='source_id'. Coach validation command also confirms: NATSClient(NATSConfig(), source_id='') raises ValueError.",
+        "notes": "TestSourceIdValidation::test_empty_source_id_raises_at_init creates NATSClient(config, source_id='') and asserts ValueError with match='source_id'. Coach validation command also confirms: NATSClient(NATSConfig(), source_id='') raises ValueError."
+      },
+      {
+        "criterion_id": "AC-016",
+        "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "ruff check src/nats_core/client.py returns 'All checks passed!'. mypy src/nats_core/client.py returns 'Success: no issues found in 1 source file'.",
+        "notes": "ruff check src/nats_core/client.py returns 'All checks passed!'. mypy src/nats_core/client.py returns 'Success: no issues found in 1 source file'."
+      }
+    ]
+  },
+  "issues": [
+    {
+      "severity": "consider",
+      "category": "seam_test_recommendation",
+      "description": "No seam tests detected for cross-boundary feature. Consider adding seam/contract/boundary tests to validate technology boundary interactions. This is a recommendation, not a blocking gate."
+    }
+  ],
+  "rationale": "All quality gates passed. Independent verification confirmed. All acceptance criteria met. Architecture context: 269 chars provided.",
+  "context_used": "## Job-Specific Context\n\nBudget: 958/5200 tokens\n\n### \ud83c\udfa8 Relevant Patterns\n- USES_FUNCTION\n- DESCRIPTION_OF\n\n### \u26a0\ufe0f Warnings\n- ALTERNATIVE_TO\n- CALLS\n\n### \ud83c\udfad Role Constraints\n- CREATES_REPORT\n- MONITORS_RESULTS_FROM\n\n### \ud83d\udee0\ufe0f Implementation Modes\n- ASSOCIATED_WITH_PROJECT\n",
+  "approved_without_independent_tests": false,
+  "is_configuration_error": false
+}

@@ -1,38 +1,52 @@
 ---
-id: TASK-NC05
-title: "NATSClient core (connect / publish / subscribe)"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
-priority: high
-task_type: feature
-tags: [nats-client, core, async, pub-sub, connection]
 complexity: 6
-wave: 4
+consumer_context:
+- consumes: NATSConfig
+  driver: pydantic-settings
+  format_note: NATSClient.__init__ receives NATSConfig; nats-py connection uses config.url,
+    config.connect_timeout, config.max_reconnect_attempts, config.reconnect_time_wait,
+    config.name, config.user, config.password, config.creds_file
+  framework: pydantic-settings (nats_core.config.NATSConfig)
+  task: TASK-NC01
+- consumes: Topics
+  driver: pure python
+  format_note: publish() receives a pre-resolved topic string; Topics.resolve() must
+    be called by the caller or in publish() for validation; Topics.for_project() applies
+    project prefix when project arg is given
+  framework: Python class (nats_core.topics.Topics)
+  task: TASK-NC02
+- consumes: MessageEnvelope
+  driver: pydantic
+  format_note: publish() auto-constructs MessageEnvelope(message_id=uuid4(), timestamp=utcnow(),
+    version='1.0', source_id=source_id, event_type=event_type, project=project, correlation_id=correlation_id,
+    payload=payload.model_dump()); subscribe() callback receives MessageEnvelope.model_validate_json(raw)
+  framework: Pydantic BaseModel (nats_core.envelope.MessageEnvelope)
+  task: TASK-ME02
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-NC01
+- TASK-NC02
+- TASK-ME02
+feature_id: FEAT-1T1W
+id: TASK-NC05
 implementation_mode: task-work
 parent_review: TASK-1T1W
-feature_id: FEAT-1T1W
-dependencies: [TASK-NC01, TASK-NC02, TASK-ME02]
-consumer_context:
-  - task: TASK-NC01
-    consumes: NATSConfig
-    framework: "pydantic-settings (nats_core.config.NATSConfig)"
-    driver: "pydantic-settings"
-    format_note: "NATSClient.__init__ receives NATSConfig; nats-py connection uses config.url, config.connect_timeout, config.max_reconnect_attempts, config.reconnect_time_wait, config.name, config.user, config.password, config.creds_file"
-  - task: TASK-NC02
-    consumes: Topics
-    framework: "Python class (nats_core.topics.Topics)"
-    driver: "pure python"
-    format_note: "publish() receives a pre-resolved topic string; Topics.resolve() must be called by the caller or in publish() for validation; Topics.for_project() applies project prefix when project arg is given"
-  - task: TASK-ME02
-    consumes: MessageEnvelope
-    framework: "Pydantic BaseModel (nats_core.envelope.MessageEnvelope)"
-    driver: "pydantic"
-    format_note: "publish() auto-constructs MessageEnvelope(message_id=uuid4(), timestamp=utcnow(), version='1.0', source_id=source_id, event_type=event_type, project=project, correlation_id=correlation_id, payload=payload.model_dump()); subscribe() callback receives MessageEnvelope.model_validate_json(raw)"
+priority: high
+status: design_approved
+tags:
+- nats-client
+- core
+- async
+- pub-sub
+- connection
+task_type: feature
 test_results:
-  status: pending
   coverage: null
   last_run: null
+  status: pending
+title: NATSClient core (connect / publish / subscribe)
+updated: 2026-04-08 00:00:00+00:00
+wave: 4
 ---
 
 # Task: NATSClient core (connect / publish / subscribe)

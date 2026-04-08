@@ -8,6 +8,12 @@ from typing import Any
 from nats_core.agent_config import AgentConfig, GraphitiConfig, ModelConfig
 from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope
+from nats_core.manifest import (
+    AgentManifest,
+    InMemoryManifestRegistry,
+    IntentCapability,
+    ToolCapability,
+)
 
 # ---------------------------------------------------------------------------
 # NATSConfig test helpers
@@ -162,3 +168,71 @@ def make_agent_config(**overrides: Any) -> AgentConfig:
     defaults: dict[str, Any] = {"models": make_model_config()}
     defaults.update(overrides)
     return AgentConfig(**defaults)
+
+
+# ---------------------------------------------------------------------------
+# Manifest & Registry test helpers
+# ---------------------------------------------------------------------------
+
+
+def make_intent_capability(**overrides: Any) -> IntentCapability:
+    """Create an IntentCapability with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        An IntentCapability instance with defaults plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {
+        "pattern": "software.*",
+        "description": "Handles software-related intents",
+    }
+    defaults.update(overrides)
+    return IntentCapability(**defaults)
+
+
+def make_tool_capability(**overrides: Any) -> ToolCapability:
+    """Create a ToolCapability with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A ToolCapability instance with defaults plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {
+        "name": "lint",
+        "description": "Run code linting",
+        "parameters": {"type": "object"},
+        "returns": "Lint report",
+    }
+    defaults.update(overrides)
+    return ToolCapability(**defaults)
+
+
+def make_agent_manifest(**overrides: Any) -> AgentManifest:
+    """Create an AgentManifest with sensible defaults and optional overrides.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        An AgentManifest instance with defaults plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {
+        "agent_id": "test-agent",
+        "name": "Test Agent",
+        "template": "basic",
+    }
+    defaults.update(overrides)
+    return AgentManifest(**defaults)
+
+
+def make_in_memory_registry() -> InMemoryManifestRegistry:
+    """Create an empty InMemoryManifestRegistry.
+
+    Returns:
+        A fresh InMemoryManifestRegistry with no registered manifests.
+    """
+    return InMemoryManifestRegistry()
