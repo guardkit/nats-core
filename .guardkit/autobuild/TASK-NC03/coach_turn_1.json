@@ -1,0 +1,165 @@
+{
+  "task_id": "TASK-NC03",
+  "turn": 1,
+  "decision": "approve",
+  "validation_results": {
+    "quality_gates": {
+      "tests_passed": true,
+      "coverage_met": true,
+      "arch_review_passed": true,
+      "plan_audit_passed": true,
+      "all_gates_passed": true
+    },
+    "independent_tests": {
+      "tests_passed": true,
+      "test_command": "pytest tests/test_event_payloads_nc03.py tests/test_event_type_schemas.py -v --tb=short",
+      "test_output_summary": "Result:\ntests/test_event_type_schemas.py::TestDispatcher::test_dispatcher_returns_correct_type_for_build_complete PASSED [ 98%]\ntests/test_event_type_schemas.py::TestDispatcher::test_dispatcher_returns_agent_manifest_for_agent_register PASSED [ 98%]\ntests/test_event_type_schemas.py::TestDispatcher::test_dispatcher_returns_agent_status_for_error PASSED [ 99%]\ntests/test_event_type_schemas.py::TestDispatcher::test_dispatcher_registry_is_module_level_dict PASSED [100%]\n============================= 171 passed in 0.11s ==============================",
+      "duration_seconds": 9.231292009353638
+    },
+    "requirements": {
+      "criteria_total": 8,
+      "criteria_met": 8,
+      "all_criteria_met": true,
+      "missing": []
+    }
+  },
+  "criteria_verification": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "All 13 payload classes exist and instantiate with their required fields",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All 13 payload classes (FeaturePlannedPayload, FeatureReadyForBuildPayload, BuildStartedPayload, BuildProgressPayload, BuildCompletePayload, BuildFailedPayload, AgentStatusPayload, ApprovalRequestPayload, ApprovalResponsePayload, IntentClassifiedPayload, DispatchPayload, AgentHeartbeatPayload, AgentDeregistrationPayload) exist in the events/ package and instantiate successfully. Verified by parametrized test test_payload_class_instantiates across all 13 classes plus individual field-level assertions.",
+      "notes": "All 13 payload classes (FeaturePlannedPayload, FeatureReadyForBuildPayload, BuildStartedPayload, BuildProgressPayload, BuildCompletePayload, BuildFailedPayload, AgentStatusPayload, ApprovalRequestPayload, ApprovalResponsePayload, IntentClassifiedPayload, DispatchPayload, AgentHeartbeatPayload, AgentDeregistrationPayload) exist in the events/ package and instantiate successfully. Verified by parametrized test test_payload_class_instantiates across all 13 classes plus individual field-level assertions."
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "All models use `ConfigDict(extra=\"ignore\")` for forward-compatible parsing",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All 13 models have model_config = ConfigDict(extra='ignore'). Verified by parametrized test test_model_config_extra_ignore and test_extra_fields_silently_discarded across all 13 classes.",
+      "notes": "All 13 models have model_config = ConfigDict(extra='ignore'). Verified by parametrized test test_model_config_extra_ignore and test_extra_fields_silently_discarded across all 13 classes."
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "All models use `from __future__ import annotations`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All 5 event modules (_pipeline.py, _agent.py, _jarvis.py, _fleet.py, __init__.py) contain 'from __future__ import annotations'. Verified by AST-based test test_module_has_future_annotations across all modules.",
+      "notes": "All 5 event modules (_pipeline.py, _agent.py, _jarvis.py, _fleet.py, __init__.py) contain 'from __future__ import annotations'. Verified by AST-based test test_module_has_future_annotations across all modules."
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "All fields have `Field(description=...)`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Every field in all 13 payload classes has a non-empty description. Verified by parametrized test test_all_fields_have_descriptions that iterates model_fields for each class.",
+      "notes": "Every field in all 13 payload classes has a non-empty description. Verified by parametrized test test_all_fields_have_descriptions that iterates model_fields for each class."
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`BuildCompletePayload` serialises to JSON matching the wire format in `API-message-contracts.md`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Added optional 'repo' and 'branch' fields to BuildCompletePayload to match the wire format documented in API-message-contracts.md. The JSON output now includes all wire format keys (feature_id, build_id, repo, branch, pr_url, duration_seconds, tasks_completed, tasks_failed, tasks_total, summary). Verified by test_build_complete_matches_wire_format_keys, test_build_complete_wire_format_values, and test_build_complete_round_trip_with_wire_format_data.",
+      "notes": "Added optional 'repo' and 'branch' fields to BuildCompletePayload to match the wire format documented in API-message-contracts.md. The JSON output now includes all wire format keys (feature_id, build_id, repo, branch, pr_url, duration_seconds, tasks_completed, tasks_failed, tasks_total, summary). Verified by test_build_complete_matches_wire_format_keys, test_build_complete_wire_format_values, and test_build_complete_round_trip_with_wire_format_data."
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`AgentHeartbeatPayload` has mutable default factory for `metadata` (not `{}` directly)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Added 'metadata: dict[str, Any] = Field(default_factory=dict, description=...)' to AgentHeartbeatPayload. Verified by test_heartbeat_has_metadata_field, test_metadata_defaults_to_empty_dict, test_metadata_uses_default_factory_not_mutable_default (checks distinct object identity), test_metadata_field_has_default_factory (checks field_info.default_factory is not None), and test_metadata_mutation_does_not_affect_other_instances.",
+      "notes": "Added 'metadata: dict[str, Any] = Field(default_factory=dict, description=...)' to AgentHeartbeatPayload. Verified by test_heartbeat_has_metadata_field, test_metadata_defaults_to_empty_dict, test_metadata_uses_default_factory_not_mutable_default (checks distinct object identity), test_metadata_field_has_default_factory (checks field_info.default_factory is not None), and test_metadata_mutation_does_not_affect_other_instances."
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "All payload classes importable from `nats_core.events` (top-level re-export)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All 13 payload classes are importable from nats_core.events and listed in __all__. Verified by test_all_13_importable_from_events and test_all_13_in_dunder_all.",
+      "notes": "All 13 payload classes are importable from nats_core.events and listed in __all__. Verified by test_all_13_importable_from_events and test_all_13_in_dunder_all."
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All 4 modified/created files pass 'ruff check' and 'ruff format --check' with zero errors: src/nats_core/events/_pipeline.py, src/nats_core/events/_fleet.py, tests/test_event_payloads_nc03.py, tests/test_event_type_schemas.py.",
+      "notes": "All 4 modified/created files pass 'ruff check' and 'ruff format --check' with zero errors: src/nats_core/events/_pipeline.py, src/nats_core/events/_fleet.py, tests/test_event_payloads_nc03.py, tests/test_event_type_schemas.py."
+    }
+  ],
+  "acceptance_criteria_verification": {
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "All 13 payload classes exist and instantiate with their required fields",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All 13 payload classes (FeaturePlannedPayload, FeatureReadyForBuildPayload, BuildStartedPayload, BuildProgressPayload, BuildCompletePayload, BuildFailedPayload, AgentStatusPayload, ApprovalRequestPayload, ApprovalResponsePayload, IntentClassifiedPayload, DispatchPayload, AgentHeartbeatPayload, AgentDeregistrationPayload) exist in the events/ package and instantiate successfully. Verified by parametrized test test_payload_class_instantiates across all 13 classes plus individual field-level assertions.",
+        "notes": "All 13 payload classes (FeaturePlannedPayload, FeatureReadyForBuildPayload, BuildStartedPayload, BuildProgressPayload, BuildCompletePayload, BuildFailedPayload, AgentStatusPayload, ApprovalRequestPayload, ApprovalResponsePayload, IntentClassifiedPayload, DispatchPayload, AgentHeartbeatPayload, AgentDeregistrationPayload) exist in the events/ package and instantiate successfully. Verified by parametrized test test_payload_class_instantiates across all 13 classes plus individual field-level assertions."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "All models use `ConfigDict(extra=\"ignore\")` for forward-compatible parsing",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All 13 models have model_config = ConfigDict(extra='ignore'). Verified by parametrized test test_model_config_extra_ignore and test_extra_fields_silently_discarded across all 13 classes.",
+        "notes": "All 13 models have model_config = ConfigDict(extra='ignore'). Verified by parametrized test test_model_config_extra_ignore and test_extra_fields_silently_discarded across all 13 classes."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "All models use `from __future__ import annotations`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All 5 event modules (_pipeline.py, _agent.py, _jarvis.py, _fleet.py, __init__.py) contain 'from __future__ import annotations'. Verified by AST-based test test_module_has_future_annotations across all modules.",
+        "notes": "All 5 event modules (_pipeline.py, _agent.py, _jarvis.py, _fleet.py, __init__.py) contain 'from __future__ import annotations'. Verified by AST-based test test_module_has_future_annotations across all modules."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "All fields have `Field(description=...)`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Every field in all 13 payload classes has a non-empty description. Verified by parametrized test test_all_fields_have_descriptions that iterates model_fields for each class.",
+        "notes": "Every field in all 13 payload classes has a non-empty description. Verified by parametrized test test_all_fields_have_descriptions that iterates model_fields for each class."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`BuildCompletePayload` serialises to JSON matching the wire format in `API-message-contracts.md`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Added optional 'repo' and 'branch' fields to BuildCompletePayload to match the wire format documented in API-message-contracts.md. The JSON output now includes all wire format keys (feature_id, build_id, repo, branch, pr_url, duration_seconds, tasks_completed, tasks_failed, tasks_total, summary). Verified by test_build_complete_matches_wire_format_keys, test_build_complete_wire_format_values, and test_build_complete_round_trip_with_wire_format_data.",
+        "notes": "Added optional 'repo' and 'branch' fields to BuildCompletePayload to match the wire format documented in API-message-contracts.md. The JSON output now includes all wire format keys (feature_id, build_id, repo, branch, pr_url, duration_seconds, tasks_completed, tasks_failed, tasks_total, summary). Verified by test_build_complete_matches_wire_format_keys, test_build_complete_wire_format_values, and test_build_complete_round_trip_with_wire_format_data."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "`AgentHeartbeatPayload` has mutable default factory for `metadata` (not `{}` directly)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Added 'metadata: dict[str, Any] = Field(default_factory=dict, description=...)' to AgentHeartbeatPayload. Verified by test_heartbeat_has_metadata_field, test_metadata_defaults_to_empty_dict, test_metadata_uses_default_factory_not_mutable_default (checks distinct object identity), test_metadata_field_has_default_factory (checks field_info.default_factory is not None), and test_metadata_mutation_does_not_affect_other_instances.",
+        "notes": "Added 'metadata: dict[str, Any] = Field(default_factory=dict, description=...)' to AgentHeartbeatPayload. Verified by test_heartbeat_has_metadata_field, test_metadata_defaults_to_empty_dict, test_metadata_uses_default_factory_not_mutable_default (checks distinct object identity), test_metadata_field_has_default_factory (checks field_info.default_factory is not None), and test_metadata_mutation_does_not_affect_other_instances."
+      },
+      {
+        "criterion_id": "AC-007",
+        "criterion_text": "All payload classes importable from `nats_core.events` (top-level re-export)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All 13 payload classes are importable from nats_core.events and listed in __all__. Verified by test_all_13_importable_from_events and test_all_13_in_dunder_all.",
+        "notes": "All 13 payload classes are importable from nats_core.events and listed in __all__. Verified by test_all_13_importable_from_events and test_all_13_in_dunder_all."
+      },
+      {
+        "criterion_id": "AC-008",
+        "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All 4 modified/created files pass 'ruff check' and 'ruff format --check' with zero errors: src/nats_core/events/_pipeline.py, src/nats_core/events/_fleet.py, tests/test_event_payloads_nc03.py, tests/test_event_type_schemas.py.",
+        "notes": "All 4 modified/created files pass 'ruff check' and 'ruff format --check' with zero errors: src/nats_core/events/_pipeline.py, src/nats_core/events/_fleet.py, tests/test_event_payloads_nc03.py, tests/test_event_type_schemas.py."
+      }
+    ]
+  },
+  "issues": [],
+  "rationale": "All quality gates passed. Independent verification confirmed. All acceptance criteria met. Architecture context: 267 chars provided.",
+  "context_used": "## Job-Specific Context\n\nBudget: 926/5200 tokens\n\n### \ud83c\udfa8 Relevant Patterns\n- PROVIDES_OPTION\n- HAS_OPTION\n\n### \u26a0\ufe0f Warnings\n- IS_IMPLEMENTED_AS\n- SOURCE_PROJECT\n\n### \ud83c\udfad Role Constraints\n- PROJECT_INVOLVES\n- PROJECT_INVOLVES\n\n### \ud83d\udee0\ufe0f Implementation Modes\n- HAS_PROJECT_ID\n",
+  "approved_without_independent_tests": false,
+  "is_configuration_error": false
+}

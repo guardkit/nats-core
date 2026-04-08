@@ -479,18 +479,18 @@ class TestPublicApiExports:
 
     def test_agent_config_importable_from_package(self) -> None:
         """AgentConfig is importable from nats_core."""
-        from nats_core import AgentConfig as AC
+        import nats_core
 
-        assert AC is AgentConfig
+        assert nats_core.AgentConfig is AgentConfig
 
     def test_model_config_importable_from_package(self) -> None:
         """ModelConfig is importable from nats_core."""
-        from nats_core import ModelConfig as MC
+        import nats_core
 
-        assert MC is ModelConfig
+        assert nats_core.ModelConfig is ModelConfig
 
     def test_graphiti_config_importable_from_package(self) -> None:
         """GraphitiConfig is importable from nats_core."""
-        from nats_core import GraphitiConfig as GC
+        import nats_core
 
-        assert GC is GraphitiConfig
+        assert nats_core.GraphitiConfig is GraphitiConfig
