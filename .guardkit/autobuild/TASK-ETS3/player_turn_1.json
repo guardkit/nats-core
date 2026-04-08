@@ -1,0 +1,211 @@
+{
+  "task_id": "TASK-ETS3",
+  "turn": 1,
+  "files_modified": [
+    ".claude/task-plans/TASK-ETS1-implementation-plan.md",
+    ".claude/task-plans/TASK-ETS2-implementation-plan.md",
+    ".claude/task-plans/TASK-ETS3-implementation-plan.md",
+    ".claude/task-plans/TASK-ETS4-implementation-plan.md",
+    ".claude/task-plans/TASK-ME02-implementation-plan.md",
+    ".claude/task-plans/TASK-ME03-implementation-plan.md",
+    ".guardkit-git.lock",
+    ".guardkit/autobuild/TASK-ETS1/checkpoints.json",
+    ".guardkit/autobuild/TASK-ETS1/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS1/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS1/task_work_results.json",
+    ".guardkit/autobuild/TASK-ETS1/turn_context.json",
+    ".guardkit/autobuild/TASK-ETS1/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS2/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS2/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS2/task_work_results.json",
+    ".guardkit/autobuild/TASK-ETS2/turn_context.json",
+    ".guardkit/autobuild/TASK-ETS2/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS3/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS3/turn_context.json",
+    ".guardkit/autobuild/TASK-ETS4/turn_context.json",
+    ".guardkit/autobuild/TASK-ME01/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME01/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME01/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME01/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME01/turn_context.json",
+    ".guardkit/autobuild/TASK-ME01/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/checkpoints.json",
+    ".guardkit/autobuild/TASK-ME02/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME02/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME02/turn_context.json",
+    ".guardkit/autobuild/TASK-ME02/turn_state_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/coach_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ME03/task_work_results.json",
+    ".guardkit/autobuild/TASK-ME03/turn_context.json",
+    ".guardkit/autobuild/TASK-ME03/turn_state_turn_1.json",
+    ".guardkit/bootstrap_state.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/events/__init__.py",
+    "coverage.json",
+    "pyproject.toml",
+    "src/nats_core/__init__.py",
+    "src/nats_core/envelope.py",
+    "src/nats_core/events/__init__.py",
+    "src/nats_core/events/_agent.py",
+    "src/nats_core/events/_fleet.py",
+    "src/nats_core/events/_jarvis.py",
+    "src/nats_core/events/_pipeline.py",
+    "src/nats_core/manifest.py",
+    "src/nats_core/py.typed",
+    "tasks/backlog/TASK-ETS5-dispatcher-and-tests.md",
+    "tasks/backlog/TASK-ME01-project-scaffolding.md",
+    "tasks/design_approved/TASK-ETS1-pipeline-event-payloads.md",
+    "tasks/design_approved/TASK-ETS2-agent-event-payloads.md",
+    "tasks/design_approved/TASK-ETS3-jarvis-event-payloads.md",
+    "tasks/design_approved/TASK-ETS4-fleet-event-payloads.md",
+    "tasks/design_approved/TASK-ME02-message-envelope-model.md",
+    "tasks/design_approved/TASK-ME03-message-envelope-tests.md",
+    "tests/__init__.py",
+    "tests/conftest.py",
+    "tests/test_envelope.py",
+    "tests/test_fleet_events.py",
+    "tests/test_jarvis_events.py",
+    "tests/test_pipeline_payloads.py",
+    "tests/test_scaffolding.py"
+  ],
+  "files_created": [
+    ".guardkit/autobuild/TASK-ETS2/checkpoints.json",
+    ".guardkit/autobuild/TASK-ETS3/task_work_results.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/.guardkit/autobuild/TASK-ETS3/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/pyproject.toml",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/__init__.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/events/_jarvis.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/py.typed",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/__init__.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_jarvis_events.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_jarvis_events.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "",
+  "implementation_notes": "Implementation via task-work delegation",
+  "concerns": [],
+  "requirements_addressed": [
+    "IntentClassifiedPayload with confidence 0.0-1.0 constraint",
+    "DispatchPayload with required correlation_id and default empty context",
+    "AgentResultPayload with all required fields",
+    "NotificationPayload with Literal level and default 'info'",
+    "ConfigDict(extra='ignore') on all models (ADR-002)",
+    "Field(description=...) on all fields",
+    "Re-export from events/__init__.py",
+    "Lint/format and mypy --strict pass"
+  ],
+  "requirements_remaining": [],
+  "sdk_turns_used": 83,
+  "sdk_max_turns": 100,
+  "sdk_ceiling_hit": false,
+  "tests_passed_count": 29,
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "src/nats_core/events/_jarvis.py created with from __future__ import annotations",
+      "status": "complete",
+      "evidence": "File created at src/nats_core/events/_jarvis.py with 'from __future__ import annotations' on line 13. Verified via py_compile and mypy --strict.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "IntentClassifiedPayload implemented with input_text: str, intent: str, confidence: float (ge=0.0, le=1.0), target_agent: str, correlation_id: str | None (default None)",
+      "status": "complete",
+      "evidence": "IntentClassifiedPayload has all 5 fields with correct types and constraints. confidence uses Field(ge=0.0, le=1.0). correlation_id defaults to None. Tests verify valid construction, boundary values (0.0, 1.0), rejection of out-of-range values (-0.1, 1.1), missing required fields, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "DispatchPayload implemented with intent: str, target_agent: str, input_text: str, correlation_id: str (required), context: dict[str, Any] (default {})",
+      "status": "complete",
+      "evidence": "DispatchPayload has all 5 fields. correlation_id is required (str, no default). context uses default_factory=dict. Tests verify valid construction, context with data, rejection of missing correlation_id, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "AgentResultPayload implemented with agent_id: str, intent: str, result: dict[str, Any], correlation_id: str, success: bool \u2014 all required",
+      "status": "complete",
+      "evidence": "AgentResultPayload has all 5 fields, all required (no defaults). Tests verify valid construction, failure result scenario, rejection of missing required fields, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "NotificationPayload implemented with message: str, level: Literal['info', 'warning', 'error'] (default 'info'), adapter: str, correlation_id: str | None (default None)",
+      "status": "complete",
+      "evidence": "NotificationPayload has all 4 fields with correct types. level uses Literal['info', 'warning', 'error'] with default='info'. Tests verify valid construction, all 3 valid levels, rejection of invalid level 'debug', default level, optional correlation_id, and extra field ignoring.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "All models use ConfigDict(extra='ignore') (ADR-002)",
+      "status": "complete",
+      "evidence": "All 4 models have model_config = ConfigDict(extra='ignore'). Tests verify extra fields are silently ignored for each model (test_extra_fields_ignored tests).",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "All fields have Field(description=...) annotations",
+      "status": "complete",
+      "evidence": "Every field on all 4 models uses Field(description=...). Tests verify this programmatically via test_field_descriptions_present for each model, asserting all fields have non-None, non-empty descriptions.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All classes exported in src/nats_core/events/__init__.py",
+      "status": "complete",
+      "evidence": "events/__init__.py imports and re-exports IntentClassifiedPayload, DispatchPayload, AgentResultPayload, NotificationPayload in __all__. Tests verify import and __all__ membership.",
+      "test_file": "tests/test_jarvis_events.py",
+      "implementation_files": [
+        "src/nats_core/events/__init__.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check on all 3 files (source, init, test) returns 'All checks passed!' with zero errors after auto-fix of import ordering.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py",
+        "src/nats_core/events/__init__.py",
+        "tests/test_jarvis_events.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "mypy src/ passes with zero errors",
+      "status": "complete",
+      "evidence": "mypy --strict on _jarvis.py and __init__.py returns 'Success: no issues found in 2 source files'.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/events/_jarvis.py",
+        "src/nats_core/events/__init__.py"
+      ]
+    }
+  ]
+}

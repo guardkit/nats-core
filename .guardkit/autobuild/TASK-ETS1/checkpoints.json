@@ -1,0 +1,14 @@
+{
+  "task_id": "TASK-ETS1",
+  "checkpoints": [
+    {
+      "turn": 1,
+      "commit_hash": "1b3db218372e55610556592c8f893e65d6e8a871",
+      "timestamp": "2026-04-08T20:05:04.146221",
+      "tests_passed": true,
+      "test_count": 0,
+      "message": "[guardkit-checkpoint] Turn 1 complete (tests: pass)"
+    }
+  ],
+  "last_updated": "2026-04-08T20:05:04.146432"
+}

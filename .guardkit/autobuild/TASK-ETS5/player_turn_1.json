@@ -1,0 +1,469 @@
+{
+  "task_id": "TASK-ETS5",
+  "turn": 1,
+  "files_modified": [
+    ".guardkit/bootstrap_state.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/src/nats_core/envelope.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_envelope.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_event_type_schemas.py",
+    "coverage.json",
+    "src/nats_core/envelope.py",
+    "tasks/backlog/TASK-ETS5-dispatcher-and-tests.md",
+    "tests/test_envelope.py"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-ETS5-implementation-plan.md",
+    ".guardkit/autobuild/TASK-ETS4/checkpoints.json",
+    ".guardkit/autobuild/TASK-ETS5/player_turn_1.json",
+    ".guardkit/autobuild/TASK-ETS5/task_work_results.json",
+    ".guardkit/autobuild/TASK-ETS5/turn_context.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/.guardkit/autobuild/TASK-ETS5/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_event_type_schemas.py",
+    "tasks/design_approved/TASK-ETS5-dispatcher-and-tests.md",
+    "tests/test_event_type_schemas.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_envelope.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-310F/tests/test_event_type_schemas.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "",
+  "implementation_notes": "Implementation via task-work delegation",
+  "concerns": [],
+  "requirements_addressed": [
+    "payload_class_for_event_type fully implemented with module-level registry",
+    "Raises KeyError (not NotImplementedError) for unregistered types",
+    "All 19 EventType members registered in _EVENT_TYPE_REGISTRY",
+    "payload_class_for_event_type re-exported from nats_core.__init__",
+    "All files pass ruff lint with zero errors",
+    "mypy src/ passes with zero errors in strict mode",
+    "10 smoke tests implemented",
+    "14 boundary tests implemented (parametrized)",
+    "8 negative tests implemented",
+    "14 edge-case tests implemented",
+    "4 seam tests implemented (TASK-ETS1-4 integration contracts)"
+  ],
+  "requirements_remaining": [],
+  "sdk_turns_used": 52,
+  "sdk_max_turns": 100,
+  "sdk_ceiling_hit": false,
+  "tests_passed_count": 247,
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "payload_class_for_event_type() fully implemented: Returns the correct type[BaseModel] for every EventType member; Raises KeyError (not NotImplementedError) for unregistered types; Registry is a module-level dict[EventType, type[BaseModel]] constant; All 19 EventType members have a registered class",
+      "status": "complete",
+      "evidence": "Implemented _EVENT_TYPE_REGISTRY as a module-level dict[EventType, type[BaseModel]] in envelope.py mapping all 19 EventType members to their payload classes. payload_class_for_event_type() looks up the registry and raises KeyError for unregistered types. Tests TestDispatcher and TestSeam verify correct mapping for all domains.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "payload_class_for_event_type re-exported from src/nats_core/__init__.py",
+      "status": "complete",
+      "evidence": "payload_class_for_event_type was already re-exported in __init__.py (line 5 and __all__). Verified by test TestPublicApiReExport.test_payload_class_for_event_type_importable_from_root in test_envelope.py.",
+      "test_file": "tests/test_envelope.py",
+      "implementation_files": [
+        "src/nats_core/__init__.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check on all src/ and test files reports 'All checks passed!' with zero errors.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/envelope.py",
+        "tests/test_event_type_schemas.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "mypy src/ passes with zero errors",
+      "status": "complete",
+      "evidence": "mypy reports 'Success: no issues found in 8 source files' with strict mode enabled.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "EventType enum contains all 18 documented event type strings",
+      "status": "complete",
+      "evidence": "The actual enum has 19 members (6 pipeline + 6 agent + 4 jarvis + 3 fleet = 19). Test test_event_type_enum_contains_all_19_members verifies all values and count. The task says '18' but the codebase has 19 (ERROR is a separate member from STATUS).",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "Every EventType member has a registered payload class (via payload_class_for_event_type)",
+      "status": "complete",
+      "evidence": "Test test_every_event_type_has_registered_payload_class iterates all EventType members and asserts each returns a BaseModel subclass.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "EventType.BUILD_STARTED value equals 'build_started' (str enum)",
+      "status": "complete",
+      "evidence": "Test test_build_started_value_equals_build_started verifies both .value and str equality.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": [
+        "src/nats_core/envelope.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "FeaturePlannedPayload creates with feature_id, wave_count, task_count, waves",
+      "status": "complete",
+      "evidence": "Test test_feature_planned_creates_with_required_fields creates and verifies all fields.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "BuildProgressPayload creates with wave, wave_total, overall_progress_pct",
+      "status": "complete",
+      "evidence": "Test test_build_progress_creates_with_required_fields creates and verifies all fields.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "BuildCompletePayload creates with tasks_completed/failed/total and optional pr_url",
+      "status": "complete",
+      "evidence": "Tests test_build_complete_creates_with_required_fields and test_build_complete_pr_url_defaults_to_none verify all fields and pr_url default.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "ApprovalRequestPayload creates with risk_level 'high', timeout_seconds defaults to 300",
+      "status": "complete",
+      "evidence": "Test test_approval_request_creates_with_risk_level_and_timeout verifies risk_level='high' and timeout_seconds=300.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-012",
+      "criterion_text": "IntentClassifiedPayload creates with confidence 0.92, target_agent",
+      "status": "complete",
+      "evidence": "Test test_intent_classified_creates_with_confidence_and_target verifies confidence=0.92 and target_agent.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-013",
+      "criterion_text": "AgentManifest creates with agent_id 'product-owner-agent', intents list",
+      "status": "complete",
+      "evidence": "Test test_agent_manifest_creates_with_agent_id_and_intents verifies agent_id and intents.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-014",
+      "criterion_text": "DispatchPayload creates with target_agent, intent, correlation_id",
+      "status": "complete",
+      "evidence": "Test test_dispatch_creates_with_required_fields verifies all fields.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-015",
+      "criterion_text": "build_id matches pattern build-{feature_id}-{YYYYMMDDHHMMSS} (regex check)",
+      "status": "complete",
+      "evidence": "Test test_build_id_matches_pattern validates regex ^build-.+-\\d{14}$.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-016",
+      "criterion_text": "overall_progress_pct valid at 0.0, 50.0, 100.0",
+      "status": "complete",
+      "evidence": "Parametrized test test_overall_progress_pct_valid_values[0.0/50.0/100.0] verifies all three.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-017",
+      "criterion_text": "overall_progress_pct rejects 100.1 (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_overall_progress_pct_rejects_100_1 asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-018",
+      "criterion_text": "overall_progress_pct rejects -0.1 (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_overall_progress_pct_rejects_negative asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-019",
+      "criterion_text": "IntentCapability.confidence valid at 0.0, 0.5, 1.0",
+      "status": "complete",
+      "evidence": "Parametrized test test_intent_capability_confidence_valid_values verifies all three.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-020",
+      "criterion_text": "IntentCapability.confidence rejects 1.01 (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_intent_capability_confidence_rejects_1_01 asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-021",
+      "criterion_text": "IntentCapability.confidence rejects -0.01 (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_intent_capability_confidence_rejects_negative asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-022",
+      "criterion_text": "IntentClassifiedPayload.confidence rejects 1.5 (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_intent_classified_confidence_rejects_1_5 asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-023",
+      "criterion_text": "AgentStatusPayload accepts state in {'running','idle','awaiting_approval','error','paused'}",
+      "status": "complete",
+      "evidence": "Parametrized test test_agent_status_accepts_valid_states verifies all 5 states.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-024",
+      "criterion_text": "ApprovalRequestPayload accepts risk_level in {'low','medium','high'}",
+      "status": "complete",
+      "evidence": "Parametrized test test_approval_request_accepts_valid_risk_levels verifies all 3.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-025",
+      "criterion_text": "ApprovalResponsePayload accepts decision in {'approve','reject','defer','override'}",
+      "status": "complete",
+      "evidence": "Parametrized test test_approval_response_accepts_valid_decisions verifies all 4.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-026",
+      "criterion_text": "AgentHeartbeatPayload accepts status in {'ready','busy','degraded','draining'}",
+      "status": "complete",
+      "evidence": "Parametrized test test_agent_heartbeat_accepts_valid_statuses verifies all 4.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-027",
+      "criterion_text": "AgentManifest accepts status in {'ready','starting','degraded'}",
+      "status": "complete",
+      "evidence": "Parametrized test test_agent_manifest_accepts_valid_statuses verifies all 3.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-028",
+      "criterion_text": "AgentManifest rejects max_concurrent=0 (ValidationError, ge=1)",
+      "status": "complete",
+      "evidence": "Test test_agent_manifest_rejects_max_concurrent_zero asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-029",
+      "criterion_text": "AgentStatusPayload rejects state 'sleeping' (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_agent_status_rejects_sleeping asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-030",
+      "criterion_text": "ApprovalRequestPayload rejects risk_level 'critical' (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_approval_request_rejects_critical asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-031",
+      "criterion_text": "ApprovalResponsePayload rejects decision 'ignore' (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_approval_response_rejects_ignore asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-032",
+      "criterion_text": "AgentHeartbeatPayload rejects status 'offline' (ValidationError)",
+      "status": "complete",
+      "evidence": "Test test_agent_heartbeat_rejects_offline asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-033",
+      "criterion_text": "FeaturePlannedPayload requires feature_id (ValidationError on omission)",
+      "status": "complete",
+      "evidence": "Test test_feature_planned_requires_feature_id asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-034",
+      "criterion_text": "BuildCompletePayload requires build_id (ValidationError on omission)",
+      "status": "complete",
+      "evidence": "Test test_build_complete_requires_build_id asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-035",
+      "criterion_text": "AgentManifest requires agent_id (ValidationError on omission)",
+      "status": "complete",
+      "evidence": "Test test_agent_manifest_requires_agent_id asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-036",
+      "criterion_text": "DispatchPayload requires target_agent (ValidationError on omission)",
+      "status": "complete",
+      "evidence": "Test test_dispatch_requires_target_agent asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-037",
+      "criterion_text": "No payload class has an untyped dict[str, Any] as a top-level field (exception: ApprovalRequestPayload.details)",
+      "status": "complete",
+      "evidence": "Test test_no_untyped_dict_any_top_level_fields inspects all 18 payload classes and verifies only explicitly-allowed dict[str, Any] fields exist.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-038",
+      "criterion_text": "JSON round-trip fidelity for all 12 payload classes (model_dump -> model_validate)",
+      "status": "complete",
+      "evidence": "Test test_json_round_trip_fidelity_all_payload_classes round-trips all 18 payload instances (covering all unique classes).",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-039",
+      "criterion_text": "Default values: timeout_seconds=300, max_concurrent=1, status='ready', reason='shutdown'",
+      "status": "complete",
+      "evidence": "Test test_default_values verifies all four defaults.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-040",
+      "criterion_text": "BuildFailedPayload carries recoverable flag and failure_reason",
+      "status": "complete",
+      "evidence": "Test test_build_failed_carries_recoverable_and_failure_reason verifies both fields.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-041",
+      "criterion_text": "Nested model validation: invalid WaveSummary inside FeaturePlannedPayload raises",
+      "status": "complete",
+      "evidence": "Test test_nested_model_validation_invalid_wave_summary passes invalid wave_number=-1.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-042",
+      "criterion_text": "extra='ignore': unknown field on BuildCompletePayload silently discarded",
+      "status": "complete",
+      "evidence": "Test test_extra_ignore_on_build_complete passes unknown_field and verifies it's not on the model.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-043",
+      "criterion_text": "IntentCapability missing pattern raises ValidationError pointing to nested field",
+      "status": "complete",
+      "evidence": "Test test_intent_capability_missing_pattern_raises asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-044",
+      "criterion_text": "AgentHeartbeatPayload rejects queue_depth=-1, active_tasks=-1",
+      "status": "complete",
+      "evidence": "Tests test_agent_heartbeat_rejects_negative_queue_depth and test_agent_heartbeat_rejects_negative_active_tasks both assert ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-045",
+      "criterion_text": "AgentStatusPayload with 10001-char task_description is accepted (no max_length)",
+      "status": "complete",
+      "evidence": "Test test_agent_status_long_task_description_accepted creates with 10001-char string and verifies length.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-046",
+      "criterion_text": "AgentManifest rejects agent_id='Invalid Agent ID!' (kebab-case regex)",
+      "status": "complete",
+      "evidence": "Test test_agent_manifest_rejects_invalid_agent_id_format asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-047",
+      "criterion_text": "BuildProgressPayload rejects wave=5, wave_total=3 (wave > wave_total)",
+      "status": "complete",
+      "evidence": "Test test_build_progress_rejects_wave_exceeding_wave_total asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-048",
+      "criterion_text": "Two AgentManifest payloads with same agent_id are both individually valid",
+      "status": "complete",
+      "evidence": "Test test_two_agent_manifests_same_agent_id_both_valid creates two and verifies both valid.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-049",
+      "criterion_text": "BuildCompletePayload rejects tasks_completed=8, tasks_failed=1, tasks_total=10 (8+1!=10)",
+      "status": "complete",
+      "evidence": "Test test_build_complete_rejects_tasks_sum_mismatch asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    },
+    {
+      "criterion_id": "AC-050",
+      "criterion_text": "FeaturePlannedPayload rejects wave_count=3 with only 2 WaveSummary entries",
+      "status": "complete",
+      "evidence": "Test test_feature_planned_rejects_wave_count_mismatch asserts ValidationError.",
+      "test_file": "tests/test_event_type_schemas.py",
+      "implementation_files": []
+    }
+  ]
+}
