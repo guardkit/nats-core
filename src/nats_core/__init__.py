@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope, payload_class_for_event_type
 from nats_core.manifest import AgentManifest, IntentCapability, ToolCapability
 from nats_core.topics import Topics
@@ -13,6 +14,7 @@ __all__ = [
     "EventType",
     "IntentCapability",
     "MessageEnvelope",
+    "NATSConfig",
     "ToolCapability",
     "Topics",
     "__version__",
