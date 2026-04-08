@@ -422,6 +422,217 @@ class TestSourceIdValidation:
 # ===========================================================================
 
 
+# ===========================================================================
+# AC: call_agent_tool() — request-reply remote tool invocation
+# ===========================================================================
+
+
+class TestCallAgentTool:
+    """Tests for call_agent_tool() request-reply method."""
+
+    async def test_call_agent_tool_before_connect_raises_runtime_error(self) -> None:
+        """AC: call_agent_tool() before connect() raises RuntimeError with 'not connected'."""
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config())
+        with pytest.raises(RuntimeError, match="not connected"):
+            await client.call_agent_tool(
+                agent_id="guardkit-factory", tool_name="lint", params={}
+            )
+
+    async def test_call_agent_tool_publishes_to_correct_topic(self) -> None:
+        """AC: call_agent_tool("guardkit-factory", "lint", {}) publishes to correct topic."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        # Setup mock request to return valid JSON response
+        response_msg = MagicMock()
+        response_msg.data = json.dumps({"result": "ok"}).encode()
+        mock_nc.request = AsyncMock(return_value=response_msg)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        await client.call_agent_tool(
+            agent_id="guardkit-factory", tool_name="lint", params={}
+        )
+
+        mock_nc.request.assert_awaited_once()
+        call_args = mock_nc.request.call_args
+        assert call_args[0][0] == "agents.guardkit-factory.tools.lint"
+
+    async def test_call_agent_tool_returns_json_decoded_response(self) -> None:
+        """AC: Response from target agent is JSON-decoded and returned."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        response_msg = MagicMock()
+        response_msg.data = json.dumps({"status": "success", "count": 42}).encode()
+        mock_nc.request = AsyncMock(return_value=response_msg)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        result = await client.call_agent_tool(
+            agent_id="test-agent", tool_name="process", params={"data": "hello"}
+        )
+
+        assert result == {"status": "success", "count": 42}
+
+    async def test_call_agent_tool_timeout_raises_timeout_error(self) -> None:
+        """AC: No response within timeout raises TimeoutError with agent_id and tool_name."""
+        import nats.errors
+
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        mock_nc.request = AsyncMock(side_effect=nats.errors.TimeoutError)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        with pytest.raises(TimeoutError, match="guardkit-factory") as exc_info:
+            await client.call_agent_tool(
+                agent_id="guardkit-factory", tool_name="lint", params={}, timeout=5.0
+            )
+
+        assert "lint" in str(exc_info.value)
+        assert "5.0" in str(exc_info.value)
+
+    async def test_call_agent_tool_no_responders_raises_timeout_error(self) -> None:
+        """AC: NoRespondersError is caught and re-raised as TimeoutError."""
+        import nats.errors
+
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        mock_nc.request = AsyncMock(side_effect=nats.errors.NoRespondersError)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        with pytest.raises(TimeoutError, match="guardkit-factory"):
+            await client.call_agent_tool(
+                agent_id="guardkit-factory", tool_name="lint", params={}
+            )
+
+    async def test_call_agent_tool_wildcard_agent_id_raises_value_error(self) -> None:
+        """AC: agent_id='evil.>' raises ValueError (wildcard rejection)."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        with pytest.raises(ValueError):
+            await client.call_agent_tool(
+                agent_id="evil.>", tool_name="lint", params={}
+            )
+
+    async def test_call_agent_tool_wildcard_tool_name_raises_value_error(self) -> None:
+        """agent_id with '*' raises ValueError."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        with pytest.raises(ValueError):
+            await client.call_agent_tool(
+                agent_id="good-agent", tool_name="evil*tool", params={}
+            )
+
+    async def test_call_agent_tool_forwards_timeout_to_request(self) -> None:
+        """AC: timeout parameter is forwarded to _nc.request()."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        response_msg = MagicMock()
+        response_msg.data = json.dumps({"ok": True}).encode()
+        mock_nc.request = AsyncMock(return_value=response_msg)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        await client.call_agent_tool(
+            agent_id="test-agent", tool_name="run", params={}, timeout=15.5
+        )
+
+        call_kwargs = mock_nc.request.call_args
+        assert call_kwargs[1]["timeout"] == 15.5
+
+    async def test_call_agent_tool_serialises_params_as_json(self) -> None:
+        """Params are serialised as JSON bytes in the request payload."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        response_msg = MagicMock()
+        response_msg.data = json.dumps({}).encode()
+        mock_nc.request = AsyncMock(return_value=response_msg)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        params = {"file": "main.py", "fix": True}
+        await client.call_agent_tool(
+            agent_id="test-agent", tool_name="lint", params=params
+        )
+
+        call_args = mock_nc.request.call_args
+        sent_bytes = call_args[0][1]
+        assert json.loads(sent_bytes) == params
+
+
+@pytest.mark.seam
+@pytest.mark.integration_contract("NATSClient")
+def test_call_agent_tool_topic_matches_agents_tools_template() -> None:
+    """Verify call_agent_tool builds topic matching Topics.Agents.TOOLS pattern.
+
+    Contract: call_agent_tool uses _nc.request() on agents.{agent_id}.tools.{tool_name};
+    topic must exactly match Topics.Agents.TOOLS template resolution.
+    Producer: TASK-NC05
+    """
+    topic = Topics.resolve(
+        Topics.Agents.TOOLS, agent_id="guardkit-factory", tool_name="lint"
+    )
+    assert topic == "agents.guardkit-factory.tools.lint"
+    assert "." in topic
+    assert ">" not in topic
+    assert "*" not in topic
+
+
 @pytest.mark.seam
 @pytest.mark.integration_contract("NATSConfig")
 def test_nats_config_fields_match_nats_py_connect_signature() -> None:

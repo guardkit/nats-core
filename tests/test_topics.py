@@ -20,6 +20,8 @@ import pytest
 from nats_core.envelope import EventType
 from nats_core.topics import Topics
 
+pytestmark = pytest.mark.unit
+
 # ---------------------------------------------------------------------------
 # @key-example @smoke — Core resolution for each domain
 # ---------------------------------------------------------------------------

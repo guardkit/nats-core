@@ -1,33 +1,43 @@
 ---
-id: TASK-NC06
-title: "Fleet convenience methods + NATSKVManifestRegistry"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
-priority: high
-task_type: feature
-tags: [nats-client, fleet, kv, jetstream, registry]
 complexity: 5
-wave: 5
+consumer_context:
+- consumes: AgentManifest
+  driver: pydantic
+  format_note: register_agent() accepts AgentManifest; serialises to manifest.model_dump_json().encode()
+    for fleet.register publish AND KV put; get_fleet_registry() returns dict[str,
+    AgentManifest] by deserialising KV values with AgentManifest.model_validate_json()
+  framework: Pydantic BaseModel (nats_core.manifest.AgentManifest)
+  task: TASK-NC04
+- consumes: NATSClient
+  driver: nats-py
+  format_note: Fleet methods are added directly to NATSClient class; NATSKVManifestRegistry
+    receives a connected NATSClient instance; access JetStream via client._nc.jetstream()
+  framework: nats_core.client.NATSClient
+  task: TASK-NC05
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-NC04
+- TASK-NC05
+feature_id: FEAT-1T1W
+id: TASK-NC06
 implementation_mode: task-work
 parent_review: TASK-1T1W
-feature_id: FEAT-1T1W
-dependencies: [TASK-NC04, TASK-NC05]
-consumer_context:
-  - task: TASK-NC04
-    consumes: AgentManifest
-    framework: "Pydantic BaseModel (nats_core.manifest.AgentManifest)"
-    driver: "pydantic"
-    format_note: "register_agent() accepts AgentManifest; serialises to manifest.model_dump_json().encode() for fleet.register publish AND KV put; get_fleet_registry() returns dict[str, AgentManifest] by deserialising KV values with AgentManifest.model_validate_json()"
-  - task: TASK-NC05
-    consumes: NATSClient
-    framework: "nats_core.client.NATSClient"
-    driver: "nats-py"
-    format_note: "Fleet methods are added directly to NATSClient class; NATSKVManifestRegistry receives a connected NATSClient instance; access JetStream via client._nc.jetstream()"
+priority: high
+status: design_approved
+tags:
+- nats-client
+- fleet
+- kv
+- jetstream
+- registry
+task_type: feature
 test_results:
-  status: pending
   coverage: null
   last_run: null
+  status: pending
+title: Fleet convenience methods + NATSKVManifestRegistry
+updated: 2026-04-08 00:00:00+00:00
+wave: 5
 ---
 
 # Task: Fleet convenience methods + NATSKVManifestRegistry

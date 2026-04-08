@@ -17,6 +17,8 @@ from nats_core.manifest import (
     ToolCapability,
 )
 
+pytestmark = pytest.mark.unit
+
 # ---------------------------------------------------------------------------
 # Local helpers (thin wrappers matching conftest factory signatures)
 # ---------------------------------------------------------------------------

@@ -14,6 +14,8 @@ from pydantic import ValidationError
 from nats_core.agent_config import AgentConfig, GraphitiConfig, ModelConfig
 from nats_core.config import NATSConfig
 
+pytestmark = pytest.mark.unit
+
 
 def _make(**overrides: Any) -> AgentConfig:
     """Thin wrapper: always provides a valid ``models`` unless overridden."""

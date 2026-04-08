@@ -1,28 +1,35 @@
 ---
-id: TASK-NC07
-title: "call_agent_tool (request-reply)"
-status: pending
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
-priority: high
-task_type: feature
-tags: [nats-client, request-reply, agent-tools, rpc]
 complexity: 4
-wave: 5
+consumer_context:
+- consumes: NATSClient
+  driver: nats-py
+  format_note: call_agent_tool() is added to NATSClient class; uses nats-py request/reply
+    via _nc.request(topic, payload_bytes, timeout=timeout); topic pattern is agents.{agent_id}.tools.{tool_name}
+    (from Topics.Agents.TOOLS)
+  framework: nats_core.client.NATSClient
+  task: TASK-NC05
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-NC05
+feature_id: FEAT-1T1W
+id: TASK-NC07
 implementation_mode: task-work
 parent_review: TASK-1T1W
-feature_id: FEAT-1T1W
-dependencies: [TASK-NC05]
-consumer_context:
-  - task: TASK-NC05
-    consumes: NATSClient
-    framework: "nats_core.client.NATSClient"
-    driver: "nats-py"
-    format_note: "call_agent_tool() is added to NATSClient class; uses nats-py request/reply via _nc.request(topic, payload_bytes, timeout=timeout); topic pattern is agents.{agent_id}.tools.{tool_name} (from Topics.Agents.TOOLS)"
+priority: high
+status: design_approved
+tags:
+- nats-client
+- request-reply
+- agent-tools
+- rpc
+task_type: feature
 test_results:
-  status: pending
   coverage: null
   last_run: null
+  status: pending
+title: call_agent_tool (request-reply)
+updated: 2026-04-08 00:00:00+00:00
+wave: 5
 ---
 
 # Task: call_agent_tool (request-reply)

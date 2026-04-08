@@ -41,6 +41,7 @@ strict = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
+    "unit: pure unit tests with no I/O or external dependencies",
     "slow: marks tests as slow",
     "integration: marks tests as integration tests",
     "seam: marks tests as seam tests",

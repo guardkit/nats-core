@@ -15,6 +15,8 @@ from pydantic import ValidationError
 
 from nats_core.config import NATSConfig
 
+pytestmark = pytest.mark.unit
+
 
 def _make(**overrides: Any) -> NATSConfig:
     """Thin wrapper delegating to the conftest factory for readability."""
