@@ -1,24 +1,25 @@
 ---
-id: TASK-FR-004
-title: NATSKVManifestRegistry
-status: backlog
-task_type: feature
-priority: high
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
 complexity: 6
-parent_review: TASK-B5F3
-feature_id: FEAT-FR01
-wave: 4
-implementation_mode: task-work
-dependencies:
-  - TASK-FR-003
 consumer_context:
-  - task: TASK-FR-003
-    consumes: ManifestRegistry
-    framework: "ABC from nats_core.manifest"
-    driver: "abc.ABC"
-    format_note: "Import as: from nats_core.manifest import ManifestRegistry — NATSKVManifestRegistry must subclass ManifestRegistry and implement all abstract methods"
+- consumes: ManifestRegistry
+  driver: abc.ABC
+  format_note: 'Import as: from nats_core.manifest import ManifestRegistry — NATSKVManifestRegistry
+    must subclass ManifestRegistry and implement all abstract methods'
+  framework: ABC from nats_core.manifest
+  task: TASK-FR-003
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-FR-003
+feature_id: FEAT-FR01
+id: TASK-FR-004
+implementation_mode: task-work
+parent_review: TASK-B5F3
+priority: high
+status: design_approved
+task_type: feature
+title: NATSKVManifestRegistry
+updated: 2026-04-08 00:00:00+00:00
+wave: 4
 ---
 
 # TASK-FR-004: NATSKVManifestRegistry

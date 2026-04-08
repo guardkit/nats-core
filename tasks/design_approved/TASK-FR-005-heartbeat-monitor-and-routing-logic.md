@@ -1,24 +1,25 @@
 ---
-id: TASK-FR-005
-title: Heartbeat monitor and routing logic
-status: backlog
-task_type: feature
-priority: high
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
 complexity: 6
-parent_review: TASK-B5F3
-feature_id: FEAT-FR01
-wave: 4
-implementation_mode: task-work
-dependencies:
-  - TASK-FR-003
 consumer_context:
-  - task: TASK-FR-003
-    consumes: ManifestRegistry
-    framework: "ABC from nats_core.manifest"
-    driver: "abc.ABC"
-    format_note: "Import as: from nats_core.manifest import ManifestRegistry — routing functions accept a ManifestRegistry instance and call list_all() and find_by_intent()"
+- consumes: ManifestRegistry
+  driver: abc.ABC
+  format_note: 'Import as: from nats_core.manifest import ManifestRegistry — routing
+    functions accept a ManifestRegistry instance and call list_all() and find_by_intent()'
+  framework: ABC from nats_core.manifest
+  task: TASK-FR-003
+created: 2026-04-08 00:00:00+00:00
+dependencies:
+- TASK-FR-003
+feature_id: FEAT-FR01
+id: TASK-FR-005
+implementation_mode: task-work
+parent_review: TASK-B5F3
+priority: high
+status: design_approved
+task_type: feature
+title: Heartbeat monitor and routing logic
+updated: 2026-04-08 00:00:00+00:00
+wave: 4
 ---
 
 # TASK-FR-005: Heartbeat monitor and routing logic

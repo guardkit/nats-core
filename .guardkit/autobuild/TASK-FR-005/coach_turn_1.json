@@ -1,0 +1,251 @@
+{
+  "task_id": "TASK-FR-005",
+  "turn": 1,
+  "decision": "approve",
+  "validation_results": {
+    "quality_gates": {
+      "tests_passed": true,
+      "coverage_met": true,
+      "arch_review_passed": true,
+      "plan_audit_passed": true,
+      "all_gates_passed": true
+    },
+    "independent_tests": {
+      "tests_passed": true,
+      "test_command": "pytest tests/test_client.py tests/test_fleet_client.py tests/test_routing.py -v --tb=short",
+      "test_output_summary": "Result:\ntests/test_routing.py::TestPurity::test_select_agent_is_synchronous PASSED [ 97%]\ntests/test_routing.py::TestPurity::test_record_heartbeat_is_synchronous PASSED [ 98%]\ntests/test_routing.py::TestPurity::test_check_timeouts_is_synchronous PASSED [ 99%]\ntests/test_routing.py::test_routing_accepts_manifest_registry_list_all PASSED [100%]\n============================= 101 passed in 0.22s ==============================",
+      "duration_seconds": 8.878169059753418
+    },
+    "requirements": {
+      "criteria_total": 13,
+      "criteria_met": 13,
+      "all_criteria_met": true,
+      "missing": []
+    }
+  },
+  "criteria_verification": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "`select_agent()` returns the agent with highest confidence for the requested intent",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Implemented select_agent() with sort by -confidence, then queue_depth. Test test_returns_agent_with_highest_confidence verifies agent-high (0.95) is selected over agent-low (0.5).",
+      "notes": "Implemented select_agent() with sort by -confidence, then queue_depth. Test test_returns_agent_with_highest_confidence verifies agent-high (0.95) is selected over agent-low (0.5)."
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "`select_agent()` breaks confidence ties using `queue_depth` ascending (lower queue preferred)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Sort key is (-conf, depth) so equal confidence sorts by ascending queue_depth. Test test_breaks_confidence_tie_by_queue_depth verifies agent-b (depth=1) is selected over agent-a (depth=5) at equal confidence 0.9.",
+      "notes": "Sort key is (-conf, depth) so equal confidence sorts by ascending queue_depth. Test test_breaks_confidence_tie_by_queue_depth verifies agent-b (depth=1) is selected over agent-a (depth=5) at equal confidence 0.9."
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "`select_agent()` skips agents where `active_tasks >= max_concurrent`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "_has_capacity() returns False when active_tasks >= max_concurrent. Test test_skips_agents_at_capacity verifies agent-full (active_tasks=2, max_concurrent=2) is skipped.",
+      "notes": "_has_capacity() returns False when active_tasks >= max_concurrent. Test test_skips_agents_at_capacity verifies agent-full (active_tasks=2, max_concurrent=2) is skipped."
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "`select_agent()` skips agents marked `available=False` in heartbeat records",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Eligibility filter checks heartbeat.available. Test test_skips_unavailable_agents verifies agent-down (available=False) is skipped despite higher confidence.",
+      "notes": "Eligibility filter checks heartbeat.available. Test test_skips_unavailable_agents verifies agent-down (available=False) is skipped despite higher confidence."
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`select_agent()` returns `None` when no eligible agent exists (empty fleet or all filtered)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Returns None when eligible list is empty. Tests test_returns_none_when_no_eligible_agent (empty list) and test_returns_none_when_all_agents_filtered (wrong intent) both verify None return.",
+      "notes": "Returns None when eligible list is empty. Tests test_returns_none_when_no_eligible_agent (empty list) and test_returns_none_when_all_agents_filtered (wrong intent) both verify None return."
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`record_heartbeat()` creates a new `HeartbeatRecord` if `agent_id` not in `heartbeats`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "record_heartbeat() creates HeartbeatRecord when agent_id not found in dict. Test test_creates_new_heartbeat_record verifies creation with correct fields.",
+      "notes": "record_heartbeat() creates HeartbeatRecord when agent_id not found in dict. Test test_creates_new_heartbeat_record verifies creation with correct fields."
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "`record_heartbeat()` resets `available=True` when a heartbeat arrives (recovery from timeout)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "record_heartbeat() sets record.available = True on existing records. Test test_recovery_resets_available_true verifies previously-unavailable agent becomes available.",
+      "notes": "record_heartbeat() sets record.available = True on existing records. Test test_recovery_resets_available_true verifies previously-unavailable agent becomes available."
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "`check_timeouts()` marks agents unavailable when `now - last_seen >= 90s`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "check_timeouts() uses (now - record.last_seen) >= timeout comparison. Test test_marks_agent_unavailable_after_timeout verifies with 100s-old heartbeat.",
+      "notes": "check_timeouts() uses (now - record.last_seen) >= timeout comparison. Test test_marks_agent_unavailable_after_timeout verifies with 100s-old heartbeat."
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "`check_timeouts()` returns the list of newly timed-out `agent_id`s",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Function returns list of agent_ids that were newly marked unavailable (skips already-unavailable). Test test_returns_newly_timed_out_ids verifies only stale agent returned.",
+      "notes": "Function returns list of agent_ids that were newly marked unavailable (skips already-unavailable). Test test_returns_newly_timed_out_ids verifies only stale agent returned."
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "An agent at exactly 89s since last heartbeat is NOT timed out",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Boundary condition: >= 90 means 89s is strictly less. Test test_agent_at_89s_is_not_timed_out uses mock time.monotonic to verify exact 89s boundary.",
+      "notes": "Boundary condition: >= 90 means 89s is strictly less. Test test_agent_at_89s_is_not_timed_out uses mock time.monotonic to verify exact 89s boundary."
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "An agent at exactly 90s since last heartbeat IS timed out",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Boundary condition: >= 90 includes exactly 90. Test test_agent_at_90s_is_timed_out uses mock time.monotonic to verify exact 90s boundary.",
+      "notes": "Boundary condition: >= 90 includes exactly 90. Test test_agent_at_90s_is_timed_out uses mock time.monotonic to verify exact 90s boundary."
+    },
+    {
+      "criterion_id": "AC-012",
+      "criterion_text": "All routing functions are pure (no I/O, no NATS calls)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All three functions (select_agent, record_heartbeat, check_timeouts) are synchronous, take data in and return decisions. No NATS imports, no async, no file I/O. Purity tests verify they are not coroutine functions.",
+      "notes": "All three functions (select_agent, record_heartbeat, check_timeouts) are synchronous, take data in and return decisions. No NATS imports, no async, no file I/O. Purity tests verify they are not coroutine functions."
+    },
+    {
+      "criterion_id": "AC-013",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "ruff check passes with 'All checks passed!' on both source and test files. mypy --strict passes with 'Success: no issues found in 1 source file'.",
+      "notes": "ruff check passes with 'All checks passed!' on both source and test files. mypy --strict passes with 'Success: no issues found in 1 source file'."
+    }
+  ],
+  "acceptance_criteria_verification": {
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`select_agent()` returns the agent with highest confidence for the requested intent",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Implemented select_agent() with sort by -confidence, then queue_depth. Test test_returns_agent_with_highest_confidence verifies agent-high (0.95) is selected over agent-low (0.5).",
+        "notes": "Implemented select_agent() with sort by -confidence, then queue_depth. Test test_returns_agent_with_highest_confidence verifies agent-high (0.95) is selected over agent-low (0.5)."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "`select_agent()` breaks confidence ties using `queue_depth` ascending (lower queue preferred)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Sort key is (-conf, depth) so equal confidence sorts by ascending queue_depth. Test test_breaks_confidence_tie_by_queue_depth verifies agent-b (depth=1) is selected over agent-a (depth=5) at equal confidence 0.9.",
+        "notes": "Sort key is (-conf, depth) so equal confidence sorts by ascending queue_depth. Test test_breaks_confidence_tie_by_queue_depth verifies agent-b (depth=1) is selected over agent-a (depth=5) at equal confidence 0.9."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "`select_agent()` skips agents where `active_tasks >= max_concurrent`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "_has_capacity() returns False when active_tasks >= max_concurrent. Test test_skips_agents_at_capacity verifies agent-full (active_tasks=2, max_concurrent=2) is skipped.",
+        "notes": "_has_capacity() returns False when active_tasks >= max_concurrent. Test test_skips_agents_at_capacity verifies agent-full (active_tasks=2, max_concurrent=2) is skipped."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "`select_agent()` skips agents marked `available=False` in heartbeat records",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Eligibility filter checks heartbeat.available. Test test_skips_unavailable_agents verifies agent-down (available=False) is skipped despite higher confidence.",
+        "notes": "Eligibility filter checks heartbeat.available. Test test_skips_unavailable_agents verifies agent-down (available=False) is skipped despite higher confidence."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`select_agent()` returns `None` when no eligible agent exists (empty fleet or all filtered)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Returns None when eligible list is empty. Tests test_returns_none_when_no_eligible_agent (empty list) and test_returns_none_when_all_agents_filtered (wrong intent) both verify None return.",
+        "notes": "Returns None when eligible list is empty. Tests test_returns_none_when_no_eligible_agent (empty list) and test_returns_none_when_all_agents_filtered (wrong intent) both verify None return."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "`record_heartbeat()` creates a new `HeartbeatRecord` if `agent_id` not in `heartbeats`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "record_heartbeat() creates HeartbeatRecord when agent_id not found in dict. Test test_creates_new_heartbeat_record verifies creation with correct fields.",
+        "notes": "record_heartbeat() creates HeartbeatRecord when agent_id not found in dict. Test test_creates_new_heartbeat_record verifies creation with correct fields."
+      },
+      {
+        "criterion_id": "AC-007",
+        "criterion_text": "`record_heartbeat()` resets `available=True` when a heartbeat arrives (recovery from timeout)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "record_heartbeat() sets record.available = True on existing records. Test test_recovery_resets_available_true verifies previously-unavailable agent becomes available.",
+        "notes": "record_heartbeat() sets record.available = True on existing records. Test test_recovery_resets_available_true verifies previously-unavailable agent becomes available."
+      },
+      {
+        "criterion_id": "AC-008",
+        "criterion_text": "`check_timeouts()` marks agents unavailable when `now - last_seen >= 90s`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "check_timeouts() uses (now - record.last_seen) >= timeout comparison. Test test_marks_agent_unavailable_after_timeout verifies with 100s-old heartbeat.",
+        "notes": "check_timeouts() uses (now - record.last_seen) >= timeout comparison. Test test_marks_agent_unavailable_after_timeout verifies with 100s-old heartbeat."
+      },
+      {
+        "criterion_id": "AC-009",
+        "criterion_text": "`check_timeouts()` returns the list of newly timed-out `agent_id`s",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Function returns list of agent_ids that were newly marked unavailable (skips already-unavailable). Test test_returns_newly_timed_out_ids verifies only stale agent returned.",
+        "notes": "Function returns list of agent_ids that were newly marked unavailable (skips already-unavailable). Test test_returns_newly_timed_out_ids verifies only stale agent returned."
+      },
+      {
+        "criterion_id": "AC-010",
+        "criterion_text": "An agent at exactly 89s since last heartbeat is NOT timed out",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Boundary condition: >= 90 means 89s is strictly less. Test test_agent_at_89s_is_not_timed_out uses mock time.monotonic to verify exact 89s boundary.",
+        "notes": "Boundary condition: >= 90 means 89s is strictly less. Test test_agent_at_89s_is_not_timed_out uses mock time.monotonic to verify exact 89s boundary."
+      },
+      {
+        "criterion_id": "AC-011",
+        "criterion_text": "An agent at exactly 90s since last heartbeat IS timed out",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Boundary condition: >= 90 includes exactly 90. Test test_agent_at_90s_is_timed_out uses mock time.monotonic to verify exact 90s boundary.",
+        "notes": "Boundary condition: >= 90 includes exactly 90. Test test_agent_at_90s_is_timed_out uses mock time.monotonic to verify exact 90s boundary."
+      },
+      {
+        "criterion_id": "AC-012",
+        "criterion_text": "All routing functions are pure (no I/O, no NATS calls)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All three functions (select_agent, record_heartbeat, check_timeouts) are synchronous, take data in and return decisions. No NATS imports, no async, no file I/O. Purity tests verify they are not coroutine functions.",
+        "notes": "All three functions (select_agent, record_heartbeat, check_timeouts) are synchronous, take data in and return decisions. No NATS imports, no async, no file I/O. Purity tests verify they are not coroutine functions."
+      },
+      {
+        "criterion_id": "AC-013",
+        "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "ruff check passes with 'All checks passed!' on both source and test files. mypy --strict passes with 'Success: no issues found in 1 source file'.",
+        "notes": "ruff check passes with 'All checks passed!' on both source and test files. mypy --strict passes with 'Success: no issues found in 1 source file'."
+      }
+    ]
+  },
+  "issues": [
+    {
+      "severity": "consider",
+      "category": "seam_test_recommendation",
+      "description": "No seam tests detected for cross-boundary feature. Consider adding seam/contract/boundary tests to validate technology boundary interactions. This is a recommendation, not a blocking gate."
+    }
+  ],
+  "rationale": "All quality gates passed. Independent verification confirmed. All acceptance criteria met. Architecture context: 413 chars provided.",
+  "context_used": "## Job-Specific Context\n\nBudget: 1732/5200 tokens\n\n### \ud83c\udfa8 Relevant Patterns\n- USES_STRATEGY_ROUTING\n- CREATED_AT\n- ASSIGNS_TASK_TO\n- CREATED_AT\n\n### \u26a0\ufe0f Warnings\n- DEPENDS_ON\n- USES_INAPPROPRIATELY\n- ERROR_CAUSE_OF\n\n### \ud83c\udfad Role Constraints\n- MONITOR_QUALITY_GATES\n- DELEGATE_TO_TASK_WORK\n- MONITORS_RESULTS_FROM\n- MONITOR_QUALITY_GATES_RESULTS_FROM_JSON\n\n### \ud83d\udee0\ufe0f Implementation Modes\n- IMPLEMENTATION_MODE_APPLIES_TO\n",
+  "approved_without_independent_tests": false,
+  "is_configuration_error": false
+}

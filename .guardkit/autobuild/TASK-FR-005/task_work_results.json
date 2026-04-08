@@ -1,0 +1,187 @@
+{
+  "task_id": "TASK-FR-005",
+  "timestamp": "2026-04-08T23:39:33.758670",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation (TDD Mode - RED Phase)",
+      "completed": false
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 26,
+    "tests_failed": 0,
+    "coverage": 100.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_routing.py",
+    "coverage.json",
+    "src/nats_core/_routing.py",
+    "src/nats_core/client.py",
+    "tasks/backlog/TASK-FR-004-nats-kv-manifest-registry.md",
+    "tasks/backlog/TASK-FR-005-heartbeat-monitor-and-routing-logic.md",
+    "tests/test_client.py",
+    "tests/test_fleet_client.py"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-FR-004-implementation-plan.md",
+    ".claude/task-plans/TASK-FR-005-implementation-plan.md",
+    ".guardkit/autobuild/TASK-FR-003/checkpoints.json",
+    ".guardkit/autobuild/TASK-FR-004/turn_context.json",
+    ".guardkit/autobuild/TASK-FR-005/player_turn_1.json",
+    ".guardkit/autobuild/TASK-FR-005/task_work_results.json",
+    ".guardkit/autobuild/TASK-FR-005/turn_context.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/.guardkit/autobuild/TASK-FR-005/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/src/nats_core/_routing.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_routing.py",
+    "tasks/design_approved/TASK-FR-004-nats-kv-manifest-registry.md",
+    "tasks/design_approved/TASK-FR-005-heartbeat-monitor-and-routing-logic.md",
+    "tests/test_routing.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_routing.py"
+  ],
+  "summary": "26 tests passed, 100.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 36,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "select_agent() returns the agent with highest confidence for the requested intent",
+      "status": "complete",
+      "evidence": "Implemented select_agent() with sort by -confidence, then queue_depth. Test test_returns_agent_with_highest_confidence verifies agent-high (0.95) is selected over agent-low (0.5).",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "select_agent() breaks confidence ties using queue_depth ascending (lower queue preferred)",
+      "status": "complete",
+      "evidence": "Sort key is (-conf, depth) so equal confidence sorts by ascending queue_depth. Test test_breaks_confidence_tie_by_queue_depth verifies agent-b (depth=1) is selected over agent-a (depth=5) at equal confidence 0.9.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "select_agent() skips agents where active_tasks >= max_concurrent",
+      "status": "complete",
+      "evidence": "_has_capacity() returns False when active_tasks >= max_concurrent. Test test_skips_agents_at_capacity verifies agent-full (active_tasks=2, max_concurrent=2) is skipped.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "select_agent() skips agents marked available=False in heartbeat records",
+      "status": "complete",
+      "evidence": "Eligibility filter checks heartbeat.available. Test test_skips_unavailable_agents verifies agent-down (available=False) is skipped despite higher confidence.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "select_agent() returns None when no eligible agent exists (empty fleet or all filtered)",
+      "status": "complete",
+      "evidence": "Returns None when eligible list is empty. Tests test_returns_none_when_no_eligible_agent (empty list) and test_returns_none_when_all_agents_filtered (wrong intent) both verify None return.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "record_heartbeat() creates a new HeartbeatRecord if agent_id not in heartbeats",
+      "status": "complete",
+      "evidence": "record_heartbeat() creates HeartbeatRecord when agent_id not found in dict. Test test_creates_new_heartbeat_record verifies creation with correct fields.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "record_heartbeat() resets available=True when a heartbeat arrives (recovery from timeout)",
+      "status": "complete",
+      "evidence": "record_heartbeat() sets record.available = True on existing records. Test test_recovery_resets_available_true verifies previously-unavailable agent becomes available.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "check_timeouts() marks agents unavailable when now - last_seen >= 90s",
+      "status": "complete",
+      "evidence": "check_timeouts() uses (now - record.last_seen) >= timeout comparison. Test test_marks_agent_unavailable_after_timeout verifies with 100s-old heartbeat.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "check_timeouts() returns the list of newly timed-out agent_ids",
+      "status": "complete",
+      "evidence": "Function returns list of agent_ids that were newly marked unavailable (skips already-unavailable). Test test_returns_newly_timed_out_ids verifies only stale agent returned.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "An agent at exactly 89s since last heartbeat is NOT timed out",
+      "status": "complete",
+      "evidence": "Boundary condition: >= 90 means 89s is strictly less. Test test_agent_at_89s_is_not_timed_out uses mock time.monotonic to verify exact 89s boundary.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-011",
+      "criterion_text": "An agent at exactly 90s since last heartbeat IS timed out",
+      "status": "complete",
+      "evidence": "Boundary condition: >= 90 includes exactly 90. Test test_agent_at_90s_is_timed_out uses mock time.monotonic to verify exact 90s boundary.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-012",
+      "criterion_text": "All routing functions are pure (no I/O, no NATS calls)",
+      "status": "complete",
+      "evidence": "All three functions (select_agent, record_heartbeat, check_timeouts) are synchronous, take data in and return decisions. No NATS imports, no async, no file I/O. Purity tests verify they are not coroutine functions.",
+      "test_file": "tests/test_routing.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-013",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check passes with 'All checks passed!' on both source and test files. mypy --strict passes with 'Success: no issues found in 1 source file'.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/_routing.py",
+        "tests/test_routing.py"
+      ]
+    }
+  ]
+}
