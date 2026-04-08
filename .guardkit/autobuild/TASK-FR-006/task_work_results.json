@@ -1,0 +1,140 @@
+{
+  "task_id": "TASK-FR-006",
+  "timestamp": "2026-04-08T23:49:05.515048",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation (TDD Mode - RED then GREEN)",
+      "completed": false
+    },
+    "phase_5": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 40,
+    "tests_failed": 0,
+    "coverage": 92.0,
+    "coverage_met": true,
+    "all_passed": true
+  },
+  "files_modified": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/pyproject.toml",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/fleet_registration/test_fleet_registration.py",
+    "coverage.json",
+    "pyproject.toml",
+    "tasks/backlog/TASK-FR-006-fleet-registration-test-suite.md"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-FR-006-implementation-plan.md",
+    ".guardkit/autobuild/TASK-FR-004/checkpoints.json",
+    ".guardkit/autobuild/TASK-FR-006/player_turn_1.json",
+    ".guardkit/autobuild/TASK-FR-006/task_work_results.json",
+    ".guardkit/autobuild/TASK-FR-006/turn_context.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/.guardkit/autobuild/TASK-FR-006/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/fleet_registration/__init__.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/fleet_registration/conftest.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/fleet_registration/test_fleet_registration.py",
+    "tasks/design_approved/TASK-FR-006-fleet-registration-test-suite.md",
+    "tests/fleet_registration/__init__.py",
+    "tests/fleet_registration/conftest.py",
+    "tests/fleet_registration/test_fleet_registration.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/fleet_registration/test_fleet_registration.py"
+  ],
+  "summary": "40 tests passed, 92.0% coverage, all quality gates passed",
+  "sdk_turns": {
+    "turns_used": 46,
+    "max_turns": 100,
+    "ceiling_hit": false
+  },
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "All 28 BDD scenarios have a corresponding test function",
+      "status": "complete",
+      "evidence": "35 test functions implemented mapping to all 28 BDD scenarios (some BDD Scenario Outlines expand to multiple tests, e.g., confidence 0.0/0.5/1.0 = 3 tests, missing fields agent_id/name/template = 3 tests). All test names match the BDD scenario coverage map exactly. 5 supplementary KV coverage tests added for branch coverage.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/test_fleet_registration.py",
+        "tests/fleet_registration/conftest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "All tests are async and use asyncio_mode = 'auto'",
+      "status": "complete",
+      "evidence": "All 40 test functions are declared with 'async def'. pyproject.toml has asyncio_mode = 'auto'. pytest-asyncio runs all tests in auto mode as confirmed by test output.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/test_fleet_registration.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "All unit tests pass without a live NATS server",
+      "status": "complete",
+      "evidence": "All 40 tests pass without NATS. InMemoryManifestRegistry used for registry tests. NATSKVManifestRegistry tests use unittest.mock.MagicMock/AsyncMock for KV bucket. Pure functions from _routing.py tested directly.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/test_fleet_registration.py",
+        "tests/fleet_registration/conftest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "NATSKVManifestRegistry tests mock KeyValue via unittest.mock",
+      "status": "complete",
+      "evidence": "make_mock_kv_bucket() factory in conftest.py creates a MagicMock with AsyncMock side_effects backed by a dict store. Used in test_kv_registry_persists_across_reconnect, test_kv_unavailable_graceful_failure, test_kv_registry_deregister_unknown_agent_ignored, test_kv_registry_get_unknown_agent_returns_none, test_kv_registry_empty_intents_rejected, test_kv_registry_find_by_intent, test_kv_registry_find_by_tool.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/conftest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "conftest.py uses factory functions (not stateful fixtures)",
+      "status": "complete",
+      "evidence": "tests/fleet_registration/conftest.py contains factory functions: make_intent(), make_manifest(), make_agent_manifest(), make_intent_capability(), make_heartbeat_payload(), make_heartbeat_record(), make_in_memory_registry(), make_mock_kv_bucket(). No pytest fixtures are used. Dataclass MockIntent and MockManifest provided as mock data classes per project convention.",
+      "test_file": null,
+      "implementation_files": [
+        "tests/fleet_registration/conftest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "All markers from the BDD scenario map are applied correctly",
+      "status": "complete",
+      "evidence": "All markers applied per the task's BDD Scenario Coverage Map: @smoke (3 tests), @key_example (6 tests), @boundary (11 tests), @negative (7 tests), @edge_case (11 tests), @security (2 tests), @concurrency (2 tests), @integration (2 tests). Markers 'security' and 'concurrency' added to pyproject.toml markers list to eliminate warnings.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/test_fleet_registration.py",
+        "pyproject.toml"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "Coverage for manifest.py, _routing.py, events/fleet.py, and client.py (fleet parts) >= 90%",
+      "status": "complete",
+      "evidence": "Coverage measured via pytest-cov: manifest.py 92%, _routing.py 98%, events/_fleet.py 100%, client.py KV registry lines (380+) 93%. All exceed the 90% threshold. The only uncovered client.py lines are the NATSClient class (network I/O) and the NATSKVManifestRegistry.create() classmethod which requires a live NATS connection.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/test_fleet_registration.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "@smoke tests are the minimal runnable set (3 tests) \u2014 verify with pytest -m smoke",
+      "status": "complete",
+      "evidence": "Running 'pytest -m smoke tests/fleet_registration/' selects exactly 3 tests: test_agent_registers_appears_in_registry, test_heartbeat_record_created_on_registration, test_deregistration_removes_from_registry. All 3 pass.",
+      "test_file": "tests/fleet_registration/test_fleet_registration.py",
+      "implementation_files": [
+        "tests/fleet_registration/test_fleet_registration.py"
+      ]
+    }
+  ]
+}

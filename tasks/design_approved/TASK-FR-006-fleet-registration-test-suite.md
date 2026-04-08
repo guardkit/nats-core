@@ -1,19 +1,19 @@
 ---
-id: TASK-FR-006
-title: Fleet Registration test suite (28 BDD scenarios)
-status: backlog
-task_type: testing
-priority: high
-created: 2026-04-08T00:00:00Z
-updated: 2026-04-08T00:00:00Z
 complexity: 4
-parent_review: TASK-B5F3
-feature_id: FEAT-FR01
-wave: 5
-implementation_mode: task-work
+created: 2026-04-08 00:00:00+00:00
 dependencies:
-  - TASK-FR-004
-  - TASK-FR-005
+- TASK-FR-004
+- TASK-FR-005
+feature_id: FEAT-FR01
+id: TASK-FR-006
+implementation_mode: task-work
+parent_review: TASK-B5F3
+priority: high
+status: design_approved
+task_type: testing
+title: Fleet Registration test suite (28 BDD scenarios)
+updated: 2026-04-08 00:00:00+00:00
+wave: 5
 ---
 
 # TASK-FR-006: Fleet Registration test suite (28 BDD scenarios)
