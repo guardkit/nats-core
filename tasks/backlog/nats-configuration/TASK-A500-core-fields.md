@@ -1,16 +1,35 @@
 ---
 id: TASK-A500
-title: "Implement NATSConfig core connection fields"
-status: pending
+title: Implement NATSConfig core connection fields
+status: in_review
 task_type: declarative
 parent_review: TASK-F7AE
 feature_id: FEAT-NC
 wave: 2
 implementation_mode: task-work
 complexity: 3
-dependencies: [TASK-A3EB]
+dependencies:
+- TASK-A3EB
 priority: high
-tags: [nats-configuration, pydantic-settings, fields]
+tags:
+- nats-configuration
+- pydantic-settings
+- fields
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E
+  base_branch: main
+  started_at: '2026-04-08T21:16:59.916905'
+  last_updated: '2026-04-08T21:21:25.378974'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:16:59.916905'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Implement NATSConfig core connection fields

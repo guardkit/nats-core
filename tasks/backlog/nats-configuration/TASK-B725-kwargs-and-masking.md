@@ -1,16 +1,35 @@
 ---
 id: TASK-B725
-title: "Implement to_connect_kwargs() and serialisation masking"
-status: pending
+title: Implement to_connect_kwargs() and serialisation masking
+status: in_review
 task_type: feature
 parent_review: TASK-F7AE
 feature_id: FEAT-NC
 wave: 4
 implementation_mode: task-work
 complexity: 3
-dependencies: [TASK-83F5]
+dependencies:
+- TASK-83F5
 priority: high
-tags: [nats-configuration, kwargs, masking]
+tags:
+- nats-configuration
+- kwargs
+- masking
+autobuild_state:
+  current_turn: 1
+  max_turns: 30
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-DD0E
+  base_branch: main
+  started_at: '2026-04-08T21:26:51.544715'
+  last_updated: '2026-04-08T21:32:27.102826'
+  turns:
+  - turn: 1
+    decision: approve
+    feedback: null
+    timestamp: '2026-04-08T21:26:51.544715'
+    player_summary: Implementation via task-work delegation
+    player_success: true
+    coach_success: true
 ---
 
 # Task: Implement to_connect_kwargs() and serialisation masking
