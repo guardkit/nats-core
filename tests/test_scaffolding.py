@@ -99,7 +99,7 @@ class TestPyprojectTomlConfig:
     def test_pydantic_dependency(self) -> None:
         """AC-003: pydantic >= 2.0 must be in dependencies."""
         deps = self.config["project"]["dependencies"]
-        pydantic_deps = [d for d in deps if d.startswith("pydantic")]
+        pydantic_deps = [d for d in deps if d.split(">")[0].split("=")[0].strip() == "pydantic"]
         assert len(pydantic_deps) == 1
         assert ">=2.0" in pydantic_deps[0]
 

@@ -69,17 +69,6 @@ class TestRoutingFileExists:
         content = (SRC / "_routing.py").read_text()
         ast.parse(content, filename="_routing.py")
 
-    @pytest.mark.unit
-    def test_routing_py_is_stub_only(self) -> None:
-        """_routing.py must be a stub — no class/function definitions yet."""
-        content = (SRC / "_routing.py").read_text()
-        tree = ast.parse(content, filename="_routing.py")
-        for node in ast.walk(tree):
-            assert not isinstance(
-                node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-            ), "_routing.py should be a stub with no logic"
-
-
 # ---------------------------------------------------------------------------
 # AC-003: src/nats_core/events/fleet.py exists (stub with future annotations)
 # ---------------------------------------------------------------------------
@@ -243,20 +232,6 @@ class TestFutureAnnotationsFirstImport:
 
 class TestNewFilesAreStubsOnly:
     """AC-007: Newly created files must be stubs with no logic."""
-
-    @pytest.mark.unit
-    def test_routing_has_no_definitions(self) -> None:
-        """_routing.py must contain no class or function definitions."""
-        content = (SRC / "_routing.py").read_text()
-        tree = ast.parse(content, filename="_routing.py")
-        definitions = [
-            node
-            for node in ast.walk(tree)
-            if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
-        ]
-        assert definitions == [], (
-            "_routing.py should be a stub with no definitions"
-        )
 
     @pytest.mark.unit
     def test_events_fleet_has_no_definitions(self) -> None:

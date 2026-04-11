@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -361,6 +362,7 @@ class TestNoHardcodedStrings:
             "jarvis.dispatch.",
             "system.health.",
         ]
+        repo_root = Path(__file__).resolve().parent.parent
         for pattern in patterns:
             result = subprocess.run(  # noqa: S603, S607
                 [
@@ -373,8 +375,7 @@ class TestNoHardcodedStrings:
                 ],
                 capture_output=True,
                 text=True,
-                cwd="/Users/richardwoollcott/Projects/appmilla_github/nats-core/"
-                ".guardkit/worktrees/FEAT-3845",
+                cwd=str(repo_root),
                 check=False,
             )
             # Filter out lines that are purely in docstrings or comments
