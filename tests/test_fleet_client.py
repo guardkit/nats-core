@@ -28,10 +28,15 @@ def _make_config(**overrides: Any) -> NATSConfig:
 
 
 def _make_manifest(agent_id: str = "test-agent", **overrides: Any) -> AgentManifest:
+    from nats_core.manifest import IntentCapability
+
     defaults: dict[str, Any] = {
         "agent_id": agent_id,
         "name": "Test Agent",
         "template": "basic",
+        "intents": [
+            IntentCapability(pattern="software.*", description="Handles software intents")
+        ],
     }
     defaults.update(overrides)
     return AgentManifest(**defaults)
@@ -376,19 +381,10 @@ class TestNATSKVManifestRegistry:
     def _make_registry(
         self, mock_kv: AsyncMock | None = None
     ) -> Any:
-        from nats_core.client import NATSClient, NATSKVManifestRegistry
+        from nats_core.client import NATSKVManifestRegistry
 
-        mock_nc = _make_mock_nc()
         kv = mock_kv or _make_mock_kv()
-        js = _make_mock_js(kv)
-        mock_nc.jetstream = MagicMock(return_value=js)
-
-        config = _make_config()
-        nats_client = NATSClient(config)
-        # Manually set _nc so the registry can use it without connecting
-        nats_client._nc = mock_nc
-
-        registry = NATSKVManifestRegistry(nats_client)
+        registry = NATSKVManifestRegistry(kv=kv)
         return registry, kv
 
     def test_is_manifest_registry_subclass(self) -> None:
@@ -443,19 +439,19 @@ class TestNATSKVManifestRegistry:
         assert ids == {"agent-a", "agent-b"}
 
     async def test_find_by_intent(self) -> None:
-        """find_by_intent() filters manifests by intent pattern."""
+        """find_by_intent() filters manifests by exact intent pattern match."""
         from nats_core.manifest import IntentCapability
 
         m1 = _make_manifest(
             "agent-a",
             intents=[
-                IntentCapability(pattern="software.*", description="Software tasks")
+                IntentCapability(pattern="software.build", description="Software tasks")
             ],
         )
         m2 = _make_manifest(
             "agent-b",
             intents=[
-                IntentCapability(pattern="data.*", description="Data tasks")
+                IntentCapability(pattern="data.ingest", description="Data tasks")
             ],
         )
         entries = {

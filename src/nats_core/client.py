@@ -8,7 +8,6 @@ fleet registry) and the ``NATSKVManifestRegistry`` backed by JetStream KV.
 
 from __future__ import annotations
 
-import fnmatch
 import json
 import logging
 import uuid
@@ -371,62 +370,77 @@ class NATSClient:
 # ---------------------------------------------------------------------------
 
 
-class NATSKVManifestRegistry(ManifestRegistry):
-    """NATS JetStream KV-backed implementation of :class:`ManifestRegistry`.
+NATSConnection = nats.aio.client.Client
+"""Type alias for the nats-py async connection object."""
 
-    Delegates all storage to the ``agent-registry`` KV bucket.
-    ``find_by_intent`` and ``find_by_tool`` call :meth:`list_all` then
-    filter in-process.
+AGENT_REGISTRY_BUCKET = _KV_BUCKET_NAME
+"""Public constant for the agent-registry KV bucket name."""
+
+
+class NATSKVManifestRegistry(ManifestRegistry):
+    """NATS JetStream KV-backed manifest registry.
+
+    Backed by the ``agent-registry`` KV bucket.  Each entry is stored as
+    JSON-serialised :class:`AgentManifest` keyed by ``agent_id``.
+
+    Use the :meth:`create` classmethod for production construction — it
+    binds (or creates) the KV bucket automatically.  The constructor
+    accepts a pre-existing *kv* handle for testing or advanced use.
 
     Args:
-        client: A connected ``NATSClient`` instance.
-        bucket: KV bucket name (default: ``"agent-registry"``).
+        kv: A NATS JetStream ``KeyValue`` bucket handle.
     """
 
-    def __init__(self, client: NATSClient, bucket: str = _KV_BUCKET_NAME) -> None:
-        self._client = client
-        self._bucket = bucket
+    def __init__(self, kv: Any) -> None:
+        self._kv = kv
 
-    async def _get_kv(self) -> Any:
-        """Get the JetStream KV bucket handle.
+    @classmethod
+    async def create(cls, nc: NATSConnection) -> NATSKVManifestRegistry:
+        """Factory: bind to the agent-registry KV bucket (creates if missing).
+
+        Args:
+            nc: A connected NATS client connection.
 
         Returns:
-            A NATS KV bucket handle.
-
-        Raises:
-            RuntimeError: If the underlying client is not connected.
+            A new ``NATSKVManifestRegistry`` backed by the agent-registry bucket.
         """
-        if self._client._nc is None:
-            msg = "client is not connected"
-            raise RuntimeError(msg)
+        js = nc.jetstream()
+        kv = await js.create_key_value(bucket=AGENT_REGISTRY_BUCKET)
+        return cls(kv)
 
-        js = self._client._nc.jetstream()
-        return await js.key_value(self._bucket)
-
-    async def register(self, manifest: AgentManifest) -> None:  # type: ignore[override]
+    async def register(self, manifest: AgentManifest) -> None:
         """Store a manifest in the KV bucket keyed by ``agent_id``.
+
+        Upserts — re-registration replaces the previous entry.
 
         Args:
             manifest: The agent manifest to register.
-        """
-        kv = await self._get_kv()
-        await kv.put(manifest.agent_id, manifest.model_dump_json().encode())
 
-    async def deregister(self, agent_id: str) -> None:  # type: ignore[override]
+        Raises:
+            ValueError: If the manifest has no intent capabilities.
+        """
+        if not manifest.intents:
+            msg = "at least one intent capability is required"
+            raise ValueError(msg)
+        payload = manifest.model_dump_json().encode()
+        await self._kv.put(manifest.agent_id, payload)
+        logger.debug("registered agent %s", manifest.agent_id)
+
+    async def deregister(self, agent_id: str) -> None:
         """Remove a manifest from the KV bucket by ``agent_id``.
 
-        If the key is not present, this method is a no-op.
+        Idempotent — if the key is not present the failure is silently
+        logged, not raised.
 
         Args:
             agent_id: The agent identifier to remove.
         """
-        kv = await self._get_kv()
         try:
-            await kv.delete(agent_id)
-        except KeyError:
-            pass
+            await self._kv.delete(agent_id)
+        except Exception:
+            logger.debug("deregister: agent %s not found (ignored)", agent_id)
 
-    async def get(self, agent_id: str) -> AgentManifest | None:  # type: ignore[override]
+    async def get(self, agent_id: str) -> AgentManifest | None:
         """Retrieve a manifest from the KV bucket by ``agent_id``.
 
         Args:
@@ -435,37 +449,36 @@ class NATSKVManifestRegistry(ManifestRegistry):
         Returns:
             The matching manifest, or ``None`` if not found.
         """
-        kv = await self._get_kv()
         try:
-            entry = await kv.get(agent_id)
+            entry = await self._kv.get(agent_id)
             return AgentManifest.model_validate_json(entry.value)
-        except KeyError:
+        except Exception:
             return None
 
     async def list_all(self) -> list[AgentManifest]:
         """Retrieve all manifests from the KV bucket.
 
+        Returns an empty list if the KV bucket is unavailable (graceful
+        degradation).
+
         Returns:
             A list of all registered agent manifests.
         """
-        kv = await self._get_kv()
-        try:
-            keys = await kv.keys()
-        except Exception:
-            return []
-
         results: list[AgentManifest] = []
-        for key in keys:
-            entry = await kv.get(key)
-            manifest = AgentManifest.model_validate_json(entry.value)
-            results.append(manifest)
+        try:
+            keys = await self._kv.keys()
+            for key in keys:
+                manifest = await self.get(key)
+                if manifest is not None:
+                    results.append(manifest)
+        except Exception:
+            logger.warning("list_all: KV unavailable, returning empty list")
         return results
 
-    async def find_by_intent(self, intent: str) -> list[AgentManifest]:  # type: ignore[override]
-        """Return all manifests whose intent patterns match *intent*.
+    async def find_by_intent(self, intent: str) -> list[AgentManifest]:
+        """Return all manifests whose intents include the given pattern.
 
-        Uses :func:`fnmatch.fnmatch` for glob-style matching, consistent
-        with :class:`InMemoryManifestRegistry`.
+        Matches on ``IntentCapability.pattern`` using exact string comparison.
 
         Args:
             intent: The intent string to match against registered patterns.
@@ -473,17 +486,16 @@ class NATSKVManifestRegistry(ManifestRegistry):
         Returns:
             A list of manifests with at least one matching intent pattern.
         """
-        all_manifests = await self.list_all()
-        results: list[AgentManifest] = []
-        for manifest in all_manifests:
-            for cap in manifest.intents:
-                if fnmatch.fnmatch(intent, cap.pattern):
-                    results.append(manifest)
-                    break
-        return results
+        return [
+            m
+            for m in await self.list_all()
+            if any(cap.pattern == intent for cap in m.intents)
+        ]
 
-    async def find_by_tool(self, tool_name: str) -> list[AgentManifest]:  # type: ignore[override]
+    async def find_by_tool(self, tool_name: str) -> list[AgentManifest]:
         """Return all manifests that expose a tool named *tool_name*.
+
+        Matches on ``ToolCapability.name`` using exact string comparison.
 
         Args:
             tool_name: The tool name to search for.
@@ -491,11 +503,8 @@ class NATSKVManifestRegistry(ManifestRegistry):
         Returns:
             A list of manifests that include the named tool.
         """
-        all_manifests = await self.list_all()
-        results: list[AgentManifest] = []
-        for manifest in all_manifests:
-            for tool in manifest.tools:
-                if tool.name == tool_name:
-                    results.append(manifest)
-                    break
-        return results
+        return [
+            m
+            for m in await self.list_all()
+            if any(tool.name == tool_name for tool in m.tools)
+        ]

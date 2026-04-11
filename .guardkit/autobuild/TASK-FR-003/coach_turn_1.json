@@ -1,0 +1,187 @@
+{
+  "task_id": "TASK-FR-003",
+  "turn": 1,
+  "decision": "approve",
+  "validation_results": {
+    "quality_gates": {
+      "tests_passed": true,
+      "coverage_met": true,
+      "arch_review_passed": true,
+      "plan_audit_passed": true,
+      "all_gates_passed": true
+    },
+    "independent_tests": {
+      "tests_passed": true,
+      "test_command": "pytest tests/test_fleet_client.py tests/test_manifest.py -v --tb=short",
+      "test_output_summary": "Result:\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_all_models_have_extra_ignore_config PASSED [ 96%]\ntests/test_manifest.py::TestFutureAnnotations::test_manifest_module_has_future_annotations PASSED [ 97%]\ntests/test_manifest.py::TestNoCircularImport::test_no_events_import PASSED [ 98%]\ntests/test_manifest.py::test_agent_manifest_storable_in_registry PASSED  [100%]\n============================== 78 passed in 0.20s ==============================",
+      "duration_seconds": 9.571033000946045
+    },
+    "requirements": {
+      "criteria_total": 9,
+      "criteria_met": 9,
+      "all_criteria_met": true,
+      "missing": []
+    }
+  },
+  "criteria_verification": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "`ManifestRegistry` is an `ABC` \u2014 cannot be instantiated directly",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "ManifestRegistry uses abc.ABC as base class with @abc.abstractmethod on all 6 methods (register, deregister, get, list_all, find_by_intent, find_by_tool). Tests verify TypeError on direct instantiation and presence of all abstract methods in __abstractmethods__.",
+      "notes": "ManifestRegistry uses abc.ABC as base class with @abc.abstractmethod on all 6 methods (register, deregister, get, list_all, find_by_intent, find_by_tool). Tests verify TypeError on direct instantiation and presence of all abstract methods in __abstractmethods__."
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "`InMemoryManifestRegistry.register()` upserts \u2014 re-registering the same `agent_id` replaces previous entry",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "InMemoryManifestRegistry.register() stores manifest in _store dict keyed by agent_id, so re-registration naturally overwrites. Test test_register_overwrites_existing registers two manifests with same agent_id and verifies the second replaces the first.",
+      "notes": "InMemoryManifestRegistry.register() stores manifest in _store dict keyed by agent_id, so re-registration naturally overwrites. Test test_register_overwrites_existing registers two manifests with same agent_id and verifies the second replaces the first."
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "`InMemoryManifestRegistry.register()` raises `ValueError` if `manifest.intents` is empty",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "register() checks 'if not manifest.intents' and raises ValueError with message 'at least one intent capability is required'. Test test_register_empty_intents_raises verifies ValueError is raised with matching message.",
+      "notes": "register() checks 'if not manifest.intents' and raises ValueError with message 'at least one intent capability is required'. Test test_register_empty_intents_raises verifies ValueError is raised with matching message."
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "`InMemoryManifestRegistry.deregister()` is idempotent \u2014 no error if `agent_id` unknown",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "deregister() uses dict.pop(agent_id, None) which silently returns None for missing keys. Tests verify no error on unknown agent_id and double-deregister.",
+      "notes": "deregister() uses dict.pop(agent_id, None) which silently returns None for missing keys. Tests verify no error on unknown agent_id and double-deregister."
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`InMemoryManifestRegistry.get()` returns `None` for unknown `agent_id`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "get() uses dict.get(agent_id) which returns None for missing keys. Test test_get_unknown_returns_none verifies this behavior.",
+      "notes": "get() uses dict.get(agent_id) which returns None for missing keys. Test test_get_unknown_returns_none verifies this behavior."
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`InMemoryManifestRegistry.find_by_intent()` matches on `IntentCapability.pattern` (exact match)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "find_by_intent() uses 'cap.pattern == intent' for exact string comparison. Changed from fnmatch glob matching to exact matching per task spec. Test test_find_by_intent_exact_not_glob verifies that pattern 'software.*' does NOT glob-match 'software.build' but DOES match 'software.*' exactly.",
+      "notes": "find_by_intent() uses 'cap.pattern == intent' for exact string comparison. Changed from fnmatch glob matching to exact matching per task spec. Test test_find_by_intent_exact_not_glob verifies that pattern 'software.*' does NOT glob-match 'software.build' but DOES match 'software.*' exactly."
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "`InMemoryManifestRegistry.find_by_tool()` matches on `ToolCapability.name` (exact match)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "find_by_tool() uses 'tool.name == tool_name' for exact string comparison. Tests verify exact match, no match, multiple agents, and multiple tools scenarios.",
+      "notes": "find_by_tool() uses 'tool.name == tool_name' for exact string comparison. Tests verify exact match, no match, multiple agents, and multiple tools scenarios."
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All methods are `async` \u2014 `InMemoryManifestRegistry` must be awaitable even without I/O",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "All 6 ABC methods and all 6 InMemoryManifestRegistry methods are declared with 'async def'. TestRegistryMethodsAreAsync class has 6 tests using inspect.iscoroutine() to verify each method returns a coroutine. All async tests use await.",
+      "notes": "All 6 ABC methods and all 6 InMemoryManifestRegistry methods are declared with 'async def'. TestRegistryMethodsAreAsync class has 6 tests using inspect.iscoroutine() to verify each method returns a coroutine. All async tests use await."
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "ruff check passes with zero errors on all modified files: src/nats_core/manifest.py, src/nats_core/client.py, tests/test_manifest.py, tests/test_fleet_client.py.",
+      "notes": "ruff check passes with zero errors on all modified files: src/nats_core/manifest.py, src/nats_core/client.py, tests/test_manifest.py, tests/test_fleet_client.py."
+    }
+  ],
+  "acceptance_criteria_verification": {
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`ManifestRegistry` is an `ABC` \u2014 cannot be instantiated directly",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "ManifestRegistry uses abc.ABC as base class with @abc.abstractmethod on all 6 methods (register, deregister, get, list_all, find_by_intent, find_by_tool). Tests verify TypeError on direct instantiation and presence of all abstract methods in __abstractmethods__.",
+        "notes": "ManifestRegistry uses abc.ABC as base class with @abc.abstractmethod on all 6 methods (register, deregister, get, list_all, find_by_intent, find_by_tool). Tests verify TypeError on direct instantiation and presence of all abstract methods in __abstractmethods__."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "`InMemoryManifestRegistry.register()` upserts \u2014 re-registering the same `agent_id` replaces previous entry",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "InMemoryManifestRegistry.register() stores manifest in _store dict keyed by agent_id, so re-registration naturally overwrites. Test test_register_overwrites_existing registers two manifests with same agent_id and verifies the second replaces the first.",
+        "notes": "InMemoryManifestRegistry.register() stores manifest in _store dict keyed by agent_id, so re-registration naturally overwrites. Test test_register_overwrites_existing registers two manifests with same agent_id and verifies the second replaces the first."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "`InMemoryManifestRegistry.register()` raises `ValueError` if `manifest.intents` is empty",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "register() checks 'if not manifest.intents' and raises ValueError with message 'at least one intent capability is required'. Test test_register_empty_intents_raises verifies ValueError is raised with matching message.",
+        "notes": "register() checks 'if not manifest.intents' and raises ValueError with message 'at least one intent capability is required'. Test test_register_empty_intents_raises verifies ValueError is raised with matching message."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "`InMemoryManifestRegistry.deregister()` is idempotent \u2014 no error if `agent_id` unknown",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "deregister() uses dict.pop(agent_id, None) which silently returns None for missing keys. Tests verify no error on unknown agent_id and double-deregister.",
+        "notes": "deregister() uses dict.pop(agent_id, None) which silently returns None for missing keys. Tests verify no error on unknown agent_id and double-deregister."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`InMemoryManifestRegistry.get()` returns `None` for unknown `agent_id`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "get() uses dict.get(agent_id) which returns None for missing keys. Test test_get_unknown_returns_none verifies this behavior.",
+        "notes": "get() uses dict.get(agent_id) which returns None for missing keys. Test test_get_unknown_returns_none verifies this behavior."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "`InMemoryManifestRegistry.find_by_intent()` matches on `IntentCapability.pattern` (exact match)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "find_by_intent() uses 'cap.pattern == intent' for exact string comparison. Changed from fnmatch glob matching to exact matching per task spec. Test test_find_by_intent_exact_not_glob verifies that pattern 'software.*' does NOT glob-match 'software.build' but DOES match 'software.*' exactly.",
+        "notes": "find_by_intent() uses 'cap.pattern == intent' for exact string comparison. Changed from fnmatch glob matching to exact matching per task spec. Test test_find_by_intent_exact_not_glob verifies that pattern 'software.*' does NOT glob-match 'software.build' but DOES match 'software.*' exactly."
+      },
+      {
+        "criterion_id": "AC-007",
+        "criterion_text": "`InMemoryManifestRegistry.find_by_tool()` matches on `ToolCapability.name` (exact match)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "find_by_tool() uses 'tool.name == tool_name' for exact string comparison. Tests verify exact match, no match, multiple agents, and multiple tools scenarios.",
+        "notes": "find_by_tool() uses 'tool.name == tool_name' for exact string comparison. Tests verify exact match, no match, multiple agents, and multiple tools scenarios."
+      },
+      {
+        "criterion_id": "AC-008",
+        "criterion_text": "All methods are `async` \u2014 `InMemoryManifestRegistry` must be awaitable even without I/O",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All 6 ABC methods and all 6 InMemoryManifestRegistry methods are declared with 'async def'. TestRegistryMethodsAreAsync class has 6 tests using inspect.iscoroutine() to verify each method returns a coroutine. All async tests use await.",
+        "notes": "All 6 ABC methods and all 6 InMemoryManifestRegistry methods are declared with 'async def'. TestRegistryMethodsAreAsync class has 6 tests using inspect.iscoroutine() to verify each method returns a coroutine. All async tests use await."
+      },
+      {
+        "criterion_id": "AC-009",
+        "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "ruff check passes with zero errors on all modified files: src/nats_core/manifest.py, src/nats_core/client.py, tests/test_manifest.py, tests/test_fleet_client.py.",
+        "notes": "ruff check passes with zero errors on all modified files: src/nats_core/manifest.py, src/nats_core/client.py, tests/test_manifest.py, tests/test_fleet_client.py."
+      }
+    ]
+  },
+  "issues": [
+    {
+      "severity": "consider",
+      "category": "seam_test_recommendation",
+      "description": "No seam tests detected for cross-boundary feature. Consider adding seam/contract/boundary tests to validate technology boundary interactions. This is a recommendation, not a blocking gate."
+    }
+  ],
+  "rationale": "All quality gates passed. Independent verification confirmed. All acceptance criteria met. Architecture context: 365 chars provided.",
+  "context_used": "## Job-Specific Context\n\nBudget: 1660/5200 tokens\n\n### \ud83c\udfa8 Relevant Patterns\n- INSTRUCTS_USER_TO_START\n- CREATED_AT\n- ASSIGNS_TASK_TO\n- HAS_REQUIRED_FIELD\n\n### \u26a0\ufe0f Warnings\n- DEPENDS_ON\n- REQUIRES_USE_OF\n- ERROR_CAUSE_OF\n\n### \ud83c\udfad Role Constraints\n- PROJECT_INVOLVES\n- DELEGATE_TO_TASK_WORK\n- DELEGATES_TO\n- PROJECT_INVOLVES\n\n### \ud83d\udee0\ufe0f Implementation Modes\n- HAS_PROJECT_ID\n",
+  "approved_without_independent_tests": false,
+  "is_configuration_error": false
+}

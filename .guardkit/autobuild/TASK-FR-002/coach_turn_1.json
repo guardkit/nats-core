@@ -1,0 +1,197 @@
+{
+  "task_id": "TASK-FR-002",
+  "turn": 1,
+  "decision": "approve",
+  "validation_results": {
+    "quality_gates": {
+      "tests_passed": true,
+      "coverage_met": true,
+      "arch_review_passed": true,
+      "plan_audit_passed": true,
+      "all_gates_passed": true
+    },
+    "independent_tests": {
+      "tests_passed": true,
+      "test_command": "pytest tests/test_manifest.py -v --tb=short",
+      "test_output_summary": "Result:\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_tool_capability_ignores_extra PASSED [ 93%]\ntests/test_manifest.py::TestConfigDictExtraIgnore::test_all_models_have_extra_ignore_config PASSED [ 95%]\ntests/test_manifest.py::TestFutureAnnotations::test_manifest_module_has_future_annotations PASSED [ 97%]\ntests/test_manifest.py::TestNoCircularImport::test_no_events_import PASSED [100%]\n============================== 48 passed in 0.07s ==============================",
+      "duration_seconds": 9.05159306526184
+    },
+    "requirements": {
+      "criteria_total": 10,
+      "criteria_met": 10,
+      "all_criteria_met": true,
+      "missing": []
+    }
+  },
+  "criteria_verification": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "`AgentManifest` validates `confidence` in `[0.0, 1.0]` \u2014 values outside rejected with `ValidationError`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "IntentCapability.confidence field has ge=0.0, le=1.0 constraints. Existing tests in TestIntentCapabilityConfidence verify boundary values (0.0, 1.0) and reject -0.1 and 1.1. Tests pass.",
+      "notes": "IntentCapability.confidence field has ge=0.0, le=1.0 constraints. Existing tests in TestIntentCapabilityConfidence verify boundary values (0.0, 1.0) and reject -0.1 and 1.1. Tests pass."
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "`AgentManifest.max_concurrent` rejects values `< 1` with `ValidationError`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "AgentManifest.max_concurrent field has ge=1 constraint. Existing test test_agent_manifest_max_concurrent_must_be_ge_1 in test_fleet_events.py verifies max_concurrent=0 is rejected. Tests pass.",
+      "notes": "AgentManifest.max_concurrent field has ge=1 constraint. Existing test test_agent_manifest_max_concurrent_must_be_ge_1 in test_fleet_events.py verifies max_concurrent=0 is rejected. Tests pass."
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "`AgentManifest` requires `agent_id`, `name`, `template` \u2014 missing any raises `ValidationError`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "agent_id, name, and template have no default values in AgentManifest, making them required. Existing tests verify minimal instantiation requires all three fields. Tests pass.",
+      "notes": "agent_id, name, and template have no default values in AgentManifest, making them required. Existing tests verify minimal instantiation requires all three fields. Tests pass."
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "`AgentManifest` requires at least zero intents (empty list is valid at model level; empty-list rejection is a registry concern)",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "intents field uses default_factory=list, so empty list is the default. Existing test test_defaults_applied verifies m.intents == []. Tests pass.",
+      "notes": "intents field uses default_factory=list, so empty list is the default. Existing test test_defaults_applied verifies m.intents == []. Tests pass."
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "`metadata` validator rejects payloads > 64KB with descriptive error",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Added @field_validator('metadata') method metadata_size_must_not_exceed_64kb to AgentManifest that uses json.dumps(v).encode() for byte-accurate size check and raises ValueError with message 'metadata exceeds the maximum allowed size of 64KB'. Added 7 new tests in TestMetadataValidator class covering: small metadata, empty metadata, just under 64KB, over 64KB (rejected), exactly at boundary (accepted), one byte over (rejected), descriptive error message. All 7 tests pass.",
+      "notes": "Added @field_validator('metadata') method metadata_size_must_not_exceed_64kb to AgentManifest that uses json.dumps(v).encode() for byte-accurate size check and raises ValueError with message 'metadata exceeds the maximum allowed size of 64KB'. Added 7 new tests in TestMetadataValidator class covering: small metadata, empty metadata, just under 64KB, over 64KB (rejected), exactly at boundary (accepted), one byte over (rejected), descriptive error message. All 7 tests pass."
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "`AgentHeartbeatPayload.status` is constrained to `ready/busy/degraded/draining`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "AgentHeartbeatPayload.status is typed as Literal['ready', 'busy', 'degraded', 'draining']. Existing test test_heartbeat_invalid_status verifies status='unknown' is rejected with ValidationError. Tests pass.",
+      "notes": "AgentHeartbeatPayload.status is typed as Literal['ready', 'busy', 'degraded', 'draining']. Existing test test_heartbeat_invalid_status verifies status='unknown' is rejected with ValidationError. Tests pass."
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "`AgentDeregistrationPayload.reason` defaults to `\"shutdown\"`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "AgentDeregistrationPayload.reason has default='shutdown'. Existing test test_valid_deregistration_default_reason verifies dereg.reason == 'shutdown'. Tests pass.",
+      "notes": "AgentDeregistrationPayload.reason has default='shutdown'. Existing test test_valid_deregistration_default_reason verifies dereg.reason == 'shutdown'. Tests pass."
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All models use `from __future__ import annotations`",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Both manifest.py and events/_fleet.py have 'from __future__ import annotations' as their first import. Existing test test_manifest_module_has_future_annotations verifies this via AST parsing. Tests pass.",
+      "notes": "Both manifest.py and events/_fleet.py have 'from __future__ import annotations' as their first import. Existing test test_manifest_module_has_future_annotations verifies this via AST parsing. Tests pass."
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All fields have `Field(description=...)` annotation",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Every field in IntentCapability, ToolCapability, AgentManifest, AgentHeartbeatPayload, and AgentDeregistrationPayload uses Field(description=...). Verified by code review and existing test test_nats_config_fields_have_descriptions pattern. All fields have descriptions.",
+      "notes": "Every field in IntentCapability, ToolCapability, AgentManifest, AgentHeartbeatPayload, and AgentDeregistrationPayload uses Field(description=...). Verified by code review and existing test test_nats_config_fields_have_descriptions pattern. All fields have descriptions."
+    },
+    {
+      "criterion_id": "AC-010",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "result": "verified",
+      "status": "verified",
+      "evidence": "Ran 'ruff check' on manifest.py, events/_fleet.py, and test_manifest.py \u2014 'All checks passed!'. Ran 'mypy' on manifest.py and events/_fleet.py \u2014 'Success: no issues found in 2 source files'. Zero lint/format/type errors.",
+      "notes": "Ran 'ruff check' on manifest.py, events/_fleet.py, and test_manifest.py \u2014 'All checks passed!'. Ran 'mypy' on manifest.py and events/_fleet.py \u2014 'Success: no issues found in 2 source files'. Zero lint/format/type errors."
+    }
+  ],
+  "acceptance_criteria_verification": {
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`AgentManifest` validates `confidence` in `[0.0, 1.0]` \u2014 values outside rejected with `ValidationError`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "IntentCapability.confidence field has ge=0.0, le=1.0 constraints. Existing tests in TestIntentCapabilityConfidence verify boundary values (0.0, 1.0) and reject -0.1 and 1.1. Tests pass.",
+        "notes": "IntentCapability.confidence field has ge=0.0, le=1.0 constraints. Existing tests in TestIntentCapabilityConfidence verify boundary values (0.0, 1.0) and reject -0.1 and 1.1. Tests pass."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "`AgentManifest.max_concurrent` rejects values `< 1` with `ValidationError`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "AgentManifest.max_concurrent field has ge=1 constraint. Existing test test_agent_manifest_max_concurrent_must_be_ge_1 in test_fleet_events.py verifies max_concurrent=0 is rejected. Tests pass.",
+        "notes": "AgentManifest.max_concurrent field has ge=1 constraint. Existing test test_agent_manifest_max_concurrent_must_be_ge_1 in test_fleet_events.py verifies max_concurrent=0 is rejected. Tests pass."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "`AgentManifest` requires `agent_id`, `name`, `template` \u2014 missing any raises `ValidationError`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "agent_id, name, and template have no default values in AgentManifest, making them required. Existing tests verify minimal instantiation requires all three fields. Tests pass.",
+        "notes": "agent_id, name, and template have no default values in AgentManifest, making them required. Existing tests verify minimal instantiation requires all three fields. Tests pass."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "`AgentManifest` requires at least zero intents (empty list is valid at model level; empty-list rejection is a registry concern)",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "intents field uses default_factory=list, so empty list is the default. Existing test test_defaults_applied verifies m.intents == []. Tests pass.",
+        "notes": "intents field uses default_factory=list, so empty list is the default. Existing test test_defaults_applied verifies m.intents == []. Tests pass."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`metadata` validator rejects payloads > 64KB with descriptive error",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Added @field_validator('metadata') method metadata_size_must_not_exceed_64kb to AgentManifest that uses json.dumps(v).encode() for byte-accurate size check and raises ValueError with message 'metadata exceeds the maximum allowed size of 64KB'. Added 7 new tests in TestMetadataValidator class covering: small metadata, empty metadata, just under 64KB, over 64KB (rejected), exactly at boundary (accepted), one byte over (rejected), descriptive error message. All 7 tests pass.",
+        "notes": "Added @field_validator('metadata') method metadata_size_must_not_exceed_64kb to AgentManifest that uses json.dumps(v).encode() for byte-accurate size check and raises ValueError with message 'metadata exceeds the maximum allowed size of 64KB'. Added 7 new tests in TestMetadataValidator class covering: small metadata, empty metadata, just under 64KB, over 64KB (rejected), exactly at boundary (accepted), one byte over (rejected), descriptive error message. All 7 tests pass."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "`AgentHeartbeatPayload.status` is constrained to `ready/busy/degraded/draining`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "AgentHeartbeatPayload.status is typed as Literal['ready', 'busy', 'degraded', 'draining']. Existing test test_heartbeat_invalid_status verifies status='unknown' is rejected with ValidationError. Tests pass.",
+        "notes": "AgentHeartbeatPayload.status is typed as Literal['ready', 'busy', 'degraded', 'draining']. Existing test test_heartbeat_invalid_status verifies status='unknown' is rejected with ValidationError. Tests pass."
+      },
+      {
+        "criterion_id": "AC-007",
+        "criterion_text": "`AgentDeregistrationPayload.reason` defaults to `\"shutdown\"`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "AgentDeregistrationPayload.reason has default='shutdown'. Existing test test_valid_deregistration_default_reason verifies dereg.reason == 'shutdown'. Tests pass.",
+        "notes": "AgentDeregistrationPayload.reason has default='shutdown'. Existing test test_valid_deregistration_default_reason verifies dereg.reason == 'shutdown'. Tests pass."
+      },
+      {
+        "criterion_id": "AC-008",
+        "criterion_text": "All models use `from __future__ import annotations`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Both manifest.py and events/_fleet.py have 'from __future__ import annotations' as their first import. Existing test test_manifest_module_has_future_annotations verifies this via AST parsing. Tests pass.",
+        "notes": "Both manifest.py and events/_fleet.py have 'from __future__ import annotations' as their first import. Existing test test_manifest_module_has_future_annotations verifies this via AST parsing. Tests pass."
+      },
+      {
+        "criterion_id": "AC-009",
+        "criterion_text": "All fields have `Field(description=...)` annotation",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Every field in IntentCapability, ToolCapability, AgentManifest, AgentHeartbeatPayload, and AgentDeregistrationPayload uses Field(description=...). Verified by code review and existing test test_nats_config_fields_have_descriptions pattern. All fields have descriptions.",
+        "notes": "Every field in IntentCapability, ToolCapability, AgentManifest, AgentHeartbeatPayload, and AgentDeregistrationPayload uses Field(description=...). Verified by code review and existing test test_nats_config_fields_have_descriptions pattern. All fields have descriptions."
+      },
+      {
+        "criterion_id": "AC-010",
+        "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Ran 'ruff check' on manifest.py, events/_fleet.py, and test_manifest.py \u2014 'All checks passed!'. Ran 'mypy' on manifest.py and events/_fleet.py \u2014 'Success: no issues found in 2 source files'. Zero lint/format/type errors.",
+        "notes": "Ran 'ruff check' on manifest.py, events/_fleet.py, and test_manifest.py \u2014 'All checks passed!'. Ran 'mypy' on manifest.py and events/_fleet.py \u2014 'Success: no issues found in 2 source files'. Zero lint/format/type errors."
+      }
+    ]
+  },
+  "issues": [],
+  "rationale": "All quality gates passed. Independent verification confirmed. All acceptance criteria met. Architecture context: 419 chars provided.",
+  "context_used": "## Job-Specific Context\n\nBudget: 1922/5200 tokens\n\n### \ud83c\udfa8 Relevant Patterns\n- IS_USED_IN_PATTERN\n- HAS_CODE_PATTERN_EXAMPLE\n- USED_AS_TYPE\n- OWNS_DEPENDENCY\n\n### \u26a0\ufe0f Warnings\n- DEPENDS_ON\n- REQUIRES_USE_OF\n- ERROR_CAUSE_OF\n\n### \ud83c\udfad Role Constraints\n- PROJECT_INVOLVES\n- DELEGATE_TO_TASK_WORK\n- DELEGATES_TO\n- PROJECT_INVOLVES\n\n### \ud83d\udee0\ufe0f Implementation Modes\n- HAS_PROJECT_ID\n- IMPLEMENTATION_MODE_APPLIES_TO\n- APPLIES_TO_TASK\n",
+  "approved_without_independent_tests": false,
+  "is_configuration_error": false
+}

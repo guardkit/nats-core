@@ -1,0 +1,143 @@
+{
+  "task_id": "TASK-FR-003",
+  "turn": 1,
+  "files_modified": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/src/nats_core/client.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/src/nats_core/manifest.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_fleet_client.py",
+    "coverage.json",
+    "src/nats_core/client.py",
+    "src/nats_core/manifest.py",
+    "tasks/backlog/TASK-FR-003-manifest-registry-abc-and-inmemory.md",
+    "tests/test_fleet_client.py",
+    "tests/test_manifest.py"
+  ],
+  "files_created": [
+    ".claude/task-plans/TASK-FR-003-implementation-plan.md",
+    ".guardkit/autobuild/TASK-FR-002/checkpoints.json",
+    ".guardkit/autobuild/TASK-FR-003/player_turn_1.json",
+    ".guardkit/autobuild/TASK-FR-003/task_work_results.json",
+    ".guardkit/autobuild/TASK-FR-003/turn_context.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/.guardkit/autobuild/TASK-FR-003/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_manifest.py",
+    "tasks/design_approved/TASK-FR-003-manifest-registry-abc-and-inmemory.md"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_fleet_client.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5/tests/test_manifest.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "",
+  "implementation_notes": "Implementation via task-work delegation",
+  "concerns": [],
+  "requirements_addressed": [
+    "ManifestRegistry is an ABC \u2014 cannot be instantiated directly",
+    "register() upserts \u2014 re-registering replaces previous entry",
+    "register() raises ValueError if manifest.intents is empty",
+    "deregister() is idempotent \u2014 no error if agent_id unknown",
+    "get() returns None for unknown agent_id",
+    "find_by_intent() matches on IntentCapability.pattern (exact match)",
+    "find_by_tool() matches on ToolCapability.name (exact match)",
+    "All methods are async \u2014 awaitable even without I/O",
+    "All modified files pass lint/format checks with zero errors"
+  ],
+  "requirements_remaining": [],
+  "sdk_turns_used": 48,
+  "sdk_max_turns": 100,
+  "sdk_ceiling_hit": false,
+  "tests_passed_count": 60,
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "ManifestRegistry is an ABC \u2014 cannot be instantiated directly",
+      "status": "complete",
+      "evidence": "ManifestRegistry uses abc.ABC as base class with @abc.abstractmethod on all 6 methods (register, deregister, get, list_all, find_by_intent, find_by_tool). Tests verify TypeError on direct instantiation and presence of all abstract methods in __abstractmethods__.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "InMemoryManifestRegistry.register() upserts \u2014 re-registering the same agent_id replaces previous entry",
+      "status": "complete",
+      "evidence": "InMemoryManifestRegistry.register() stores manifest in _store dict keyed by agent_id, so re-registration naturally overwrites. Test test_register_overwrites_existing registers two manifests with same agent_id and verifies the second replaces the first.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "InMemoryManifestRegistry.register() raises ValueError if manifest.intents is empty",
+      "status": "complete",
+      "evidence": "register() checks 'if not manifest.intents' and raises ValueError with message 'at least one intent capability is required'. Test test_register_empty_intents_raises verifies ValueError is raised with matching message.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "InMemoryManifestRegistry.deregister() is idempotent \u2014 no error if agent_id unknown",
+      "status": "complete",
+      "evidence": "deregister() uses dict.pop(agent_id, None) which silently returns None for missing keys. Tests verify no error on unknown agent_id and double-deregister.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "InMemoryManifestRegistry.get() returns None for unknown agent_id",
+      "status": "complete",
+      "evidence": "get() uses dict.get(agent_id) which returns None for missing keys. Test test_get_unknown_returns_none verifies this behavior.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "InMemoryManifestRegistry.find_by_intent() matches on IntentCapability.pattern (exact match)",
+      "status": "complete",
+      "evidence": "find_by_intent() uses 'cap.pattern == intent' for exact string comparison. Changed from fnmatch glob matching to exact matching per task spec. Test test_find_by_intent_exact_not_glob verifies that pattern 'software.*' does NOT glob-match 'software.build' but DOES match 'software.*' exactly.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "InMemoryManifestRegistry.find_by_tool() matches on ToolCapability.name (exact match)",
+      "status": "complete",
+      "evidence": "find_by_tool() uses 'tool.name == tool_name' for exact string comparison. Tests verify exact match, no match, multiple agents, and multiple tools scenarios.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-008",
+      "criterion_text": "All methods are async \u2014 InMemoryManifestRegistry must be awaitable even without I/O",
+      "status": "complete",
+      "evidence": "All 6 ABC methods and all 6 InMemoryManifestRegistry methods are declared with 'async def'. TestRegistryMethodsAreAsync class has 6 tests using inspect.iscoroutine() to verify each method returns a coroutine. All async tests use await.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-009",
+      "criterion_text": "All modified files pass project-configured lint/format checks with zero errors",
+      "status": "complete",
+      "evidence": "ruff check passes with zero errors on all modified files: src/nats_core/manifest.py, src/nats_core/client.py, tests/test_manifest.py, tests/test_fleet_client.py.",
+      "test_file": "tests/test_manifest.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py",
+        "src/nats_core/client.py"
+      ]
+    }
+  ]
+}

@@ -6,7 +6,6 @@ Tests are grouped by acceptance criterion.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -20,7 +19,6 @@ from pydantic import BaseModel
 from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope
 from nats_core.topics import Topics
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -631,6 +629,469 @@ def test_call_agent_tool_topic_matches_agents_tools_template() -> None:
     assert "." in topic
     assert ">" not in topic
     assert "*" not in topic
+
+
+# ===========================================================================
+# NATSKVManifestRegistry tests (TASK-FR-004)
+# ===========================================================================
+
+
+def _make_mock_kv() -> AsyncMock:
+    """Return an AsyncMock that behaves like nats.js.kv.KeyValue."""
+    kv = AsyncMock()
+    kv.put = AsyncMock()
+    kv.get = AsyncMock()
+    kv.delete = AsyncMock()
+    kv.keys = AsyncMock(return_value=[])
+    return kv
+
+
+def _make_kv_entry(value: bytes) -> MagicMock:
+    """Return a mock KV entry with the given value."""
+    entry = MagicMock()
+    entry.value = value
+    return entry
+
+
+def _make_manifest_with_intents(**overrides: Any) -> Any:
+    """Create an AgentManifest with at least one intent."""
+    from nats_core.manifest import AgentManifest, IntentCapability
+
+    defaults: dict[str, Any] = {
+        "agent_id": "test-agent",
+        "name": "Test Agent",
+        "template": "basic",
+        "intents": [
+            IntentCapability(pattern="software.*", description="Handles software intents")
+        ],
+    }
+    defaults.update(overrides)
+    return AgentManifest(**defaults)
+
+
+def _make_manifest_no_intents(**overrides: Any) -> Any:
+    """Create an AgentManifest with no intents."""
+    from nats_core.manifest import AgentManifest
+
+    defaults: dict[str, Any] = {
+        "agent_id": "test-agent",
+        "name": "Test Agent",
+        "template": "basic",
+        "intents": [],
+    }
+    defaults.update(overrides)
+    return AgentManifest(**defaults)
+
+
+class TestNATSKVManifestRegistrySubclass:
+    """AC: NATSKVManifestRegistry satisfies the ManifestRegistry ABC."""
+
+    @pytest.mark.seam
+    @pytest.mark.integration_contract("ManifestRegistry")
+    def test_is_subclass_of_manifest_registry(self) -> None:
+        """NATSKVManifestRegistry is a subclass of ManifestRegistry."""
+        from nats_core.client import NATSKVManifestRegistry
+        from nats_core.manifest import ManifestRegistry
+
+        assert issubclass(NATSKVManifestRegistry, ManifestRegistry)
+
+    @pytest.mark.seam
+    @pytest.mark.integration_contract("ManifestRegistry")
+    def test_instance_is_manifest_registry(self) -> None:
+        """NATSKVManifestRegistry instance satisfies isinstance check."""
+        from nats_core.client import NATSKVManifestRegistry
+        from nats_core.manifest import ManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+        assert isinstance(registry, ManifestRegistry)
+
+
+class TestNATSKVManifestRegistryRegister:
+    """AC: register() upserts via kv.put() and validates intents."""
+
+    @pytest.mark.unit
+    async def test_register_puts_manifest_as_json_bytes(self) -> None:
+        """AC: register() upserts via kv.put() — uses agent_id as key."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+        manifest = _make_manifest_with_intents()
+
+        await registry.register(manifest)
+
+        mock_kv.put.assert_awaited_once()
+        call_args = mock_kv.put.call_args
+        assert call_args[0][0] == "test-agent"
+        # Value should be JSON bytes from model_dump_json().encode()
+        stored_bytes = call_args[0][1]
+        assert isinstance(stored_bytes, bytes)
+        # Should be valid JSON that round-trips
+        from nats_core.manifest import AgentManifest
+
+        restored = AgentManifest.model_validate_json(stored_bytes)
+        assert restored.agent_id == "test-agent"
+
+    @pytest.mark.unit
+    @pytest.mark.negative
+    async def test_register_raises_value_error_if_intents_empty(self) -> None:
+        """AC: register() raises ValueError if manifest.intents is empty."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+        manifest = _make_manifest_no_intents()
+
+        with pytest.raises(ValueError, match="at least one intent"):
+            await registry.register(manifest)
+
+        # kv.put should NOT have been called
+        mock_kv.put.assert_not_awaited()
+
+    @pytest.mark.unit
+    async def test_register_upserts_on_re_registration(self) -> None:
+        """register() re-registration replaces previous entry (upsert)."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+        manifest = _make_manifest_with_intents()
+
+        await registry.register(manifest)
+        await registry.register(manifest)
+
+        assert mock_kv.put.await_count == 2
+
+    @pytest.mark.unit
+    async def test_register_uses_model_dump_json_encode(self) -> None:
+        """AC: Values stored as model_dump_json().encode() — JSON bytes."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+        manifest = _make_manifest_with_intents()
+
+        await registry.register(manifest)
+
+        call_args = mock_kv.put.call_args
+        stored = call_args[0][1]
+        # Should be exactly model_dump_json().encode()
+        expected = manifest.model_dump_json().encode()
+        assert stored == expected
+
+    @pytest.mark.unit
+    async def test_register_logs_debug_on_success(self, caplog: Any) -> None:
+        """AC: Logging uses logger.debug — register logs on success."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+        manifest = _make_manifest_with_intents()
+
+        with caplog.at_level(logging.DEBUG, logger="nats_core.client"):
+            await registry.register(manifest)
+
+        assert any("registered" in r.message.lower() for r in caplog.records)
+
+
+class TestNATSKVManifestRegistryDeregister:
+    """AC: deregister() is idempotent — kv.delete() failure is silently logged."""
+
+    @pytest.mark.unit
+    async def test_deregister_deletes_by_agent_id(self) -> None:
+        """deregister() calls kv.delete() with agent_id."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        await registry.deregister("test-agent")
+
+        mock_kv.delete.assert_awaited_once_with("test-agent")
+
+    @pytest.mark.unit
+    async def test_deregister_is_idempotent_on_key_not_found(self, caplog: Any) -> None:
+        """AC: deregister() is idempotent — kv.delete() failure is silently logged."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.delete = AsyncMock(side_effect=Exception("key not found"))
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        with caplog.at_level(logging.DEBUG, logger="nats_core.client"):
+            await registry.deregister("nonexistent-agent")
+
+        # Should NOT raise
+        assert any("nonexistent-agent" in r.message for r in caplog.records)
+
+
+class TestNATSKVManifestRegistryGet:
+    """AC: get() returns None if key not found."""
+
+    @pytest.mark.unit
+    async def test_get_returns_manifest_for_existing_key(self) -> None:
+        """get() returns deserialized AgentManifest for existing key."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        manifest = _make_manifest_with_intents()
+        mock_kv = _make_mock_kv()
+        mock_kv.get = AsyncMock(
+            return_value=_make_kv_entry(manifest.model_dump_json().encode())
+        )
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        result = await registry.get("test-agent")
+
+        assert result is not None
+        assert result.agent_id == "test-agent"
+
+    @pytest.mark.unit
+    async def test_get_uses_model_validate_json(self) -> None:
+        """AC: Values deserialized via model_validate_json() — not json.loads."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        manifest = _make_manifest_with_intents()
+        json_bytes = manifest.model_dump_json().encode()
+        mock_kv = _make_mock_kv()
+        mock_kv.get = AsyncMock(return_value=_make_kv_entry(json_bytes))
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        result = await registry.get("test-agent")
+        assert result is not None
+        assert result.agent_id == manifest.agent_id
+
+    @pytest.mark.unit
+    @pytest.mark.negative
+    async def test_get_returns_none_for_missing_key(self) -> None:
+        """AC: get() returns None if key not found (catches all KV exceptions)."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.get = AsyncMock(side_effect=KeyError("not found"))
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        result = await registry.get("nonexistent")
+        assert result is None
+
+    @pytest.mark.unit
+    @pytest.mark.negative
+    async def test_get_returns_none_on_any_exception(self) -> None:
+        """AC: get() catches all KV exceptions, not just KeyError."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.get = AsyncMock(side_effect=Exception("connection lost"))
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        result = await registry.get("some-agent")
+        assert result is None
+
+
+class TestNATSKVManifestRegistryListAll:
+    """AC: list_all() returns [] if KV unavailable."""
+
+    @pytest.mark.unit
+    async def test_list_all_returns_all_manifests(self) -> None:
+        """list_all() returns all registered manifests."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        m1 = _make_manifest_with_intents(agent_id="agent-a")
+        m2 = _make_manifest_with_intents(agent_id="agent-b")
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(return_value=["agent-a", "agent-b"])
+        mock_kv.get = AsyncMock(
+            side_effect=[
+                _make_kv_entry(m1.model_dump_json().encode()),
+                _make_kv_entry(m2.model_dump_json().encode()),
+            ]
+        )
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.list_all()
+        assert len(results) == 2
+        ids = {m.agent_id for m in results}
+        assert ids == {"agent-a", "agent-b"}
+
+    @pytest.mark.unit
+    @pytest.mark.negative
+    async def test_list_all_returns_empty_on_kv_unavailable(self) -> None:
+        """AC: list_all() returns [] if KV unavailable (graceful degradation)."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(side_effect=Exception("KV unavailable"))
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.list_all()
+        assert results == []
+
+    @pytest.mark.unit
+    async def test_list_all_returns_empty_when_no_keys(self) -> None:
+        """list_all() returns empty list when bucket has no keys."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(return_value=[])
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.list_all()
+        assert results == []
+
+
+class TestNATSKVManifestRegistryCreate:
+    """AC: create() classmethod creates bucket if it does not exist."""
+
+    @pytest.mark.unit
+    async def test_create_calls_create_key_value(self) -> None:
+        """AC: create() classmethod creates bucket if it does not exist."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_nc = AsyncMock()
+        mock_js = AsyncMock()
+        mock_kv = _make_mock_kv()
+        mock_nc.jetstream = MagicMock(return_value=mock_js)
+        mock_js.create_key_value = AsyncMock(return_value=mock_kv)
+
+        registry = await NATSKVManifestRegistry.create(mock_nc)
+
+        mock_js.create_key_value.assert_awaited_once()
+        call_kwargs = mock_js.create_key_value.call_args
+        assert call_kwargs[1]["bucket"] == "agent-registry"
+        assert isinstance(registry, NATSKVManifestRegistry)
+
+    @pytest.mark.unit
+    async def test_create_returns_registry_with_kv(self) -> None:
+        """create() returns a NATSKVManifestRegistry with the KV bucket bound."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_nc = AsyncMock()
+        mock_js = AsyncMock()
+        mock_kv = _make_mock_kv()
+        mock_nc.jetstream = MagicMock(return_value=mock_js)
+        mock_js.create_key_value = AsyncMock(return_value=mock_kv)
+
+        registry = await NATSKVManifestRegistry.create(mock_nc)
+
+        # Verify the registry can delegate to the mock kv
+        manifest = _make_manifest_with_intents()
+        await registry.register(manifest)
+        mock_kv.put.assert_awaited_once()
+
+
+class TestNATSKVManifestRegistryFindByIntent:
+    """Tests for find_by_intent() — filters from list_all()."""
+
+    @pytest.mark.unit
+    async def test_find_by_intent_returns_matching_manifests(self) -> None:
+        """find_by_intent() returns manifests with matching intent pattern."""
+        from nats_core.client import NATSKVManifestRegistry
+        from nats_core.manifest import IntentCapability
+
+        m1 = _make_manifest_with_intents(agent_id="agent-a")
+        m2 = _make_manifest_with_intents(
+            agent_id="agent-b",
+            intents=[IntentCapability(pattern="devops.*", description="Devops")],
+        )
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(return_value=["agent-a", "agent-b"])
+        mock_kv.get = AsyncMock(
+            side_effect=[
+                _make_kv_entry(m1.model_dump_json().encode()),
+                _make_kv_entry(m2.model_dump_json().encode()),
+            ]
+        )
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.find_by_intent("software.*")
+        assert len(results) == 1
+        assert results[0].agent_id == "agent-a"
+
+    @pytest.mark.unit
+    async def test_find_by_intent_returns_empty_for_no_match(self) -> None:
+        """find_by_intent() returns empty list when no manifests match."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(return_value=[])
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.find_by_intent("nonexistent.*")
+        assert results == []
+
+
+class TestNATSKVManifestRegistryFindByTool:
+    """Tests for find_by_tool() — filters from list_all()."""
+
+    @pytest.mark.unit
+    async def test_find_by_tool_returns_matching_manifests(self) -> None:
+        """find_by_tool() returns manifests with matching tool name."""
+        from nats_core.client import NATSKVManifestRegistry
+        from nats_core.manifest import ToolCapability
+
+        m1 = _make_manifest_with_intents(
+            agent_id="agent-a",
+            tools=[
+                ToolCapability(
+                    name="lint",
+                    description="Run linter",
+                    parameters={"type": "object"},
+                    returns="Lint report",
+                )
+            ],
+        )
+        m2 = _make_manifest_with_intents(agent_id="agent-b")
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(return_value=["agent-a", "agent-b"])
+        mock_kv.get = AsyncMock(
+            side_effect=[
+                _make_kv_entry(m1.model_dump_json().encode()),
+                _make_kv_entry(m2.model_dump_json().encode()),
+            ]
+        )
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.find_by_tool("lint")
+        assert len(results) == 1
+        assert results[0].agent_id == "agent-a"
+
+    @pytest.mark.unit
+    async def test_find_by_tool_returns_empty_for_no_match(self) -> None:
+        """find_by_tool() returns empty list when no manifests match."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(return_value=[])
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        results = await registry.find_by_tool("nonexistent")
+        assert results == []
+
+
+class TestNATSKVManifestRegistryLogging:
+    """AC: Logging uses logger.debug/warning — never print()."""
+
+    @pytest.mark.unit
+    async def test_list_all_logs_warning_on_kv_unavailable(self, caplog: Any) -> None:
+        """AC: list_all() logs warning when KV is unavailable."""
+        from nats_core.client import NATSKVManifestRegistry
+
+        mock_kv = _make_mock_kv()
+        mock_kv.keys = AsyncMock(side_effect=Exception("KV unavailable"))
+        registry = NATSKVManifestRegistry(kv=mock_kv)
+
+        with caplog.at_level(logging.WARNING, logger="nats_core.client"):
+            await registry.list_all()
+
+        assert any("list_all" in r.message.lower() for r in caplog.records)
+
+
+# ===========================================================================
+# Existing seam tests
+# ===========================================================================
 
 
 @pytest.mark.seam

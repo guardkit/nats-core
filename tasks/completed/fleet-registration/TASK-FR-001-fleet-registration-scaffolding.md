@@ -4,7 +4,7 @@ title: Fleet Registration scaffolding
 status: completed
 task_type: scaffolding
 priority: high
-created: 2026-04-08 00:00:00+00:00
+created: 2026-04-08T00:00:00Z
 updated: '2026-04-11T00:00:00+00:00'
 complexity: 2
 parent_review: TASK-B5F3
@@ -12,26 +12,6 @@ feature_id: FEAT-FR01
 wave: 1
 implementation_mode: direct
 dependencies: []
-autobuild_state:
-  current_turn: 1
-  max_turns: 30
-  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5
-  base_branch: main
-  started_at: '2026-04-08T23:19:19.804228'
-  last_updated: '2026-04-08T23:21:59.300201'
-  turns:
-  - turn: 1
-    decision: approve
-    feedback: null
-    timestamp: '2026-04-08T23:19:19.804228'
-    player_summary: Created two new stub files (_routing.py and events/fleet.py) with
-      only docstrings and 'from __future__ import annotations'. The manifest.py and
-      py.typed files already existed in the codebase. Wrote 25 comprehensive tests
-      covering file existence, future annotations presence and ordering, valid Python
-      syntax, stub-only enforcement (no class/function definitions), importability,
-      and subprocess import verification.
-    player_success: true
-    coach_success: true
 completed: '2026-04-11T00:00:00+00:00'
 completed_location: tasks/completed/fleet-registration/
 ---

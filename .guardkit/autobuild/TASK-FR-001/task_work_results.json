@@ -1,0 +1,127 @@
+{
+  "task_id": "TASK-FR-001",
+  "timestamp": "2026-04-08T23:21:58.727794",
+  "completed": true,
+  "success": true,
+  "implementation_mode": "direct",
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "coverage": null,
+    "coverage_met": true,
+    "quality_gates_relaxed": true,
+    "all_passed": true
+  },
+  "files_modified": [],
+  "files_created": [
+    "src/nats_core/_routing.py",
+    "src/nats_core/events/fleet.py",
+    "tests/test_fleet_registration_scaffolding.py"
+  ],
+  "tests_written": [
+    "tests/test_fleet_registration_scaffolding.py"
+  ],
+  "requirements_addressed": [
+    "AC-001: src/nats_core/manifest.py exists with from __future__ import annotations",
+    "AC-002: src/nats_core/_routing.py exists with from __future__ import annotations",
+    "AC-003: src/nats_core/events/fleet.py exists with from __future__ import annotations",
+    "AC-004: src/nats_core/py.typed exists (empty file)",
+    "AC-005: python -c 'import nats_core' succeeds without error",
+    "AC-006: All stub files include from __future__ import annotations as first import",
+    "AC-007: No logic implemented \u2014 stubs only"
+  ],
+  "requirements_met": [
+    "AC-001: src/nats_core/manifest.py exists with from __future__ import annotations",
+    "AC-002: src/nats_core/_routing.py exists with from __future__ import annotations",
+    "AC-003: src/nats_core/events/fleet.py exists with from __future__ import annotations",
+    "AC-004: src/nats_core/py.typed exists (empty file)",
+    "AC-005: python -c 'import nats_core' succeeds without error",
+    "AC-006: All stub files include from __future__ import annotations as first import",
+    "AC-007: No logic implemented \u2014 stubs only"
+  ],
+  "summary": "Direct mode implementation completed successfully",
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "[ ] `src/nats_core/manifest.py` exists (stub with `from __future__ import annotations`)",
+      "status": "complete",
+      "evidence": "manifest.py already existed with full implementation including 'from __future__ import annotations' as first import. Verified by TestManifestFileExists (3 tests): file existence, future annotations present, valid Python syntax.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "[ ] `src/nats_core/_routing.py` exists (stub with `from __future__ import annotations`)",
+      "status": "complete",
+      "evidence": "Created _routing.py as a stub containing only a module docstring and 'from __future__ import annotations'. Verified by TestRoutingFileExists (4 tests): file existence, future annotations present, valid Python syntax, and no class/function definitions.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "[ ] `src/nats_core/events/fleet.py` exists (stub with `from __future__ import annotations`)",
+      "status": "complete",
+      "evidence": "Created events/fleet.py as a stub containing only a module docstring and 'from __future__ import annotations'. Note: events/_fleet.py (private) already existed with implementation; this is the public fleet.py stub. Verified by TestEventsFleetFileExists (4 tests): file existence, future annotations present, valid Python syntax, and no class/function definitions.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/events/fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "[ ] `src/nats_core/py.typed` exists (empty file \u2014 PEP 561 compliance)",
+      "status": "complete",
+      "evidence": "py.typed already existed as an empty file in the package. Verified by TestPyTypedExists (2 tests): file existence and empty content check.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/py.typed"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "[ ] `python -c \"import nats_core\"` succeeds without error",
+      "status": "complete",
+      "evidence": "Package imports successfully both in-process and via subprocess. Verified by TestPackageImportable (4 tests): in-process import of nats_core, subprocess import verification (exit code 0), import of nats_core._routing, and import of nats_core.events.fleet.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/__init__.py",
+        "src/nats_core/_routing.py",
+        "src/nats_core/events/fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "[ ] All stub files include `from __future__ import annotations` as first import",
+      "status": "complete",
+      "evidence": "All three stub files (manifest.py, _routing.py, events/fleet.py) have 'from __future__ import annotations' as their first import statement. Verified by TestFutureAnnotationsFirstImport (6 parametrized tests): presence check and AST-based first-import verification for each file.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/manifest.py",
+        "src/nats_core/_routing.py",
+        "src/nats_core/events/fleet.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-007",
+      "criterion_text": "[ ] No logic implemented in this task \u2014 stubs only",
+      "status": "complete",
+      "evidence": "The two newly created files (_routing.py and events/fleet.py) contain only docstrings and the future annotations import \u2014 no class, function, or async function definitions. Verified by TestNewFilesAreStubsOnly (2 tests) using AST analysis to confirm zero ClassDef/FunctionDef/AsyncFunctionDef nodes.",
+      "test_file": "tests/test_fleet_registration_scaffolding.py",
+      "implementation_files": [
+        "src/nats_core/_routing.py",
+        "src/nats_core/events/fleet.py"
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ title: Heartbeat monitor and routing logic
 status: completed
 task_type: feature
 priority: high
-created: 2026-04-08 00:00:00+00:00
+created: 2026-04-08T00:00:00Z
 updated: '2026-04-11T00:00:00+00:00'
 complexity: 6
 parent_review: TASK-B5F3
@@ -12,30 +12,13 @@ feature_id: FEAT-FR01
 wave: 4
 implementation_mode: task-work
 dependencies:
-- TASK-FR-003
+  - TASK-FR-003
 consumer_context:
-- task: TASK-FR-003
-  consumes: ManifestRegistry
-  framework: ABC from nats_core.manifest
-  driver: abc.ABC
-  format_note: "Import as: from nats_core.manifest import ManifestRegistry \u2014\
-    \ routing functions accept a ManifestRegistry instance and call list_all() and\
-    \ find_by_intent()"
-autobuild_state:
-  current_turn: 1
-  max_turns: 30
-  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-BEA5
-  base_branch: main
-  started_at: '2026-04-08T23:34:02.971832'
-  last_updated: '2026-04-08T23:39:43.698386'
-  turns:
-  - turn: 1
-    decision: approve
-    feedback: null
-    timestamp: '2026-04-08T23:34:02.971832'
-    player_summary: Implementation via task-work delegation
-    player_success: true
-    coach_success: true
+  - task: TASK-FR-003
+    consumes: ManifestRegistry
+    framework: "ABC from nats_core.manifest"
+    driver: "abc.ABC"
+    format_note: "Import as: from nats_core.manifest import ManifestRegistry — routing functions accept a ManifestRegistry instance and call list_all() and find_by_intent()"
 completed: '2026-04-11T00:00:00+00:00'
 completed_location: tasks/completed/fleet-registration/
 ---
