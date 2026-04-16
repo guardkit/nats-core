@@ -3469,4 +3469,227 @@ Next steps:
 # Or manual, start with Wave 1
 /task-work TASK-FR-001
 
+
+Phase 2-4: Review Analysis, Synthesis, and Report
+
+
+=========================================================================
+REVIEW REPORT: TASK-7448
+Review forge-v2-alignment tasks for correctness and regression safety
+=========================================================================
+
+Mode:     Architectural
+Depth:    Standard
+Score:    78/100
+Findings: 9
+Recommendations: 7
+Verdict:  PROCEED WITH MODIFICATIONS
+=========================================================================
+Executive Summary
+The two implementation tasks (TASK-NCFA-001 and TASK-NCFA-002) are fundamentally sound — the payloads, topics, and deprecation strategy are the correct approach for Forge v2.2 alignment. However, the review identified 3 issues that must be addressed before implementation and 4 issues that should be addressed. None are blocking enough to warrant a "revise significantly" or "block" decision.
+
+Section 1: Payload Design Correctness — Score: 7/10
+Finding 1 (MEDIUM): correlation_id design divergence — intentional but underdocumented
+MessageEnvelope already has correlation_id: str | None as an optional field (envelope.py:150-152). The new payloads add correlation_id: str as a required field on each payload model.
+
+This is intentional — the payload-level correlation_id threads build lifecycle events together (domain concern), while the envelope-level one links request-response pairs (infrastructure concern). This is the correct design, but the tasks should document this dual-level correlation to avoid future confusion.
+
+Risk: Low. Implementer may ask "why is this duplicated?" — answer should be in the code comments.
+
+Finding 2 (HIGH): ConfigDict(extra='allow') inconsistency across new payloads
+All 8 existing pipeline payloads use ConfigDict(extra="ignore") per ADR-002 (_pipeline.py:29). TASK-NCFA-001 specifies extra='allow' for BuildQueuedPayload only (from Appendix C), but the four sketch payloads in IMPLEMENTATION-GUIDE.md don't specify a ConfigDict at all.
+
+This creates an inconsistency: BuildQueuedPayload is forward-compatible with unknown fields while BuildPausedPayload, BuildResumedPayload, StageCompletePayload, and StageGatedPayload silently drop unknown fields. If a future publisher adds fields to any of these, consumers running current code will lose that data.
+
+Recommendation: Make a conscious decision — either all five new payloads use extra='allow' (if forward-compat is the v2.2 strategy) or all use extra='ignore' (if consistency with ADR-002 is paramount). Update both TASK-NCFA-001 and IMPLEMENTATION-GUIDE.md accordingly.
+
+Finding 3 (LOW): Sketch payload style inconsistencies
+The IMPLEMENTATION-GUIDE.md sketches use:
+
+Optional[float] instead of float | None (the codebase convention per Python 3.10+)
+datetime fields (paused_at, resumed_at, etc.) — new to this module, requires from datetime import datetime import
+No Field(description=...) annotations (required by CLAUDE.md conventions)
+No explicit ConfigDict (should be specified)
+These are style issues that will be caught during implementation but are worth noting for the implementer.
+
+Finding 4 (LOW): TriggerSource / OriginatingAdapter placement
+These Literal types are pipeline-specific. Keeping them in _pipeline.py is correct. No action needed.
+
+Section 2: Topic Naming and Registry — Score: 9/10
+Finding 5 (PASS): Topic naming patterns are correct
+All six new topics follow the established {domain}.{event-name}.{parameter} pattern perfectly:
+
+pipeline.build-queued.{feature_id} — matches pipeline.build-started.{feature_id}
+pipeline.stage-complete.{feature_id} — new "stage" segment, correctly distinguished from "build"
+agents.command.broadcast — static topic, no placeholder
+Finding 6 (INFO): Wildcard ALL_BUILDS won't catch stage events
+Topics.Pipeline.ALL_BUILDS = "pipeline.build-*.>" (topics.py:86) matches build-queued, build-paused, build-resumed but not stage-complete or stage-gated. This is correct behavior — stages are not builds. The catch-all Topics.Pipeline.ALL = "pipeline.>" (topics.py:85) covers everything.
+
+No action needed, but TASK-NCFA-001 could add a ALL_STAGES = "pipeline.stage-*.>" convenience constant if stage-level subscriptions are anticipated.
+
+Finding 7 (PASS): agents.command.broadcast — no conflict
+agents.command.> subscribers will receive broadcast messages. This is the intended behavior. Targeted subscribers using agents.command.{specific_agent_id} won't receive broadcasts. No conflict.
+
+Section 3: Deprecation Strategy — Score: 6/10
+Finding 8 (HIGH): Deprecation warning mechanism must be __init__, NOT module-level import
+The IMPLEMENTATION-GUIDE.md suggests warnings.warn(...) in __init_subclass__ or on module import. Both are wrong:
+
+__init_subclass__ fires when a class inherits from FeaturePlannedPayload, not when it's instantiated. Nobody subclasses it.
+Module-level import would fire every time nats_core is imported, because envelope.py:36 imports FeaturePlannedPayload at the top level. This would produce a deprecation warning on every single from nats_core import ... call.
+Correct approach: Override __init__ or use Pydantic's model_post_init to emit the warning only on instantiation:
+
+
+def model_post_init(self, __context: Any) -> None:
+    warnings.warn(
+        "FeaturePlannedPayload is deprecated; use BuildQueuedPayload",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+Recommendation: Update IMPLEMENTATION-GUIDE.md and TASK-NCFA-001 to specify model_post_init as the deprecation mechanism.
+
+Finding 9 (MEDIUM): Existing tests will need pytest.warns wrappers
+After adding the deprecation warning, these test files will emit DeprecationWarning on every FeaturePlannedPayload instantiation:
+
+File	Approximate instantiations
+test_pipeline_payloads.py	~5 (TestFeaturePlannedPayload class)
+test_event_type_schemas.py	~6 (via _make_feature_planned factory)
+test_event_payloads_nc03.py	~3
+The project doesn't configure filterwarnings in pyproject.toml, so these won't cause test failures today. But they'll produce noisy output, and if -W error is ever added, they'll break.
+
+Recommendation: TASK-NCFA-001 scope should explicitly include wrapping existing FeaturePlannedPayload test instantiations with pytest.warns(DeprecationWarning) or adding a filterwarnings marker to those test classes.
+
+Section 4: Regression Risk Assessment — Score: 7/10
+Finding 10 (HIGH): Scope gap — EventType enum and _EVENT_TYPE_REGISTRY updates missing from task
+TASK-NCFA-001's out-of-scope section states: "Any MessageEnvelope or NATSClient changes — only adding new payload classes and topic constants."
+
+However, the new payloads require additions to:
+
+EventType enum in envelope.py:42-76 — five new members
+_EVENT_TYPE_REGISTRY in envelope.py:80-104 — five new entries
+Without these, the payloads can't be dispatched via payload_class_for_event_type(), which breaks the entire envelope → payload routing pipeline.
+
+Recommendation: Add an explicit scope item to TASK-NCFA-001:
+
+"### 5. Update EventType and payload registry — Add BUILD_QUEUED, BUILD_PAUSED, BUILD_RESUMED, STAGE_COMPLETE, STAGE_GATED to EventType enum and _EVENT_TYPE_REGISTRY in envelope.py"
+
+And update the out-of-scope note to: "Any MessageEnvelope schema changes or NATSClient changes" (distinguishing schema changes from registry additions).
+
+Finding 11 (PASS): No circular import risk
+Import chain is one-directional: __init__ → events/__init__ → events/_pipeline. Adding exports is safe.
+
+Finding 12 (MEDIUM): Test noise from deprecation (see Finding 9)
+Existing tests that instantiate FeaturePlannedPayload will emit warnings. Not a failure risk, but should be addressed in scope.
+
+Finding 13 (PASS): Test discovery will work
+testpaths = ["tests"] discovers recursively. The new tests/integration/ directory will work with @pytest.mark.integration exclusion.
+
+Section 5: Integration Test Feasibility — Score: 8/10
+Finding 14 (MEDIUM): Existing "integration" tests use mocks, not live NATS
+The existing test_client_integration.py uses AsyncMock to simulate nats-py — it doesn't connect to a live server. TASK-NCFA-002 proposes actual live NATS tests against GB10.
+
+The task says "Use the existing integration test fixtures (nats_client, jetstream_context)" but these fixtures don't exist in the current conftest. The task will need to create new fixtures for live NATS connectivity.
+
+Recommendation: Update TASK-NCFA-002 to note that live NATS fixtures need to be created from scratch (a conftest.py in tests/integration/ with nats_client and jetstream_context fixtures). This adds scope but is necessary.
+
+Finding 15 (PASS): AckWait redelivery test is feasible
+The test requires a ~6s wait (5s AckWait + 1s buffer). This is reasonable for integration tests and JetStream pull consumers support this pattern.
+
+Finding 16 (PASS): Wildcard subscription test is correctly scoped
+pipeline.build-*.> will catch build events but not stage events. The test description correctly says "all build events" — this is accurate.
+
+Section 6: Alignment with Anchor v2.2 — Score: 9/10
+Finding 17 (PASS): Scope coverage appears complete
+Five payloads, six topics, one deprecation — matches the README's description of corrections 26-30. (Cannot verify against the alignment review itself as it's in the forge repo.)
+
+Finding 18 (PASS): Out-of-scope items are correctly deferred
+FeatureReadyForBuildPayload — already exists in code, correctly left alone pending TASK-FVD3
+Singular topic convention — already correctly implemented, no action needed
+Recommendations Summary
+#	Priority	Finding	Recommendation
+1	MUST	EventType/registry gap (F10)	Add EventType enum + _EVENT_TYPE_REGISTRY updates to TASK-NCFA-001 scope
+2	MUST	Deprecation mechanism (F8)	Specify model_post_init not __init_subclass__ or module-level
+3	MUST	extra='allow' inconsistency (F2)	Decide and document whether all 5 or only BuildQueued uses extra='allow'
+4	SHOULD	Test noise from deprecation (F9)	Add pytest.warns wrappers to existing tests in TASK-NCFA-001 scope
+5	SHOULD	Live NATS fixtures don't exist (F14)	Update TASK-NCFA-002 to include fixture creation
+6	COULD	correlation_id documentation (F1)	Add code comment explaining dual-level correlation
+7	COULD	ALL_STAGES wildcard (F6)	Add convenience constant for stage event subscriptions
+
+=========================================================================
+DECISION CHECKPOINT
+=========================================================================
+
+Review Results:
+  Architecture Score: 78/100
+  Findings: 9 (3 HIGH, 3 MEDIUM, 3 LOW/PASS)
+  Recommendations: 7 (3 MUST, 2 SHOULD, 2 COULD)
+
+Verdict: PROCEED WITH MODIFICATIONS
+
+The tasks are architecturally sound and represent the correct
+approach for Forge v2.2 alignment. Three modifications are required
+before implementation begins:
+
+  1. Add EventType enum + registry updates to TASK-NCFA-001 scope
+  2. Fix deprecation mechanism (use model_post_init)
+  3. Decide on extra='allow' strategy for all five payloads
+
+Decision Options:
+  [A]ccept  — Approve findings, archive review
+  [R]evise  — Request deeper analysis on specific areas
+  [I]mplement — Apply modifications to task files, then proceed
+  [C]ancel  — Discard review
+
+=========================================================================
+Your choice?
+
+I
+
+All modifications applied. Here's a summary of what was changed:
+
+
+=========================================================================
+REVIEW COMPLETE: TASK-7448 — Modifications Applied
+=========================================================================
+
+Files modified:
+  TASK-NCFA-001-add-pipeline-payloads.md
+    + Added EventType enum + registry updates as explicit scope item
+    + Fixed deprecation mechanism → model_post_init
+    + All 5 payloads now use ConfigDict(extra="allow")
+    + Added existing test update scope for pytest.warns
+    + Clarified out-of-scope re: envelope registry vs schema
+
+  TASK-NCFA-002-integration-tests-new-payloads.md
+    + Noted live NATS fixtures must be created from scratch
+    + Clarified existing "integration" tests use AsyncMock
+
+  IMPLEMENTATION-GUIDE.md
+    + Added forward-compat decision note
+    + Updated sketches: model_config, Field(description=...), float | None
+    + Fixed deprecation mechanism to model_post_init
+
+  TASK-7448-review-forge-v2-alignment-tasks.md
+    + Status: backlog → review_complete
+    + Added full review findings and test execution log
+
+=========================================================================
+Next steps:
+  1. /task-work TASK-NCFA-001  (Wave 1 — payloads, topics, deprecation)
+  2. /task-work TASK-NCFA-002  (Wave 2 — integration tests, depends on 001)
+=========================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 GUARDKIT_LOG_LEVEL=DEBUG guardkit autobuild feature FEAT-BEA5 --verbose --max-turns 30

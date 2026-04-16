@@ -76,12 +76,18 @@ class Topics:
     class Pipeline(metaclass=_ImmutableNamespaceMeta):
         """Pipeline domain topics."""
 
+        # DEPRECATED: use BUILD_QUEUED
         FEATURE_PLANNED: str = "pipeline.feature-planned.{feature_id}"
         FEATURE_READY_FOR_BUILD: str = "pipeline.feature-ready-for-build.{feature_id}"
+        BUILD_QUEUED: str = "pipeline.build-queued.{feature_id}"
         BUILD_STARTED: str = "pipeline.build-started.{feature_id}"
         BUILD_PROGRESS: str = "pipeline.build-progress.{feature_id}"
+        BUILD_PAUSED: str = "pipeline.build-paused.{feature_id}"
+        BUILD_RESUMED: str = "pipeline.build-resumed.{feature_id}"
         BUILD_COMPLETE: str = "pipeline.build-complete.{feature_id}"
         BUILD_FAILED: str = "pipeline.build-failed.{feature_id}"
+        STAGE_COMPLETE: str = "pipeline.stage-complete.{feature_id}"
+        STAGE_GATED: str = "pipeline.stage-gated.{feature_id}"
         ALL: str = "pipeline.>"
         ALL_BUILDS: str = "pipeline.build-*.>"
 
@@ -93,6 +99,7 @@ class Topics:
         APPROVAL_REQUEST: str = "agents.approval.{agent_id}.{task_id}"
         APPROVAL_RESPONSE: str = "agents.approval.{agent_id}.{task_id}.response"
         COMMAND: str = "agents.command.{agent_id}"
+        COMMAND_BROADCAST: str = "agents.command.broadcast"
         RESULT: str = "agents.result.{agent_id}"
         TOOLS: str = "agents.{agent_id}.tools.{tool_name}"
         TOOLS_ALL: str = "agents.{agent_id}.tools.>"

@@ -51,6 +51,8 @@ def _make_wave_summary(**overrides: Any) -> WaveSummary:
 
 
 def _make_feature_planned(**overrides: Any) -> FeaturePlannedPayload:
+    import warnings
+
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-001",
         "wave_count": 1,
@@ -58,7 +60,9 @@ def _make_feature_planned(**overrides: Any) -> FeaturePlannedPayload:
         "waves": [_make_wave_summary()],
     }
     defaults.update(overrides)
-    return FeaturePlannedPayload(**defaults)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        return FeaturePlannedPayload(**defaults)
 
 
 def _make_build_progress(**overrides: Any) -> BuildProgressPayload:
@@ -166,18 +170,23 @@ class TestSmoke:
     """Key example scenarios — core happy-path tests."""
 
     @pytest.mark.smoke
-    def test_event_type_enum_contains_all_19_members(self) -> None:
-        """EventType enum contains all 19 documented event type strings.
+    def test_event_type_enum_contains_all_24_members(self) -> None:
+        """EventType enum contains all 24 documented event type strings.
 
-        Pipeline(6) + Agent(6) + Jarvis(4) + Fleet(3) = 19.
+        Pipeline(11) + Agent(6) + Jarvis(4) + Fleet(3) = 24.
         """
         expected = {
             "feature_planned",
             "feature_ready_for_build",
+            "build_queued",
             "build_started",
             "build_progress",
+            "build_paused",
+            "build_resumed",
             "build_complete",
             "build_failed",
+            "stage_complete",
+            "stage_gated",
             "status",
             "approval_request",
             "approval_response",
@@ -194,7 +203,7 @@ class TestSmoke:
         }
         actual = {member.value for member in EventType}
         assert actual == expected
-        assert len(EventType) == 19  # noqa: PLR2004
+        assert len(EventType) == 24  # noqa: PLR2004
 
     @pytest.mark.smoke
     def test_every_event_type_has_registered_payload_class(self) -> None:
@@ -702,10 +711,15 @@ class TestSeam:
         pipeline_event_types = [
             EventType.FEATURE_PLANNED,
             EventType.FEATURE_READY_FOR_BUILD,
+            EventType.BUILD_QUEUED,
             EventType.BUILD_STARTED,
             EventType.BUILD_PROGRESS,
+            EventType.BUILD_PAUSED,
+            EventType.BUILD_RESUMED,
             EventType.BUILD_COMPLETE,
             EventType.BUILD_FAILED,
+            EventType.STAGE_COMPLETE,
+            EventType.STAGE_GATED,
         ]
         for et in pipeline_event_types:
             cls = payload_class_for_event_type(et)
@@ -807,7 +821,7 @@ class TestDispatcher:
         assert hasattr(envelope, "_EVENT_TYPE_REGISTRY")
         registry = envelope._EVENT_TYPE_REGISTRY
         assert isinstance(registry, dict)
-        assert len(registry) == 19  # noqa: PLR2004
+        assert len(registry) == 24  # noqa: PLR2004
         for key, value in registry.items():
             assert isinstance(key, EventType)
             assert issubclass(value, BaseModel)

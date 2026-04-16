@@ -319,8 +319,8 @@ class TestEventTypeSync:
     @pytest.mark.smoke
     def test_agent_topics_correspond_to_event_types(self) -> None:
         """Every non-wildcard, non-tool Agent topic template has a matching EventType."""
-        # TOOLS is an RPC topic, not an event — exclude it
-        excluded = {"TOOLS"}
+        # TOOLS is an RPC topic, COMMAND_BROADCAST is a broadcast mechanism — not events
+        excluded = {"TOOLS", "COMMAND_BROADCAST"}
         agent_names = {
             k
             for k, v in vars(Topics.Agents).items()
@@ -429,12 +429,13 @@ class TestAllTopics:
     def test_all_topics_count(self) -> None:
         # Total non-wildcard constants:
         # Pipeline: 6 (excl ALL, ALL_BUILDS)
-        # Agents: 6 (excl STATUS_ALL, TOOLS_ALL)
+        # Pipeline: 11 (excl ALL, ALL_BUILDS)
+        # Agents: 7 (excl STATUS_ALL, TOOLS_ALL)
         # Fleet: 3 (excl HEARTBEAT_ALL, ALL)
         # Jarvis: 4 (none are wildcards)
         # System: 1
-        # Total: 20
-        assert len(Topics.ALL_TOPICS) == 20
+        # Total: 26
+        assert len(Topics.ALL_TOPICS) == 26
 
 
 # ---------------------------------------------------------------------------

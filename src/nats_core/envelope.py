@@ -31,10 +31,15 @@ from nats_core.events._jarvis import (
 from nats_core.events._pipeline import (
     BuildCompletePayload,
     BuildFailedPayload,
+    BuildPausedPayload,
     BuildProgressPayload,
+    BuildQueuedPayload,
+    BuildResumedPayload,
     BuildStartedPayload,
     FeaturePlannedPayload,
     FeatureReadyForBuildPayload,
+    StageCompletePayload,
+    StageGatedPayload,
 )
 from nats_core.manifest import AgentManifest
 
@@ -47,13 +52,18 @@ class EventType(str, Enum):
     as a NATS subject segment.
     """
 
-    # Pipeline domain (6)
+    # Pipeline domain (11)
     FEATURE_PLANNED = "feature_planned"
     FEATURE_READY_FOR_BUILD = "feature_ready_for_build"
+    BUILD_QUEUED = "build_queued"
     BUILD_STARTED = "build_started"
     BUILD_PROGRESS = "build_progress"
+    BUILD_PAUSED = "build_paused"
+    BUILD_RESUMED = "build_resumed"
     BUILD_COMPLETE = "build_complete"
     BUILD_FAILED = "build_failed"
+    STAGE_COMPLETE = "stage_complete"
+    STAGE_GATED = "stage_gated"
 
     # Agent domain (6)
     STATUS = "status"
@@ -81,10 +91,15 @@ _EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
     # Pipeline domain
     EventType.FEATURE_PLANNED: FeaturePlannedPayload,
     EventType.FEATURE_READY_FOR_BUILD: FeatureReadyForBuildPayload,
+    EventType.BUILD_QUEUED: BuildQueuedPayload,
     EventType.BUILD_STARTED: BuildStartedPayload,
     EventType.BUILD_PROGRESS: BuildProgressPayload,
+    EventType.BUILD_PAUSED: BuildPausedPayload,
+    EventType.BUILD_RESUMED: BuildResumedPayload,
     EventType.BUILD_COMPLETE: BuildCompletePayload,
     EventType.BUILD_FAILED: BuildFailedPayload,
+    EventType.STAGE_COMPLETE: StageCompletePayload,
+    EventType.STAGE_GATED: StageGatedPayload,
     # Agent domain
     EventType.STATUS: AgentStatusPayload,
     EventType.APPROVAL_REQUEST: ApprovalRequestPayload,

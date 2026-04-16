@@ -70,6 +70,8 @@ def _make_wave() -> WaveSummary:
 
 def _make_payload(cls: type[BaseModel]) -> BaseModel:
     """Create a valid instance of any of the 13 payload classes."""
+    import warnings
+
     factories: dict[type[BaseModel], dict[str, Any]] = {
         FeaturePlannedPayload: {
             "feature_id": "FEAT-001",
@@ -151,7 +153,9 @@ def _make_payload(cls: type[BaseModel]) -> BaseModel:
             "agent_id": "test-agent",
         },
     }
-    return cls(**factories[cls])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        return cls(**factories[cls])
 
 
 # ===================================================================

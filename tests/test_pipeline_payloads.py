@@ -92,18 +92,21 @@ class TestFeaturePlannedPayload:
 
     def test_valid_feature_planned(self) -> None:
         waves = [WaveSummary(wave_number=1, task_count=2, task_ids=["T1", "T2"])]
-        fp = FeaturePlannedPayload(
-            feature_id="FEAT-001",
-            wave_count=1,
-            task_count=2,
-            waves=waves,
-        )
+        with pytest.warns(DeprecationWarning, match="deprecated"):
+            fp = FeaturePlannedPayload(
+                feature_id="FEAT-001",
+                wave_count=1,
+                task_count=2,
+                waves=waves,
+            )
         assert fp.feature_id == "FEAT-001"
         assert fp.wave_count == 1
         assert fp.task_count == 2
         assert len(fp.waves) == 1
 
     def test_wave_count_ge_1(self) -> None:
+        # ValidationError fires during field validation, before model_post_init,
+        # so no DeprecationWarning is emitted.
         with pytest.raises(ValidationError):
             FeaturePlannedPayload(
                 feature_id="FEAT-001",
@@ -134,13 +137,14 @@ class TestFeaturePlannedPayload:
 
     def test_extra_fields_ignored(self) -> None:
         waves = [WaveSummary(wave_number=1, task_count=1, task_ids=["T1"])]
-        fp = FeaturePlannedPayload(
-            feature_id="FEAT-001",
-            wave_count=1,
-            task_count=1,
-            waves=waves,
-            unknown="x",
-        )
+        with pytest.warns(DeprecationWarning, match="deprecated"):
+            fp = FeaturePlannedPayload(
+                feature_id="FEAT-001",
+                wave_count=1,
+                task_count=1,
+                waves=waves,
+                unknown="x",
+            )
         assert not hasattr(fp, "unknown")
 
 
