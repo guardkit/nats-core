@@ -3678,9 +3678,130 @@ Next steps:
   2. /task-work TASK-NCFA-002  (Wave 2 — integration tests, depends on 001)
 =========================================================================
 
+ Task Work Complete - TASK-NCFA-001
 
+  Stack: Python (src layout library)
+  Duration: ~5 minutes
 
+  Changes Made
 
+  1. src/nats_core/events/_pipeline.py — 5 new payload classes + deprecation
+  - BuildQueuedPayload — verbatim from Appendix C with all validators (feature_id regex, repo
+  org/name regex, adapter-source cross-validation), ConfigDict(extra="allow")
+  - BuildPausedPayload — gate_mode, coach_score, threshold fields
+  - BuildResumedPayload — decision (approve/reject), resumed_by fields
+  - StageCompletePayload — status literal (passed/failed/gated/skipped)
+  - StageGatedPayload — coach_score + threshold required
+  - FeaturePlannedPayload — added model_post_init deprecation warning + updated docstring
+
+  2. src/nats_core/topics.py — 6 new constants
+  - Topics.Pipeline: BUILD_QUEUED, BUILD_PAUSED, BUILD_RESUMED, STAGE_COMPLETE, STAGE_GATED
+  - Topics.Agents: COMMAND_BROADCAST
+  - FEATURE_PLANNED marked deprecated with comment
+
+  3. src/nats_core/envelope.py — 5 new EventType members + registry entries
+  - Pipeline domain: 6 → 11 members
+
+  4. src/nats_core/events/__init__.py — 5 new exports in imports and __all__
+
+  5. Tests updated:
+  - tests/test_pipeline_payloads.py — pytest.warns(DeprecationWarning) on successful instantiations
+  - tests/test_event_type_schemas.py — factory suppresses warnings, counts updated 19→24
+  - tests/test_event_payloads_nc03.py — factory suppresses warnings
+  - tests/test_envelope.py — count 19→24
+  - tests/test_topics.py — count 20→26, COMMAND_BROADCAST excluded from EventType sync check
+
+  6. New test file: tests/events/test_pipeline.py — 22 tests covering all 5 new payloads +
+  deprecation
+
+  Quality Gates
+
+  ┌────────────────────────────────┬───────────────────────┐
+  │              Gate              │        Result         │
+  ├────────────────────────────────┼───────────────────────┤
+  │ Compilation                    │ PASSED                │
+  ├────────────────────────────────┼───────────────────────┤
+  │ All tests                      │ 779 passed (0 failed) │
+  ├────────────────────────────────┼───────────────────────┤
+  │ Coverage                       │ 98% (target: >=98%)   │
+  ├────────────────────────────────┼───────────────────────┤
+  │ _pipeline.py coverage          │ 100%                  │
+  ├────────────────────────────────┼───────────────────────┤
+  │ Ruff lint                      │ PASSED                │
+  ├────────────────────────────────┼───────────────────────┤
+  │ mypy                           │ PASSED                │
+  ├────────────────────────────────┼───────────────────────┤
+  │ agents.commands. (plural) grep │ 0 hits                │
+  └────────────────────────────────┴───────────────────────┘
+
+  State Transition
+
+  - From: BACKLOG → IN_PROGRESS → IN_REVIEW
+  - Reason: All quality gates passed, all acceptance criteria met
+
+  
+
+Task Completion Summary
+
+  TASK-NCFA-002 successfully completed
+
+  State Transition: BACKLOG -> IN_PROGRESS -> IN_REVIEW -> COMPLETED
+  Completed: 2026-04-17
+  Location: tasks/completed/forge-v2-alignment/TASK-NCFA-002-integration-tests-new-payloads.md
+
+  Acceptance Criteria: 4/4 passed
+
+  ┌─────┬────────────────────────────────────────────────────────────────┬───────────────────────────────────┐
+  │  #  │                           Criterion                            │              Status               │
+  ├─────┼────────────────────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ 1   │ tests/integration/test_pipeline_payloads_live.py with 10 tests │ PASSED                            │
+  ├─────┼────────────────────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ 2   │ All tests pass against live NATS on GB10                       │ PASSED (10/10)                    │
+  ├─────┼────────────────────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ 3   │ AckWait redelivery test proves JetStream crash-recovery        │ PASSED                            │
+  ├─────┼────────────────────────────────────────────────────────────────┼───────────────────────────────────┤
+  │ 4   │ Coverage >=98%                                                 │ PASSED (98%, _pipeline.py = 100%) │
+  └─────┴────────────────────────────────────────────────────────────────┴───────────────────────────────────┘
+
+  Files Created
+
+  ┌──────────────────────────────────────────────────┬────────────────────────────────────┐
+  │                       File                       │              Purpose               │
+  ├──────────────────────────────────────────────────┼────────────────────────────────────┤
+  │ tests/integration/__init__.py                    │ Package marker                     │
+  ├──────────────────────────────────────────────────┼────────────────────────────────────┤
+  │ tests/integration/conftest.py                    │ Live NATS fixtures (module-scoped) │
+  ├──────────────────────────────────────────────────┼────────────────────────────────────┤
+  │ tests/integration/test_pipeline_payloads_live.py │ 10 integration tests               │
+  ├──────────────────────────────────────────────────┼────────────────────────────────────┤
+  │ .gitignore                                       │ Added .env.integration             │
+  └──────────────────────────────────────────────────┴────────────────────────────────────┘
+
+  Integration Tests
+
+  ┌────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │          Test          │                                         What it proves                                          │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 5 round-trip tests     │ Each new payload serialises through MessageEnvelope, persists in JetStream, deserialises with   │
+  │                        │ field equality                                                                                  │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ AckWait redelivery     │ Unacked message redelivered after 3s AckWait — same message_id verified                         │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Correlation ID         │ 5 events with same correlation_id arrive in order on pipeline.*.{feature_id}                    │
+  │ threading              │                                                                                                 │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Forward-compat         │ Extra session_context field preserved through wire (ConfigDict extra='allow')                   │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Schema rejection       │ Invalid feature_id="bogus" raises ValidationError on consumer side                              │
+  ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Wildcard subscription  │ pipeline.*.{feature_id} catches all 5 build event types                                         │
+  └────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Feature FEAT-NCFA: 100% Complete
+
+  Both tasks in the forge-v2-alignment feature are now complete:
+  - TASK-NCFA-001 (wave 1): Payloads, topics, EventType, deprecation
+  - TASK-NCFA-002 (wave 2): Integration tests against live NATS
 
 
 

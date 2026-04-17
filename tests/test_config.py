@@ -194,6 +194,23 @@ def test_dotenv_loading(tmp_path: Path) -> None:
     assert cfg.url == "nats://dotenv-server:4222"
 
 
+def test_dotenv_with_sibling_keys_is_tolerated(tmp_path: Path) -> None:
+    """Sibling (non-NATS_) keys in a shared .env file must not cause extra_forbidden."""
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        'NATS_URL="nats://shared-env:4222"\n'
+        'OPENAI_API_KEY="sk-openai"\n'
+        'GOOGLE_API_KEY="sk-google"\n'
+        'TAVILY_API_KEY="sk-tavily"\n'
+        'FALKORDB_HOST="whitestocks"\n'
+    )
+    cfg = NATSConfig(_env_file=env_file)  # type: ignore[call-arg]
+    assert cfg.url == "nats://shared-env:4222"
+    dumped = cfg.model_dump()
+    for sibling in ("openai_api_key", "google_api_key", "tavily_api_key", "falkordb_host"):
+        assert sibling not in dumped
+
+
 def test_password_masked_repr() -> None:
     """Scenario: Sensitive fields are masked in string representation."""
     cfg = _make(user="admin", password="s3cret")

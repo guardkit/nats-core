@@ -1,7 +1,8 @@
 ---
 id: TASK-NCFA-002
 title: Integration tests for new pipeline payloads against live NATS on GB10
-status: backlog
+status: completed
+completed: 2026-04-17
 task_type: implementation
 parent_review: forge/TASK-REV-A1F2
 feature_id: FEAT-NCFA
@@ -12,9 +13,9 @@ wave: 2
 implementation_mode: task-work
 dependencies: [TASK-NCFA-001]
 test_results:
-  status: pending
-  coverage: null
-  last_run: null
+  status: passed
+  coverage: 98
+  last_run: 2026-04-17
 ---
 
 # Task: Integration tests for new pipeline payloads against live NATS on GB10
@@ -73,10 +74,10 @@ In `tests/integration/test_pipeline_payloads_live.py` (new file), one test per n
 
 ## Acceptance criteria
 
-- [ ] New test file `tests/integration/test_pipeline_payloads_live.py` exists with all seven tests
-- [ ] `pytest -m integration tests/integration/test_pipeline_payloads_live.py` passes against a live NATS instance on GB10
-- [ ] `test_build_queued_unacked_redelivery` demonstrably proves JetStream's AckWait redelivery
-- [ ] Coverage for the new payloads is ≥98%
+- [x] New test file `tests/integration/test_pipeline_payloads_live.py` exists with 10 tests (7 spec + 3 extra)
+- [x] `pytest -m integration tests/integration/test_pipeline_payloads_live.py` passes against live NATS on GB10
+- [x] `test_build_queued_unacked_redelivery` proves JetStream AckWait redelivery (3s ack_wait, verified same message_id)
+- [x] Coverage for the new payloads is 98% (100% on `_pipeline.py`)
 
 ## Out of scope
 

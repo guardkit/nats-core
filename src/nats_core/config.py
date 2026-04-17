@@ -22,7 +22,11 @@ class NATSConfig(BaseSettings):
     and falls back to an optional ``.env`` file.
     """
 
-    model_config = SettingsConfigDict(env_prefix="NATS_", env_file=".env")
+    model_config = SettingsConfigDict(
+        env_prefix="NATS_",
+        env_file=".env",
+        extra="ignore",
+    )
 
     url: str = Field(
         default="nats://localhost:4222",
