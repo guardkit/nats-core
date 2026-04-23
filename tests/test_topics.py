@@ -428,14 +428,13 @@ class TestAllTopics:
 
     def test_all_topics_count(self) -> None:
         # Total non-wildcard constants:
-        # Pipeline: 6 (excl ALL, ALL_BUILDS)
-        # Pipeline: 11 (excl ALL, ALL_BUILDS)
+        # Pipeline: 12 (excl ALL, ALL_BUILDS — adds BUILD_CANCELLED per TASK-NCFA-003)
         # Agents: 7 (excl STATUS_ALL, TOOLS_ALL)
         # Fleet: 3 (excl HEARTBEAT_ALL, ALL)
         # Jarvis: 4 (none are wildcards)
         # System: 1
-        # Total: 26
-        assert len(Topics.ALL_TOPICS) == 26
+        # Total: 27
+        assert len(Topics.ALL_TOPICS) == 27
 
 
 # ---------------------------------------------------------------------------
@@ -656,3 +655,32 @@ class TestTaskNC02AcceptanceCriteria:
 
         source = inspect.getsource(topics_mod)
         assert "from __future__ import annotations" in source
+
+
+# ---------------------------------------------------------------------------
+# TASK-NCFA-003 — Forge-alignment topic additions
+# ---------------------------------------------------------------------------
+
+
+class TestTaskNCFA003Topics:
+    """Topic resolution tests for TASK-NCFA-003 additions."""
+
+    @pytest.mark.smoke
+    def test_topic_build_cancelled_resolves(self) -> None:
+        """AC: Topics.Pipeline.BUILD_CANCELLED resolves to
+        ``pipeline.build-cancelled.{feature_id}``.
+        """
+        result = Topics.resolve(
+            Topics.Pipeline.BUILD_CANCELLED, feature_id="FEAT-XXX"
+        )
+        assert result == "pipeline.build-cancelled.FEAT-XXX"
+
+    @pytest.mark.smoke
+    def test_topic_build_resumed_resolves(self) -> None:
+        """AC: Topics.Pipeline.BUILD_RESUMED resolves to
+        ``pipeline.build-resumed.{feature_id}`` (sibling to BUILD_CANCELLED).
+        """
+        result = Topics.resolve(
+            Topics.Pipeline.BUILD_RESUMED, feature_id="FEAT-XXX"
+        )
+        assert result == "pipeline.build-resumed.FEAT-XXX"

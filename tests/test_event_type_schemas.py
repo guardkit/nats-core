@@ -170,10 +170,11 @@ class TestSmoke:
     """Key example scenarios — core happy-path tests."""
 
     @pytest.mark.smoke
-    def test_event_type_enum_contains_all_24_members(self) -> None:
-        """EventType enum contains all 24 documented event type strings.
+    def test_event_type_enum_contains_all_25_members(self) -> None:
+        """EventType enum contains all 25 documented event type strings.
 
-        Pipeline(11) + Agent(6) + Jarvis(4) + Fleet(3) = 24.
+        Pipeline(12) + Agent(6) + Jarvis(4) + Fleet(3) = 25 after TASK-NCFA-003
+        added ``build_cancelled``.
         """
         expected = {
             "feature_planned",
@@ -183,6 +184,7 @@ class TestSmoke:
             "build_progress",
             "build_paused",
             "build_resumed",
+            "build_cancelled",
             "build_complete",
             "build_failed",
             "stage_complete",
@@ -203,7 +205,7 @@ class TestSmoke:
         }
         actual = {member.value for member in EventType}
         assert actual == expected
-        assert len(EventType) == 24  # noqa: PLR2004
+        assert len(EventType) == 25  # noqa: PLR2004
 
     @pytest.mark.smoke
     def test_every_event_type_has_registered_payload_class(self) -> None:
@@ -716,6 +718,7 @@ class TestSeam:
             EventType.BUILD_PROGRESS,
             EventType.BUILD_PAUSED,
             EventType.BUILD_RESUMED,
+            EventType.BUILD_CANCELLED,
             EventType.BUILD_COMPLETE,
             EventType.BUILD_FAILED,
             EventType.STAGE_COMPLETE,
@@ -813,6 +816,16 @@ class TestDispatcher:
         """ERROR event type maps to AgentStatusPayload (reused per spec)."""
         assert payload_class_for_event_type(EventType.ERROR) is AgentStatusPayload
 
+    @pytest.mark.smoke
+    def test_event_type_build_cancelled_registered(self) -> None:
+        """TASK-NCFA-003 AC: BUILD_CANCELLED resolves to BuildCancelledPayload."""
+        from nats_core.events import BuildCancelledPayload
+
+        assert (
+            payload_class_for_event_type(EventType.BUILD_CANCELLED)
+            is BuildCancelledPayload
+        )
+
     @pytest.mark.negative
     def test_dispatcher_registry_is_module_level_dict(self) -> None:
         """Registry is a module-level dict[EventType, type[BaseModel]] constant."""
@@ -821,7 +834,7 @@ class TestDispatcher:
         assert hasattr(envelope, "_EVENT_TYPE_REGISTRY")
         registry = envelope._EVENT_TYPE_REGISTRY
         assert isinstance(registry, dict)
-        assert len(registry) == 24  # noqa: PLR2004
+        assert len(registry) == 25  # noqa: PLR2004
         for key, value in registry.items():
             assert isinstance(key, EventType)
             assert issubclass(value, BaseModel)

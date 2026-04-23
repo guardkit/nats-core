@@ -1,13 +1,29 @@
-"""Tests for v2.2 pipeline event payloads (TASK-NCFA-001).
+"""Tests for v2.2 pipeline event payloads (TASK-NCFA-001 / TASK-NCFA-003).
 
-Validates the five new payload classes added for forge v2.2 alignment:
+Validates the pipeline payload classes for the forge-v2 alignment waves:
   - BuildQueuedPayload (with field validators)
-  - BuildPausedPayload
-  - BuildResumedPayload
-  - StageCompletePayload
+  - BuildPausedPayload (reconciled to Forge API contract — TASK-NCFA-003)
+  - BuildResumedPayload (reconciled to Forge API contract — TASK-NCFA-003)
+  - StageCompletePayload (reconciled to Forge API contract — TASK-NCFA-003)
   - StageGatedPayload
 
 Also verifies the FeaturePlannedPayload deprecation warning.
+
+The StageComplete / BuildPaused / BuildResumed payloads were reconciled in
+TASK-NCFA-003 to the canonical Forge ``/system-design`` API contract:
+  - timestamps are ``str`` (ISO 8601), not ``datetime``
+  - ``StageCompletePayload.status`` uses UPPERCASE literals
+  - ``BuildPausedPayload.gate_mode`` uses UPPERCASE literals and excludes
+    ``AUTO_APPROVE``
+  - ``BuildPausedPayload`` renamed ``stage`` → ``stage_label`` and
+    ``details`` → ``rationale``, added ``approval_subject``, dropped
+    ``threshold``
+  - ``BuildResumedPayload`` renamed ``stage`` → ``stage_label`` and
+    ``resumed_by`` → ``responder``, expanded the ``decision`` literal
+
+Forge-contract-specific coverage (e.g. the ``AUTO_APPROVE`` rejection, the
+``BuildCancelledPayload`` happy/sad paths, the extra-fields forward-compat
+smoke) lives in ``tests/events/test_pipeline_forge_reconciliation.py``.
 """
 
 from __future__ import annotations
@@ -28,11 +44,14 @@ from nats_core.events import (
     WaveSummary,
 )
 
+pytestmark = pytest.mark.unit
+
 # ---------------------------------------------------------------------------
 # Factory helpers
 # ---------------------------------------------------------------------------
 
 _NOW = datetime(2026, 4, 15, 16, 30, 12, tzinfo=timezone.utc)
+_NOW_ISO = _NOW.isoformat()
 
 
 def _make_build_queued(**overrides: Any) -> BuildQueuedPayload:
@@ -55,13 +74,13 @@ def _make_build_paused(**overrides: Any) -> BuildPausedPayload:
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-001",
         "build_id": "build-FEAT-001-20260415163012",
-        "stage": "autobuild",
+        "stage_label": "autobuild",
+        "gate_mode": "FLAG_FOR_REVIEW",
         "coach_score": 0.65,
-        "threshold": 0.75,
-        "gate_mode": "flag_for_review",
-        "details": "Coach score below threshold",
+        "rationale": "Coach score below threshold",
+        "approval_subject": "agents.approval.forge.FEAT-001",
+        "paused_at": _NOW_ISO,
         "correlation_id": "bld-001",
-        "paused_at": _NOW,
     }
     defaults.update(overrides)
     return BuildPausedPayload(**defaults)
@@ -71,11 +90,11 @@ def _make_build_resumed(**overrides: Any) -> BuildResumedPayload:
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-001",
         "build_id": "build-FEAT-001-20260415163012",
-        "stage": "autobuild",
-        "resumed_by": "rich",
+        "stage_label": "autobuild",
         "decision": "approve",
+        "responder": "rich",
+        "resumed_at": _NOW_ISO,
         "correlation_id": "bld-001",
-        "resumed_at": _NOW,
     }
     defaults.update(overrides)
     return BuildResumedPayload(**defaults)
@@ -85,11 +104,15 @@ def _make_stage_complete(**overrides: Any) -> StageCompletePayload:
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-001",
         "build_id": "build-FEAT-001-20260415163012",
-        "stage": "autobuild",
-        "status": "passed",
+        "stage_label": "autobuild",
+        "target_kind": "subagent",
+        "target_identifier": "autobuild-player-coach",
+        "status": "PASSED",
+        "gate_mode": None,
+        "coach_score": None,
         "duration_secs": 42.5,
+        "completed_at": _NOW_ISO,
         "correlation_id": "bld-001",
-        "completed_at": _NOW,
     }
     defaults.update(overrides)
     return StageCompletePayload(**defaults)
@@ -206,19 +229,19 @@ class TestBuildQueuedPayload:
 
 
 # ---------------------------------------------------------------------------
-# BuildPausedPayload
+# BuildPausedPayload (reconciled to Forge contract)
 # ---------------------------------------------------------------------------
 
 
 class TestBuildPausedPayload:
-    """BuildPausedPayload validation."""
+    """BuildPausedPayload validation — canonical Forge field set."""
 
     def test_build_paused_payload_requires_gate_mode(self) -> None:
-        """gate_mode must be 'flag_for_review' or 'hard_stop'."""
+        """gate_mode must be one of FLAG_FOR_REVIEW / HARD_STOP / MANDATORY_HUMAN_APPROVAL."""
         with pytest.raises(ValidationError):
             _make_build_paused(gate_mode="invalid")
 
-        for mode in ("flag_for_review", "hard_stop"):
+        for mode in ("FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"):
             payload = _make_build_paused(gate_mode=mode)
             assert payload.gate_mode == mode
 
@@ -232,24 +255,26 @@ class TestBuildPausedPayload:
         payload = _make_build_paused()
         dumped = payload.model_dump(mode="json")
         restored = BuildPausedPayload.model_validate(dumped)
-        assert restored.stage == payload.stage
+        assert restored.stage_label == payload.stage_label
         assert restored.gate_mode == payload.gate_mode
+        assert restored.rationale == payload.rationale
+        assert restored.approval_subject == payload.approval_subject
 
 
 # ---------------------------------------------------------------------------
-# BuildResumedPayload
+# BuildResumedPayload (reconciled to Forge contract)
 # ---------------------------------------------------------------------------
 
 
 class TestBuildResumedPayload:
-    """BuildResumedPayload validation."""
+    """BuildResumedPayload validation — canonical Forge field set."""
 
     def test_build_resumed_payload_requires_decision(self) -> None:
-        """decision must be 'approve' or 'reject'."""
+        """decision must be one of approve / reject / defer / override."""
         with pytest.raises(ValidationError):
             _make_build_resumed(decision="maybe")
 
-        for decision in ("approve", "reject"):
+        for decision in ("approve", "reject", "defer", "override"):
             payload = _make_build_resumed(decision=decision)
             assert payload.decision == decision
 
@@ -264,20 +289,21 @@ class TestBuildResumedPayload:
         dumped = payload.model_dump(mode="json")
         restored = BuildResumedPayload.model_validate(dumped)
         assert restored.decision == payload.decision
-        assert restored.resumed_by == payload.resumed_by
+        assert restored.responder == payload.responder
+        assert restored.stage_label == payload.stage_label
 
 
 # ---------------------------------------------------------------------------
-# StageCompletePayload
+# StageCompletePayload (reconciled to Forge contract)
 # ---------------------------------------------------------------------------
 
 
 class TestStageCompletePayload:
-    """StageCompletePayload validation."""
+    """StageCompletePayload validation — canonical Forge field set."""
 
     def test_stage_complete_payload_status_literal(self) -> None:
-        """status must be one of: passed, failed, gated, skipped."""
-        for status in ("passed", "failed", "gated", "skipped"):
+        """status must be one of PASSED / FAILED / GATED / SKIPPED."""
+        for status in ("PASSED", "FAILED", "GATED", "SKIPPED"):
             payload = _make_stage_complete(status=status)
             assert payload.status == status
 
@@ -285,7 +311,7 @@ class TestStageCompletePayload:
             _make_stage_complete(status="unknown")
 
     def test_stage_complete_payload_coach_score_optional(self) -> None:
-        """coach_score defaults to None."""
+        """coach_score is optional (accepts None or a float)."""
         payload = _make_stage_complete()
         assert payload.coach_score is None
 
@@ -299,10 +325,13 @@ class TestStageCompletePayload:
 
     def test_stage_complete_payload_json_round_trip(self) -> None:
         """JSON round-trip fidelity."""
-        payload = _make_stage_complete(coach_score=0.9)
+        payload = _make_stage_complete(coach_score=0.9, gate_mode="AUTO_APPROVE")
         dumped = payload.model_dump(mode="json")
         restored = StageCompletePayload.model_validate(dumped)
         assert restored.status == payload.status
+        assert restored.target_kind == payload.target_kind
+        assert restored.target_identifier == payload.target_identifier
+        assert restored.gate_mode == payload.gate_mode
         assert restored.coach_score == pytest.approx(0.9)
 
 

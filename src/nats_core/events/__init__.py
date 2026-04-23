@@ -17,6 +17,7 @@ from nats_core.events._jarvis import (
     NotificationPayload,
 )
 from nats_core.events._pipeline import (
+    BuildCancelledPayload,
     BuildCompletePayload,
     BuildFailedPayload,
     BuildPausedPayload,
@@ -39,6 +40,7 @@ __all__ = [
     "AgentStatusPayload",
     "ApprovalRequestPayload",
     "ApprovalResponsePayload",
+    "BuildCancelledPayload",
     "BuildCompletePayload",
     "BuildFailedPayload",
     "BuildPausedPayload",

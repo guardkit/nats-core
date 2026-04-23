@@ -409,64 +409,73 @@ class BuildQueuedPayload(BaseModel):
 class BuildPausedPayload(BaseModel):
     """Payload emitted when a build is paused at a quality gate.
 
+    The ``gate_mode`` literal is a strict subset of the full gate-mode set used
+    elsewhere — ``AUTO_APPROVE`` is excluded because a build only pauses when
+    a gate requires human action.
+
     Attributes:
         feature_id: Unique identifier for the feature.
         build_id: Build identifier.
-        stage: Pipeline stage that triggered the pause.
-        coach_score: Coach quality score that triggered the gate.
-        threshold: Minimum score threshold for this gate.
-        gate_mode: Gate enforcement mode.
-        details: Human-readable explanation of why the build was paused.
+        stage_label: Pipeline stage that triggered the pause.
+        gate_mode: Gate enforcement mode (excludes ``AUTO_APPROVE``).
+        coach_score: Coach quality score that triggered the gate, or None.
+        rationale: Human-readable explanation of why the build was paused.
+        approval_subject: NATS subject where approval responses are expected.
+        paused_at: ISO 8601 timestamp when the build was paused.
         correlation_id: Correlates this event with other build lifecycle events.
-        paused_at: UTC timestamp when the build was paused.
     """
 
     model_config = ConfigDict(extra="allow")
 
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
-    stage: str = Field(description="Pipeline stage that triggered the pause")
-    coach_score: float = Field(description="Coach quality score that triggered the gate")
-    threshold: float = Field(description="Minimum score threshold for this gate")
-    gate_mode: Literal["flag_for_review", "hard_stop"] = Field(
-        description="Gate enforcement mode"
+    stage_label: str = Field(description="Pipeline stage that triggered the pause")
+    gate_mode: Literal[
+        "FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"
+    ] = Field(description="Gate enforcement mode (excludes AUTO_APPROVE)")
+    coach_score: float | None = Field(
+        description="Coach quality score that triggered the gate, or None"
     )
-    details: str = Field(
+    rationale: str = Field(
         description="Human-readable explanation of why the build was paused"
     )
+    approval_subject: str = Field(
+        description="NATS subject where approval responses are expected"
+    )
+    paused_at: str = Field(description="ISO 8601 timestamp when the build was paused")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
-    )
-    paused_at: datetime = Field(
-        description="UTC timestamp when the build was paused"
     )
 
 
 class BuildResumedPayload(BaseModel):
     """Payload emitted when a paused build is resumed after approval.
 
+    Emitted after ``ApprovalResponsePayload`` rehydrates and the LangGraph graph
+    resumes.
+
     Attributes:
         feature_id: Unique identifier for the feature.
         build_id: Build identifier.
-        stage: Pipeline stage being resumed.
-        resumed_by: Identifier of the approver (e.g. 'rich').
+        stage_label: Pipeline stage being resumed.
         decision: Approval decision.
+        responder: Identifier of the approver (e.g. 'rich').
+        resumed_at: ISO 8601 timestamp when the build was resumed.
         correlation_id: Correlates this event with other build lifecycle events.
-        resumed_at: UTC timestamp when the build was resumed.
     """
 
     model_config = ConfigDict(extra="allow")
 
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
-    stage: str = Field(description="Pipeline stage being resumed")
-    resumed_by: str = Field(description="Identifier of the approver (e.g. 'rich')")
-    decision: Literal["approve", "reject"] = Field(description="Approval decision")
+    stage_label: str = Field(description="Pipeline stage being resumed")
+    decision: Literal["approve", "reject", "defer", "override"] = Field(
+        description="Approval decision"
+    )
+    responder: str = Field(description="Identifier of the approver (e.g. 'rich')")
+    resumed_at: str = Field(description="ISO 8601 timestamp when the build was resumed")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
-    )
-    resumed_at: datetime = Field(
-        description="UTC timestamp when the build was resumed"
     )
 
 
@@ -476,31 +485,69 @@ class StageCompletePayload(BaseModel):
     Attributes:
         feature_id: Unique identifier for the feature.
         build_id: Build identifier.
-        stage: Pipeline stage that completed.
+        stage_label: Pipeline stage that completed.
+        target_kind: Kind of execution target that ran the stage.
+        target_identifier: Identifier of the specific target instance.
         status: Stage outcome.
+        gate_mode: Gate enforcement mode applied to this stage, or None.
         coach_score: Coach quality score, if applicable.
         duration_secs: Stage duration in seconds.
+        completed_at: ISO 8601 timestamp when the stage completed.
         correlation_id: Correlates this event with other build lifecycle events.
-        completed_at: UTC timestamp when the stage completed.
     """
 
     model_config = ConfigDict(extra="allow")
 
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
-    stage: str = Field(description="Pipeline stage that completed")
-    status: Literal["passed", "failed", "gated", "skipped"] = Field(
+    stage_label: str = Field(description="Pipeline stage that completed")
+    target_kind: Literal["local_tool", "fleet_capability", "subagent"] = Field(
+        description="Kind of execution target that ran the stage"
+    )
+    target_identifier: str = Field(
+        description="Identifier of the specific target instance"
+    )
+    status: Literal["PASSED", "FAILED", "GATED", "SKIPPED"] = Field(
         description="Stage outcome"
     )
-    coach_score: float | None = Field(
-        default=None, description="Coach quality score, if applicable"
-    )
+    gate_mode: Literal[
+        "AUTO_APPROVE", "FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"
+    ] | None = Field(description="Gate enforcement mode applied to this stage, or None")
+    coach_score: float | None = Field(description="Coach quality score, if applicable")
     duration_secs: float = Field(description="Stage duration in seconds")
+    completed_at: str = Field(description="ISO 8601 timestamp when the stage completed")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
     )
-    completed_at: datetime = Field(
-        description="UTC timestamp when the stage completed"
+
+
+class BuildCancelledPayload(BaseModel):
+    """Payload emitted when the running build sees a cancel command on the pipeline.
+
+    Attributes:
+        feature_id: Unique identifier for the feature.
+        build_id: Build identifier.
+        reason: Human-readable description of why the build was cancelled.
+        cancelled_by: Identifier of the actor that cancelled the build.
+        cancelled_at: ISO 8601 timestamp when the build was cancelled.
+        correlation_id: Correlates this event with other build lifecycle events.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    feature_id: str = Field(description="Unique identifier for the feature")
+    build_id: str = Field(description="Build identifier")
+    reason: str = Field(
+        description="Human-readable description of why the build was cancelled"
+    )
+    cancelled_by: str = Field(
+        description="Identifier of the actor that cancelled the build"
+    )
+    cancelled_at: str = Field(
+        description="ISO 8601 timestamp when the build was cancelled"
+    )
+    correlation_id: str = Field(
+        description="Correlates this event with other build lifecycle events"
     )
 
 

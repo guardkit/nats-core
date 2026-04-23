@@ -84,6 +84,7 @@ class Topics:
         BUILD_PROGRESS: str = "pipeline.build-progress.{feature_id}"
         BUILD_PAUSED: str = "pipeline.build-paused.{feature_id}"
         BUILD_RESUMED: str = "pipeline.build-resumed.{feature_id}"
+        BUILD_CANCELLED: str = "pipeline.build-cancelled.{feature_id}"
         BUILD_COMPLETE: str = "pipeline.build-complete.{feature_id}"
         BUILD_FAILED: str = "pipeline.build-failed.{feature_id}"
         STAGE_COMPLETE: str = "pipeline.stage-complete.{feature_id}"

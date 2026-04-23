@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nats-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared contract layer for the Jarvis Ship's Computer fleet"
 readme = "README.md"
 license = "MIT"

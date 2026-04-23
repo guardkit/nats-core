@@ -89,13 +89,13 @@ def _make_build_paused_data(**overrides: Any) -> dict[str, Any]:
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-TEST001",
         "build_id": "build-FEAT-TEST001-20260415163012",
-        "stage": "autobuild",
+        "stage_label": "autobuild",
+        "gate_mode": "FLAG_FOR_REVIEW",
         "coach_score": 0.65,
-        "threshold": 0.75,
-        "gate_mode": "flag_for_review",
-        "details": "Coach score below threshold",
-        "correlation_id": make_test_correlation_id(),
+        "rationale": "Coach score below threshold",
+        "approval_subject": "agents.approval.forge.FEAT-TEST001",
         "paused_at": _NOW.isoformat(),
+        "correlation_id": make_test_correlation_id(),
     }
     defaults.update(overrides)
     return defaults
@@ -105,11 +105,11 @@ def _make_build_resumed_data(**overrides: Any) -> dict[str, Any]:
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-TEST001",
         "build_id": "build-FEAT-TEST001-20260415163012",
-        "stage": "autobuild",
-        "resumed_by": "rich",
+        "stage_label": "autobuild",
         "decision": "approve",
-        "correlation_id": make_test_correlation_id(),
+        "responder": "rich",
         "resumed_at": _NOW.isoformat(),
+        "correlation_id": make_test_correlation_id(),
     }
     defaults.update(overrides)
     return defaults
@@ -119,12 +119,15 @@ def _make_stage_complete_data(**overrides: Any) -> dict[str, Any]:
     defaults: dict[str, Any] = {
         "feature_id": "FEAT-TEST001",
         "build_id": "build-FEAT-TEST001-20260415163012",
-        "stage": "autobuild",
-        "status": "passed",
+        "stage_label": "autobuild",
+        "target_kind": "subagent",
+        "target_identifier": "autobuild-player-coach",
+        "status": "PASSED",
+        "gate_mode": None,
         "coach_score": 0.92,
         "duration_secs": 42.5,
-        "correlation_id": make_test_correlation_id(),
         "completed_at": _NOW.isoformat(),
+        "correlation_id": make_test_correlation_id(),
     }
     defaults.update(overrides)
     return defaults
@@ -219,7 +222,7 @@ class TestRoundTrip:
         received = await _publish_and_pull(jetstream, test_stream, subject, envelope)
 
         parsed = BuildPausedPayload.model_validate(received.payload)
-        assert parsed.gate_mode == "flag_for_review"
+        assert parsed.gate_mode == "FLAG_FOR_REVIEW"
         assert parsed.correlation_id == corr_id
 
     async def test_build_resumed_round_trip(
@@ -236,7 +239,7 @@ class TestRoundTrip:
 
         parsed = BuildResumedPayload.model_validate(received.payload)
         assert parsed.decision == "approve"
-        assert parsed.resumed_by == "rich"
+        assert parsed.responder == "rich"
 
     async def test_stage_complete_round_trip(
         self, jetstream: nats.js.JetStreamContext, test_stream: str
@@ -253,7 +256,8 @@ class TestRoundTrip:
         received = await _publish_and_pull(jetstream, test_stream, subject, envelope)
 
         parsed = StageCompletePayload.model_validate(received.payload)
-        assert parsed.status == "passed"
+        assert parsed.status == "PASSED"
+        assert parsed.target_kind == "subagent"
         assert parsed.coach_score == pytest.approx(0.92)
 
     async def test_stage_gated_round_trip(

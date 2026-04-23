@@ -29,6 +29,7 @@ from nats_core.events._jarvis import (
     NotificationPayload,
 )
 from nats_core.events._pipeline import (
+    BuildCancelledPayload,
     BuildCompletePayload,
     BuildFailedPayload,
     BuildPausedPayload,
@@ -52,7 +53,7 @@ class EventType(str, Enum):
     as a NATS subject segment.
     """
 
-    # Pipeline domain (11)
+    # Pipeline domain (12)
     FEATURE_PLANNED = "feature_planned"
     FEATURE_READY_FOR_BUILD = "feature_ready_for_build"
     BUILD_QUEUED = "build_queued"
@@ -60,6 +61,7 @@ class EventType(str, Enum):
     BUILD_PROGRESS = "build_progress"
     BUILD_PAUSED = "build_paused"
     BUILD_RESUMED = "build_resumed"
+    BUILD_CANCELLED = "build_cancelled"
     BUILD_COMPLETE = "build_complete"
     BUILD_FAILED = "build_failed"
     STAGE_COMPLETE = "stage_complete"
@@ -96,6 +98,7 @@ _EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
     EventType.BUILD_PROGRESS: BuildProgressPayload,
     EventType.BUILD_PAUSED: BuildPausedPayload,
     EventType.BUILD_RESUMED: BuildResumedPayload,
+    EventType.BUILD_CANCELLED: BuildCancelledPayload,
     EventType.BUILD_COMPLETE: BuildCompletePayload,
     EventType.BUILD_FAILED: BuildFailedPayload,
     EventType.STAGE_COMPLETE: StageCompletePayload,
