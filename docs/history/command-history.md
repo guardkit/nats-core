@@ -3805,6 +3805,61 @@ Task Completion Summary
 
 
 
+/task-work TASK-NCFA-003
+
+
+✅ Task Work Complete — TASK-NCFA-003
+State transition: backlog → in_progress → in_review
+
+Changes
+Production code (6 files):
+
+src/nats_core/events/_pipeline.py:409-551 — reconciled StageCompletePayload, BuildPausedPayload, BuildResumedPayload to Forge contract; added BuildCancelledPayload
+src/nats_core/events/pipeline.py — new public re-export module (mirrors fleet.py stub pattern) satisfying AC-1
+src/nats_core/events/init.py — BuildCancelledPayload added to __all__
+src/nats_core/envelope.py — BUILD_CANCELLED enum member + registry entry
+src/nats_core/topics.py — BUILD_CANCELLED topic constant
+pyproject.toml — version 0.1.0 → 0.2.0
+Tests (6 files, 1 new):
+
+New: tests/events/test_pipeline_forge_reconciliation.py with all 14 test names from spec §6
+Updated: tests/events/test_pipeline.py, tests/integration/test_pipeline_payloads_live.py, tests/test_envelope.py, tests/test_event_type_schemas.py, tests/test_topics.py
+Quality gates
+Gate	Result
+Compiles	✅
+Tests passing	✅ 761/761 (1.14s)
+Line coverage	✅ 98% (_pipeline.py and pipeline.py at 100%)
+Ruff (touched files)	✅ Clean
+Mypy strict (src/)	✅ No issues
+Code review verdict	✅ APPROVE
+Spec conformance
+All 12 acceptance criteria met. Breaking shape change (timestamp datetime → ISO-8601 str; status / gate_mode literals lowercase → UPPERCASE on two payloads) is covered by the 0.1.0 → 0.2.0 minor bump per task guidance.
+
+Next steps
+Task is queued for human review at tasks/in_review/forge-v2-alignment/TASK-NCFA-003-add-forge-system-design-pipeline-payloads.md. After review approval, run /task-complete TASK-NCFA-003. Forge can then bump its nats-core pin to >= 0.2.0 and delete forge/forge/adapters/nats/_interim_payloads.py.
+
+/task-complete TASK-NCFA-003
+
+✅ Task Complete — TASK-NCFA-003
+Commit: 0928f57 — Add Forge pipeline-event payloads (TASK-NCFA-003, nats-core 0.2.0)
+
+13 files changed, +810 / −92
+3 new files (public events/pipeline.py, new reconciliation test module, completed task file)
+State: in_review → completed → tasks/completed/forge-v2-alignment/TASK-NCFA-003/TASK-NCFA-003.md
+
+Graphiti knowledge capture (both episodes queued for background processing):
+
+guardkit__task_outcomes ← "Task Completion: TASK-NCFA-003"
+guardkit__project_decisions ← "Decision: TASK-NCFA-003 - ISO-8601 str timestamps over datetime"
+Working tree (pre-existing unrelated changes left untouched per your scope choice):
+
+M .guardkit/graphiti.yaml
+D command-history.md
+?? docs/history/
+Downstream: Forge can now bump its nats-core pin to >= 0.2.0 and delete forge/forge/adapters/nats/_interim_payloads.py. Sibling task TASK-NCFA-001 was flagged in the spec as also part of this release wave — worth checking whether it also needs to ship before tagging/publishing 0.2.0.
+
+Want me to /schedule an agent to check in a week whether Forge has bumped its pin and the interim payloads module has been deleted?
+
 
 
 
