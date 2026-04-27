@@ -9,7 +9,7 @@
 #
 # FalkorDB Browser UI: http://whitestocks:3000
 
-project_id: nats-core
+project_id: nats_core
 enabled: true
 graph_store: falkordb
 
