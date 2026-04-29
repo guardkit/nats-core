@@ -18,11 +18,11 @@ falkordb_host: whitestocks
 falkordb_port: 6379
 timeout: 30.0
 max_concurrent_episodes: 3
-
+chunk_extraction_concurrency: 4
 # LLM provider for Graphiti entity extraction
 # --- GB10 (vLLM, FP8) ---
 llm_provider: vllm
-llm_base_url: http://promaxgb10-41b1:8000/v1
+llm_base_url: http://promaxgb10-41b1:9000/v1
 llm_model: neuralmagic/Qwen2.5-14B-Instruct-FP8-dynamic
 # --- Fallback: MacBook Pro M2 Max (Ollama, Q4_K_M) — uncomment if GB10 offline ---
 #llm_provider: ollama
@@ -32,7 +32,7 @@ llm_max_tokens: 4096
 
 # Embedding provider for Graphiti vector search
 embedding_provider: vllm
-embedding_base_url: http://promaxgb10-41b1:8001/v1
+embedding_base_url: http://promaxgb10-41b1:9000/v1
 embedding_model: nomic-embed-text-v1.5
 # Embedding dimension is resolved from KNOWN_EMBEDDING_DIMS
 # based on embedding_model above. Set explicitly only to override
@@ -45,5 +45,3 @@ group_ids:
   - architecture_decisions
 
 # Deprecated fields (kept for backwards compatibility)
-host: localhost
-port: 8000
