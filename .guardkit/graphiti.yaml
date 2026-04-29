@@ -23,7 +23,7 @@ chunk_extraction_concurrency: 4
 # --- GB10 (vLLM, FP8) ---
 llm_provider: vllm
 llm_base_url: http://promaxgb10-41b1:9000/v1
-llm_model: neuralmagic/Qwen2.5-14B-Instruct-FP8-dynamic
+llm_model: qwen-graphiti
 # --- Fallback: MacBook Pro M2 Max (Ollama, Q4_K_M) — uncomment if GB10 offline ---
 #llm_provider: ollama
 #llm_base_url: http://richards-macbook-pro.tailebf801.ts.net:8000/v1
@@ -33,7 +33,7 @@ llm_max_tokens: 4096
 # Embedding provider for Graphiti vector search
 embedding_provider: vllm
 embedding_base_url: http://promaxgb10-41b1:9000/v1
-embedding_model: nomic-embed-text-v1.5
+embedding_model: nomic-embed
 # Embedding dimension is resolved from KNOWN_EMBEDDING_DIMS
 # based on embedding_model above. Set explicitly only to override
 # (e.g., for Matryoshka truncation).
