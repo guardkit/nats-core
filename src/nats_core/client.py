@@ -396,16 +396,45 @@ class NATSKVManifestRegistry(ManifestRegistry):
 
     @classmethod
     async def create(cls, nc: NATSConnection) -> NATSKVManifestRegistry:
-        """Factory: bind to the agent-registry KV bucket (creates if missing).
+        """Factory: bind to the pre-provisioned agent-registry KV bucket.
+
+        The ``agent-registry`` bucket is owned by ``nats-infrastructure`` —
+        its history, max value size, replicas, and storage shape are
+        provisioned by ``nats-infrastructure/kv/provision-kv.sh`` (see
+        ``nats-infrastructure/kv/kv-definitions.json``: ``history=5``,
+        ``max_value_size=256KB``, ``storage=file``). nats_core is a
+        consumer of that contract, not a provisioner: this factory binds
+        to the existing bucket via ``js.key_value(bucket=...)`` rather
+        than asserting any config of its own with
+        ``js.create_key_value(...)``.
+
+        Why lookup-only: ``js.create_key_value`` with no further config
+        asserts nats-py defaults (``history=1``, unlimited size); against
+        a canonically-provisioned bucket nats-py rejects the assertion
+        with ``BadRequestError code=10058 stream name already in use
+        with a different configuration``. That mismatch was the root
+        cause of ``jarvis_fleet_register_failed`` and
+        ``jarvis_live_capabilities_registry_failed`` on the GB10
+        2026-05-01 first-real-run (jarvis TASK-FRR-001 / FEAT-JARVIS-
+        INTERNAL-001-FRR follow-up). Switching to ``js.key_value(...)``
+        honours the canonical config untouched and makes the binding
+        succeed; the cost is that the bucket MUST be pre-provisioned
+        (``provision-kv.sh`` is idempotent and runs at infra deploy
+        time, so this is the correct contract direction).
 
         Args:
             nc: A connected NATS client connection.
 
         Returns:
             A new ``NATSKVManifestRegistry`` backed by the agent-registry bucket.
+
+        Raises:
+            nats.js.errors.BucketNotFoundError: If the agent-registry
+                bucket has not been provisioned. Run
+                ``nats-infrastructure/kv/provision-kv.sh`` to create it.
         """
         js = nc.jetstream()
-        kv = await js.create_key_value(bucket=AGENT_REGISTRY_BUCKET)
+        kv = await js.key_value(bucket=AGENT_REGISTRY_BUCKET)
         return cls(kv)
 
     async def register(self, manifest: AgentManifest) -> None:

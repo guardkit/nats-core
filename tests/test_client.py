@@ -941,25 +941,40 @@ class TestNATSKVManifestRegistryListAll:
 
 
 class TestNATSKVManifestRegistryCreate:
-    """AC: create() classmethod creates bucket if it does not exist."""
+    """AC: create() classmethod binds to the canonical agent-registry bucket.
+
+    Revised 2026-05-01 (jarvis TASK-FRR-001): the canonical bucket is owned
+    by ``nats-infrastructure`` (see ``kv/kv-definitions.json`` —
+    ``history=5``, ``max_value_size=256KB``). nats_core is a consumer of
+    that contract: it binds via ``js.key_value(bucket=...)`` (lookup-only)
+    rather than asserting any config of its own with ``create_key_value``.
+    Asserting nats-py defaults against a canonically-provisioned bucket
+    surfaced as ``BadRequestError code=10058 stream name already in use
+    with a different configuration`` on every jarvis startup until the
+    switch to lookup-only landed.
+    """
 
     @pytest.mark.unit
-    async def test_create_calls_create_key_value(self) -> None:
-        """AC: create() classmethod creates bucket if it does not exist."""
+    async def test_create_calls_key_value_lookup(self) -> None:
+        """create() classmethod looks up the canonical agent-registry bucket."""
         from nats_core.client import NATSKVManifestRegistry
 
         mock_nc = AsyncMock()
         mock_js = AsyncMock()
         mock_kv = _make_mock_kv()
         mock_nc.jetstream = MagicMock(return_value=mock_js)
-        mock_js.create_key_value = AsyncMock(return_value=mock_kv)
+        mock_js.key_value = AsyncMock(return_value=mock_kv)
 
         registry = await NATSKVManifestRegistry.create(mock_nc)
 
-        mock_js.create_key_value.assert_awaited_once()
-        call_kwargs = mock_js.create_key_value.call_args
+        mock_js.key_value.assert_awaited_once()
+        call_kwargs = mock_js.key_value.call_args
         assert call_kwargs[1]["bucket"] == "agent-registry"
         assert isinstance(registry, NATSKVManifestRegistry)
+        # Lookup-only: must not call ``create_key_value`` (which would
+        # assert nats-py defaults and hit ``code=10058`` against the
+        # canonical bucket — see jarvis TASK-FRR-001).
+        mock_js.create_key_value.assert_not_awaited()
 
     @pytest.mark.unit
     async def test_create_returns_registry_with_kv(self) -> None:
@@ -970,7 +985,7 @@ class TestNATSKVManifestRegistryCreate:
         mock_js = AsyncMock()
         mock_kv = _make_mock_kv()
         mock_nc.jetstream = MagicMock(return_value=mock_js)
-        mock_js.create_key_value = AsyncMock(return_value=mock_kv)
+        mock_js.key_value = AsyncMock(return_value=mock_kv)
 
         registry = await NATSKVManifestRegistry.create(mock_nc)
 
