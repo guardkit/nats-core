@@ -229,6 +229,108 @@ class TestBuildQueuedPayload:
 
 
 # ---------------------------------------------------------------------------
+# TASK-F8-002 / F008-VAL-002 — Mode C task_id + mode wire fields
+# ---------------------------------------------------------------------------
+
+
+class TestBuildQueuedPayloadModeC:
+    """Mode-aware identity invariants for ``BuildQueuedPayload``.
+
+    The 6 cells of the (mode × task_id) cross-product are covered explicitly
+    so a future regression in the ``_task_id_required_iff_mode_c`` model
+    validator is caught at the contract layer rather than at a downstream
+    dispatch site.
+
+    Cross-product (positive ``√`` / negative ``×``):
+
+    +-----------+-------------+-----------------+
+    | mode      | task_id     | expected        |
+    +===========+=============+=================+
+    | mode-a    | None        | √ (default)     |
+    | mode-a    | TASK-XXX    | × (rejected)    |
+    | mode-b    | None        | √               |
+    | mode-b    | TASK-XXX    | × (rejected)    |
+    | mode-c    | None        | × (rejected)    |
+    | mode-c    | TASK-XXX    | √               |
+    +-----------+-------------+-----------------+
+    """
+
+    # --- Mode A ---
+
+    def test_mode_a_with_no_task_id_is_valid(self) -> None:
+        """Mode A is the default; task_id stays None."""
+        payload = _make_build_queued(mode="mode-a")
+        assert payload.mode == "mode-a"
+        assert payload.task_id is None
+
+    def test_mode_a_with_task_id_is_rejected(self) -> None:
+        """Mode A must not carry a task_id (Mode C only)."""
+        with pytest.raises(ValidationError, match="task_id must be None"):
+            _make_build_queued(mode="mode-a", task_id="TASK-LPA042")
+
+    # --- Mode B ---
+
+    def test_mode_b_with_no_task_id_is_valid(self) -> None:
+        """Mode B publishes feature-only; task_id stays None."""
+        payload = _make_build_queued(mode="mode-b")
+        assert payload.mode == "mode-b"
+        assert payload.task_id is None
+
+    def test_mode_b_with_task_id_is_rejected(self) -> None:
+        """Mode B must not carry a task_id (Mode C only)."""
+        with pytest.raises(ValidationError, match="task_id must be None"):
+            _make_build_queued(mode="mode-b", task_id="TASK-LPA042")
+
+    # --- Mode C ---
+
+    def test_mode_c_without_task_id_is_rejected(self) -> None:
+        """Mode C requires a task_id (the dispatch target)."""
+        with pytest.raises(ValidationError, match="task_id is required"):
+            _make_build_queued(mode="mode-c")
+
+    def test_mode_c_with_task_id_is_valid(self) -> None:
+        """Mode C with TASK-XXX — the only well-formed Mode C shape."""
+        payload = _make_build_queued(mode="mode-c", task_id="TASK-LPA042")
+        assert payload.mode == "mode-c"
+        assert payload.task_id == "TASK-LPA042"
+
+    # --- task_id format validation (regex) ---
+
+    def test_task_id_must_match_pattern(self) -> None:
+        """task_id must match ^TASK-[A-Z0-9]{3,12}$ when non-None."""
+        with pytest.raises(ValidationError, match="task_id must match"):
+            _make_build_queued(mode="mode-c", task_id="not-a-task")
+
+    def test_task_id_lowercase_is_rejected(self) -> None:
+        """Pattern is case-sensitive — lowercase prefix must fail."""
+        with pytest.raises(ValidationError, match="task_id must match"):
+            _make_build_queued(mode="mode-c", task_id="task-abc")
+
+    # --- defaults & round-trips ---
+
+    def test_default_mode_is_mode_a_for_backwards_compat(self) -> None:
+        """Pre-TASK-F8-002 publishers (no mode field) must still validate."""
+        payload = _make_build_queued()
+        assert payload.mode == "mode-a"
+        assert payload.task_id is None
+
+    def test_invalid_mode_literal_is_rejected(self) -> None:
+        """mode must be one of mode-a / mode-b / mode-c."""
+        with pytest.raises(ValidationError):
+            _make_build_queued(mode="mode-d")
+
+    def test_mode_c_payload_json_round_trip(self) -> None:
+        """Mode C payload survives a JSON round-trip with both fields."""
+        original = _make_build_queued(mode="mode-c", task_id="TASK-MCRT01")
+        dumped = original.model_dump(mode="json")
+        assert dumped["mode"] == "mode-c"
+        assert dumped["task_id"] == "TASK-MCRT01"
+        restored = BuildQueuedPayload.model_validate(dumped)
+        assert restored.mode == "mode-c"
+        assert restored.task_id == "TASK-MCRT01"
+
+
+# ---------------------------------------------------------------------------
 # BuildPausedPayload (reconciled to Forge contract)
 # ---------------------------------------------------------------------------
 

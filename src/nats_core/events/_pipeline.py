@@ -26,6 +26,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # Regex patterns for BuildQueuedPayload validators.
 FEATURE_ID_PATTERN = re.compile(r"^FEAT-[A-Z0-9]{3,12}$")
 REPO_PATTERN = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$")
+# TASK-F8-002 / F008-VAL-002 — Mode C carries a per-fix-task identifier
+# alongside the parent feature_id. The pattern mirrors FEATURE_ID_PATTERN
+# so the strictness budget is symmetric across the two identifier slots.
+TASK_ID_PATTERN = re.compile(r"^TASK-[A-Z0-9]{3,12}$")
 
 # Literal types for BuildQueuedPayload provenance fields.
 TriggerSource = Literal["cli", "jarvis", "forge-internal", "notification-adapter"]
@@ -371,12 +375,44 @@ class BuildQueuedPayload(BaseModel):
         description="When the message was published to JetStream"
     )
 
+    # --- mode-aware identity (FEAT-F8 / F008-VAL-002 — TASK-F8-002) ---
+    # ``feature_id`` above stays strict (FEAT-XXX) per ADR-FB-002 / the
+    # F008 review §2 rejection of Option B/C — Mode C carries a sibling
+    # ``task_id`` slot rather than overloading the feature subject.
+    task_id: str | None = Field(
+        default=None,
+        description=(
+            "Per-fix-task identifier (TASK-XXX) for Mode C dispatches. "
+            "MUST be non-None when mode == 'mode-c'; MUST be None for "
+            "Mode A and Mode B (enforced by _task_id_required_iff_mode_c)."
+        ),
+    )
+    mode: Literal["mode-a", "mode-b", "mode-c"] = Field(
+        default="mode-a",
+        description=(
+            "Build mode (mirrors the v2 SQLite builds.mode column). "
+            "Determines which planner the supervisor invokes. Defaults to "
+            "'mode-a' so v2.2 publishers that pre-date this field continue "
+            "to validate without changes."
+        ),
+    )
+
     # --- validators ---
     @field_validator("feature_id")
     @classmethod
     def _validate_feature_id(cls, v: str) -> str:
         if not FEATURE_ID_PATTERN.match(v):
             msg = f"feature_id must match {FEATURE_ID_PATTERN.pattern}, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("task_id")
+    @classmethod
+    def _validate_task_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not TASK_ID_PATTERN.match(v):
+            msg = f"task_id must match {TASK_ID_PATTERN.pattern}, got {v!r}"
             raise ValueError(msg)
         return v
 
@@ -404,6 +440,25 @@ class BuildQueuedPayload(BaseModel):
             )
             raise ValueError(msg)
         return v
+
+    @model_validator(mode="after")
+    def _task_id_required_iff_mode_c(self) -> BuildQueuedPayload:
+        # TASK-F8-002 / F008-VAL-002 — bidirectional invariant:
+        #   mode == "mode-c"  <=>  task_id is not None
+        # The pair encodes the v2 dispatch contract: Mode C is the only
+        # build shape where the *fix-task* is the dispatch target. Modes
+        # A/B publish a feature-only build, so a task_id slot would be
+        # ambiguous and is rejected at the wire layer.
+        if self.mode == "mode-c" and self.task_id is None:
+            raise ValueError(
+                "task_id is required when mode == 'mode-c' (TASK-F8-002)"
+            )
+        if self.mode in ("mode-a", "mode-b") and self.task_id is not None:
+            raise ValueError(
+                f"task_id must be None for mode={self.mode!r} "
+                "(Mode C only — TASK-F8-002)"
+            )
+        return self
 
 
 class BuildPausedPayload(BaseModel):
