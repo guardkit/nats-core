@@ -174,6 +174,74 @@ class NATSClient:
         )
         return sub
 
+    async def subscribe_with_reply(
+        self,
+        topic: str,
+        callback: Callable[[MessageEnvelope, str | None], Awaitable[None]],
+    ) -> nats.aio.subscription.Subscription:
+        """Subscribe and pass the reply-to subject through to the callback.
+
+        Like :meth:`subscribe`, but the user callback receives a second
+        positional argument: the publisher's ``msg.reply`` subject (the
+        ``_INBOX.<token>`` allocated by ``nc.request(...)``), or ``None``
+        when the publisher did not set one.
+
+        Use this when the subscriber must honour request/reply semantics —
+        e.g. a command handler that needs to publish the response back to
+        the requester's inbox. ``subscribe()`` is preserved for callers
+        that only consume envelopes from event streams.
+
+        Args:
+            topic: NATS subject to subscribe to.
+            callback: Async function called with each valid
+                ``(envelope, reply_to)`` pair. ``reply_to`` is ``None``
+                when ``msg.reply`` is empty.
+
+        Returns:
+            The nats-py ``Subscription`` object.
+
+        Raises:
+            RuntimeError: If the client is not connected.
+        """
+        if self._nc is None:
+            msg = "client is not connected"
+            raise RuntimeError(msg)
+
+        async def _internal_callback(msg: Any) -> None:
+            try:
+                envelope = MessageEnvelope.model_validate_json(msg.data)
+            except (ValidationError, ValueError) as exc:
+                logger.error("Failed to parse NATS message as MessageEnvelope: %s", exc)
+                return
+
+            reply_to = msg.reply if msg.reply else None
+            await callback(envelope, reply_to)
+
+        sub: nats.aio.subscription.Subscription = await self._nc.subscribe(
+            topic, cb=_internal_callback
+        )
+        return sub
+
+    async def publish_raw(self, subject: str, data: bytes) -> None:
+        """Publish raw bytes to a subject, bypassing envelope wrapping.
+
+        Use only for request/reply replies where the requester parses the
+        body as a domain payload directly (e.g. ``ResultPayload``) rather
+        than as a :class:`MessageEnvelope`. Event-stream consumers should
+        receive envelope-wrapped messages via :meth:`publish`.
+
+        Args:
+            subject: Resolved NATS subject (typically a reply-inbox).
+            data: Raw bytes to publish.
+
+        Raises:
+            RuntimeError: If the client is not connected.
+        """
+        if self._nc is None:
+            msg = "client is not connected"
+            raise RuntimeError(msg)
+        await self._nc.publish(subject, data)
+
     # ------------------------------------------------------------------
     # Fleet convenience methods
     # ------------------------------------------------------------------

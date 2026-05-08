@@ -383,6 +383,182 @@ class TestSubscribe:
 
 
 # ===========================================================================
+# subscribe_with_reply() — request/reply-aware subscription
+# ===========================================================================
+
+
+class TestSubscribeWithReply:
+    """Tests for subscribe_with_reply() — request/reply-aware subscription."""
+
+    async def test_callback_receives_envelope_and_reply_subject(self) -> None:
+        """User callback receives (envelope, reply_to) when msg.reply is set."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        internal_cb = None
+
+        async def _capture_subscribe(topic: str, cb: Any = None, **kwargs: Any) -> AsyncMock:
+            nonlocal internal_cb
+            internal_cb = cb
+            return AsyncMock()
+
+        mock_nc.subscribe = AsyncMock(side_effect=_capture_subscribe)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        received: list[tuple[MessageEnvelope, str | None]] = []
+
+        async def user_cb(env: MessageEnvelope, reply_to: str | None) -> None:
+            received.append((env, reply_to))
+
+        await client.subscribe_with_reply(topic="agents.command.x", callback=user_cb)
+        assert internal_cb is not None
+
+        valid_envelope = MessageEnvelope(
+            source_id="jarvis",
+            event_type=EventType.COMMAND,
+            payload={"command": "align"},
+        )
+        msg = MagicMock()
+        msg.data = valid_envelope.model_dump_json().encode()
+        msg.reply = "_INBOX.abc123"
+
+        await internal_cb(msg)
+        assert len(received) == 1
+        env, reply_to = received[0]
+        assert env.source_id == "jarvis"
+        assert reply_to == "_INBOX.abc123"
+
+    async def test_callback_receives_none_when_reply_empty(self) -> None:
+        """reply_to is None when the publisher did not set msg.reply."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        internal_cb = None
+
+        async def _capture_subscribe(topic: str, cb: Any = None, **kwargs: Any) -> AsyncMock:
+            nonlocal internal_cb
+            internal_cb = cb
+            return AsyncMock()
+
+        mock_nc.subscribe = AsyncMock(side_effect=_capture_subscribe)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        received: list[tuple[MessageEnvelope, str | None]] = []
+
+        async def user_cb(env: MessageEnvelope, reply_to: str | None) -> None:
+            received.append((env, reply_to))
+
+        await client.subscribe_with_reply(topic="agents.command.x", callback=user_cb)
+        assert internal_cb is not None
+
+        valid_envelope = MessageEnvelope(
+            source_id="event-stream-publisher",
+            event_type=EventType.STATUS,
+            payload={"state": "ok"},
+        )
+        # nats-py exposes msg.reply as an empty string for fire-and-forget publishes
+        msg = MagicMock()
+        msg.data = valid_envelope.model_dump_json().encode()
+        msg.reply = ""
+
+        await internal_cb(msg)
+        assert len(received) == 1
+        _, reply_to = received[0]
+        assert reply_to is None
+
+    async def test_invalid_json_does_not_crash_subscriber(self, caplog: Any) -> None:
+        """Invalid JSON is logged and the user callback is not invoked."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        internal_cb = None
+
+        async def _capture_subscribe(topic: str, cb: Any = None, **kwargs: Any) -> AsyncMock:
+            nonlocal internal_cb
+            internal_cb = cb
+            return AsyncMock()
+
+        mock_nc.subscribe = AsyncMock(side_effect=_capture_subscribe)
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        user_cb = AsyncMock()
+        await client.subscribe_with_reply(topic="agents.command.x", callback=user_cb)
+        assert internal_cb is not None
+
+        msg = MagicMock()
+        msg.data = b"not valid json{{"
+        msg.reply = "_INBOX.def456"
+
+        with caplog.at_level(logging.ERROR, logger="nats_core.client"):
+            await internal_cb(msg)
+
+        user_cb.assert_not_awaited()
+        assert len(caplog.records) >= 1
+
+    async def test_subscribe_with_reply_before_connect_raises(self) -> None:
+        """subscribe_with_reply() before connect() raises RuntimeError."""
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config())
+        cb = AsyncMock()
+        with pytest.raises(RuntimeError, match="not connected"):
+            await client.subscribe_with_reply(topic="any.topic", callback=cb)
+
+
+# ===========================================================================
+# publish_raw() — bypass envelope wrap for request/reply replies
+# ===========================================================================
+
+
+class TestPublishRaw:
+    """Tests for publish_raw() — raw byte publish for reply-inbox responses."""
+
+    async def test_publish_raw_forwards_bytes_to_subject(self) -> None:
+        """publish_raw publishes the raw bytes verbatim to the given subject."""
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config)
+        mock_nc = _make_mock_nc()
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+        await client.publish_raw("_INBOX.abc123", b'{"command":"align","success":true}')
+
+        mock_nc.publish.assert_awaited_once_with(
+            "_INBOX.abc123", b'{"command":"align","success":true}'
+        )
+
+    async def test_publish_raw_before_connect_raises(self) -> None:
+        """publish_raw() before connect() raises RuntimeError."""
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config())
+        with pytest.raises(RuntimeError, match="not connected"):
+            await client.publish_raw("_INBOX.abc", b"x")
+
+
+# ===========================================================================
 # AC: NATSClient with source_id="" raises validation error at creation
 # ===========================================================================
 
