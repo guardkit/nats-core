@@ -6,6 +6,7 @@ Tests are grouped by acceptance criterion.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -1323,3 +1324,232 @@ def test_message_envelope_json_round_trips() -> None:
     restored = MessageEnvelope.model_validate_json(raw)
     assert restored.source_id == "test-agent"
     assert restored.event_type == EventType.BUILD_COMPLETE
+
+
+# ===========================================================================
+# TASK-NC10: Lifecycle callback wiring + default fail-fast closed_cb
+# ===========================================================================
+
+
+class TestLifecycleCallbacks:
+    """AC-NC10-01..06: callback wiring and default fail-fast ``closed_cb``."""
+
+    @pytest.mark.unit
+    def test_constructor_accepts_callback_kwargs(self) -> None:
+        """AC-NC10-01: __init__ accepts the four optional callback kwargs."""
+        from nats_core.client import NATSClient
+
+        async def _cb() -> None:
+            return None
+
+        async def _err_cb(_exc: Exception) -> None:
+            return None
+
+        client = NATSClient(
+            _make_config(),
+            source_id="agent-x",
+            reconnected_cb=_cb,
+            disconnected_cb=_cb,
+            closed_cb=_cb,
+            error_cb=_err_cb,
+        )
+        assert client is not None
+
+    @pytest.mark.unit
+    def test_legacy_constructor_call_site_still_works(self) -> None:
+        """AC-NC10-01: existing call sites without callbacks keep compiling."""
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config(), source_id="agent-legacy")
+        assert client is not None
+
+    @pytest.mark.unit
+    async def test_callbacks_passed_through_to_nats_connect(self) -> None:
+        """AC-NC10-02: provided callbacks are forwarded via connect_kwargs."""
+        from nats_core.client import NATSClient
+
+        async def reconnected() -> None:
+            return None
+
+        async def disconnected() -> None:
+            return None
+
+        async def closed() -> None:
+            return None
+
+        async def error_cb(_exc: Exception) -> None:
+            return None
+
+        client = NATSClient(
+            _make_config(),
+            source_id="agent-x",
+            reconnected_cb=reconnected,
+            disconnected_cb=disconnected,
+            closed_cb=closed,
+            error_cb=error_cb,
+        )
+
+        with patch(
+            "nats_core.client.nats.connect", new_callable=AsyncMock
+        ) as mock_connect:
+            mock_connect.return_value = _make_mock_nc()
+            await client.connect()
+
+        kwargs = mock_connect.call_args[1]
+        assert kwargs["reconnected_cb"] is reconnected
+        assert kwargs["disconnected_cb"] is disconnected
+        assert kwargs["closed_cb"] is closed
+        assert kwargs["error_cb"] is error_cb
+
+    @pytest.mark.unit
+    async def test_no_callbacks_provided_still_wires_default_closed_cb(self) -> None:
+        """AC-NC10-02/03: ``closed_cb`` is always set, defaulting when absent.
+
+        Other callbacks remain absent from connect_kwargs when the caller
+        does not provide them — only ``closed_cb`` is guaranteed.
+        """
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config(), source_id="agent-x")
+
+        with patch(
+            "nats_core.client.nats.connect", new_callable=AsyncMock
+        ) as mock_connect:
+            mock_connect.return_value = _make_mock_nc()
+            await client.connect()
+
+        kwargs = mock_connect.call_args[1]
+        assert "reconnected_cb" not in kwargs
+        assert "disconnected_cb" not in kwargs
+        assert "error_cb" not in kwargs
+        # closed_cb is always set (default exists)
+        assert callable(kwargs["closed_cb"])
+        # Default cb is bound to the client instance — calling it sets the event.
+        assert client.terminally_closed.is_set() is False
+        await kwargs["closed_cb"]()
+        assert client.terminally_closed.is_set() is True
+
+    @pytest.mark.unit
+    async def test_default_closed_cb_logs_structured_terminal_error(
+        self, caplog: Any
+    ) -> None:
+        """AC-NC10-03: default closed_cb logs ``nats_terminally_closed`` ERROR.
+
+        The log record must carry ``nats_url``, ``source_id``,
+        ``max_reconnect_attempts``, and ``reconnect_time_wait`` as structured
+        fields (``extra=`` kwargs surface as attributes on the ``LogRecord``).
+        """
+        from nats_core.client import NATSClient
+
+        config = _make_config()
+        client = NATSClient(config, source_id="agent-x")
+
+        with caplog.at_level(logging.ERROR, logger="nats_core.client"):
+            await client._default_closed_cb()
+
+        terminal_records = [
+            r for r in caplog.records if r.message == "nats_terminally_closed"
+        ]
+        assert len(terminal_records) == 1
+        record = terminal_records[0]
+        assert record.levelno == logging.ERROR
+        assert record.nats_url == config.url
+        assert record.source_id == "agent-x"
+        assert record.max_reconnect_attempts == config.max_reconnect_attempts
+        assert record.reconnect_time_wait == config.reconnect_time_wait
+
+    @pytest.mark.unit
+    async def test_default_closed_cb_sets_terminally_closed_event(self) -> None:
+        """AC-NC10-04: default closed_cb sets the public ``terminally_closed`` event."""
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config(), source_id="agent-x")
+        assert client.terminally_closed.is_set() is False
+
+        await client._default_closed_cb()
+
+        assert client.terminally_closed.is_set() is True
+        # Property is exposed as an asyncio.Event for supervisor.wait().
+        assert isinstance(client.terminally_closed, asyncio.Event)
+
+    @pytest.mark.unit
+    async def test_custom_closed_cb_replaces_default_and_no_default_log(
+        self, caplog: Any
+    ) -> None:
+        """AC-NC10-05: a caller-supplied ``closed_cb`` replaces the default entirely.
+
+        The default's ``nats_terminally_closed`` log line must NOT be emitted
+        when a custom callback is wired.
+        """
+        from nats_core.client import NATSClient
+
+        custom_called = False
+
+        async def custom_closed() -> None:
+            nonlocal custom_called
+            custom_called = True
+
+        client = NATSClient(
+            _make_config(), source_id="agent-x", closed_cb=custom_closed
+        )
+
+        with patch(
+            "nats_core.client.nats.connect", new_callable=AsyncMock
+        ) as mock_connect:
+            mock_connect.return_value = _make_mock_nc()
+            await client.connect()
+
+        forwarded = mock_connect.call_args[1]["closed_cb"]
+        assert forwarded is custom_closed
+
+        with caplog.at_level(logging.ERROR, logger="nats_core.client"):
+            await forwarded()
+
+        assert custom_called is True
+        # The default log line must NOT have been emitted.
+        terminal_records = [
+            r for r in caplog.records if r.message == "nats_terminally_closed"
+        ]
+        assert terminal_records == []
+        # And the default's event side-effect must NOT have fired.
+        assert client.terminally_closed.is_set() is False
+
+    @pytest.mark.unit
+    async def test_simulated_broker_loss_invokes_disconnected_then_closed(self) -> None:
+        """AC-NC10-06: simulate broker loss — disconnected_cb (≥1x) then closed_cb (1x).
+
+        We exercise the same code path a live broker would: nats-py would
+        invoke the registered callbacks on disconnect / terminal-close. Here
+        we capture the callbacks forwarded into ``nats.connect`` and invoke
+        them directly to assert the contract end-to-end without a running
+        broker. A separate live-broker test would belong under
+        ``tests/integration/`` and is gated by ``@pytest.mark.integration``.
+        """
+        from nats_core.client import NATSClient
+
+        disconnected = AsyncMock()
+        closed = AsyncMock()
+
+        client = NATSClient(
+            _make_config(),
+            source_id="agent-x",
+            disconnected_cb=disconnected,
+            closed_cb=closed,
+        )
+
+        with patch(
+            "nats_core.client.nats.connect", new_callable=AsyncMock
+        ) as mock_connect:
+            mock_connect.return_value = _make_mock_nc()
+            await client.connect()
+
+        kwargs = mock_connect.call_args[1]
+        # Broker drops: nats-py would fire disconnected_cb (potentially
+        # multiple times across reconnect attempts).
+        await kwargs["disconnected_cb"]()
+        await kwargs["disconnected_cb"]()
+        # Reconnect budget exhausted: nats-py fires closed_cb once.
+        await kwargs["closed_cb"]()
+
+        assert disconnected.await_count >= 1
+        closed.assert_awaited_once()

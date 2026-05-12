@@ -8,6 +8,7 @@ fleet registry) and the ``NATSKVManifestRegistry`` backed by JetStream KV.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -42,12 +43,35 @@ class NATSClient:
         config: NATS connection configuration.
         source_id: Identifier for this client instance used in envelope ``source_id``.
             Defaults to the ``config.name`` value.
+        reconnected_cb: Optional async callback invoked after the underlying
+            nats-py client successfully reconnects to the broker. Use this to
+            re-establish ephemeral state (e.g. re-publish an agent manifest to
+            ``agent-registry`` KV).
+        disconnected_cb: Optional async callback invoked when the underlying
+            connection is lost. nats-py will then begin reconnect attempts up
+            to ``NATSConfig.max_reconnect_attempts``.
+        closed_cb: Optional async callback invoked when the connection has
+            reached terminal-closed state (reconnect budget exhausted). When
+            omitted, a default callback is wired that logs a structured
+            ``nats_terminally_closed`` ERROR and sets :attr:`terminally_closed`.
+            Pass a custom callback to fully replace that default.
+        error_cb: Optional async callback invoked with each transport-level
+            exception observed by nats-py.
 
     Raises:
         ValueError: If *source_id* is an empty string.
     """
 
-    def __init__(self, config: NATSConfig, source_id: str | None = None) -> None:
+    def __init__(
+        self,
+        config: NATSConfig,
+        source_id: str | None = None,
+        *,
+        reconnected_cb: Callable[[], Awaitable[None]] | None = None,
+        disconnected_cb: Callable[[], Awaitable[None]] | None = None,
+        closed_cb: Callable[[], Awaitable[None]] | None = None,
+        error_cb: Callable[[Exception], Awaitable[None]] | None = None,
+    ) -> None:
         resolved_source_id = source_id if source_id is not None else config.name
         if not resolved_source_id or not resolved_source_id.strip():
             msg = "source_id must not be empty"
@@ -57,12 +81,57 @@ class NATSClient:
         self._source_id = resolved_source_id
         self._nc: nats.aio.client.Client | None = None
 
+        self._reconnected_cb = reconnected_cb
+        self._disconnected_cb = disconnected_cb
+        self._closed_cb: Callable[[], Awaitable[None]] = (
+            closed_cb if closed_cb is not None else self._default_closed_cb
+        )
+        self._error_cb = error_cb
+        self._terminally_closed = asyncio.Event()
+
+    @property
+    def terminally_closed(self) -> asyncio.Event:
+        """Event set when the NATS connection has reached terminal-closed state.
+
+        Set automatically by the default ``closed_cb`` wired in :meth:`__init__`
+        when the caller did not supply their own ``closed_cb``. Consumers may
+        ``await`` this in a supervisor task to drive fail-fast / process-exit
+        behaviour after the reconnect budget is exhausted.
+
+        If the caller passed a custom ``closed_cb`` to :meth:`__init__`, this
+        event is *not* set automatically — the custom callback owns terminal
+        signalling.
+        """
+        return self._terminally_closed
+
+    async def _default_closed_cb(self) -> None:
+        """Default ``closed_cb``: log terminal failure and set the event.
+
+        Logs a structured ``nats_terminally_closed`` ERROR with connection
+        identifying fields, then sets :attr:`terminally_closed` so supervisor
+        tasks can react.
+        """
+        logger.error(
+            "nats_terminally_closed",
+            extra={
+                "nats_url": self._config.url,
+                "source_id": self._source_id,
+                "max_reconnect_attempts": self._config.max_reconnect_attempts,
+                "reconnect_time_wait": self._config.reconnect_time_wait,
+            },
+        )
+        self._terminally_closed.set()
+
     async def connect(self) -> None:
         """Establish a connection to the NATS server.
 
         Uses connection parameters from the ``NATSConfig`` supplied at
-        construction time.  Calling ``connect()`` on an already-connected
-        client raises ``RuntimeError``.
+        construction time, and wires any caller-supplied lifecycle callbacks
+        (``reconnected_cb``, ``disconnected_cb``, ``closed_cb``, ``error_cb``)
+        through to ``nats.connect()``. ``closed_cb`` is always passed —
+        defaulting to :meth:`_default_closed_cb` when the caller did not
+        override it. Calling ``connect()`` on an already-connected client
+        raises ``RuntimeError``.
 
         Raises:
             RuntimeError: If the client is already connected.
@@ -72,6 +141,13 @@ class NATSClient:
             raise RuntimeError(msg)
 
         connect_kwargs = self._config.to_connect_kwargs()
+        if self._reconnected_cb is not None:
+            connect_kwargs["reconnected_cb"] = self._reconnected_cb
+        if self._disconnected_cb is not None:
+            connect_kwargs["disconnected_cb"] = self._disconnected_cb
+        connect_kwargs["closed_cb"] = self._closed_cb
+        if self._error_cb is not None:
+            connect_kwargs["error_cb"] = self._error_cb
         self._nc = await nats.connect(**connect_kwargs)
 
     async def disconnect(self) -> None:
