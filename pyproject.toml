@@ -43,6 +43,7 @@ strict = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "-m 'not integration'"
 markers = [
     "unit: pure unit tests with no I/O or external dependencies",
     "slow: marks tests as slow",
