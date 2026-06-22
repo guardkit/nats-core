@@ -54,7 +54,7 @@ class TestPackageImport:
 
         assert hasattr(nats_core, "__version__")
         assert isinstance(nats_core.__version__, str)
-        assert nats_core.__version__ == "0.1.0"
+        assert nats_core.__version__ == "0.3.0"
 
     def test_nats_core_has_docstring(self) -> None:
         """AC-008: nats_core must have a module docstring."""
