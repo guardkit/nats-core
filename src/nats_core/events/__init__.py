@@ -32,6 +32,13 @@ from nats_core.events._pipeline import (
     TaskProgress,
     WaveSummary,
 )
+from nats_core.events._runbook import (
+    EscalatedPayload,
+    RunbookCompletePayload,
+    RunbookStartedPayload,
+    StepResultPayload,
+    StepStartedPayload,
+)
 
 __all__ = [
     "AgentDeregistrationPayload",
@@ -50,13 +57,18 @@ __all__ = [
     "BuildStartedPayload",
     "CommandPayload",
     "DispatchPayload",
+    "EscalatedPayload",
     "FeaturePlannedPayload",
     "FeatureReadyForBuildPayload",
     "IntentClassifiedPayload",
     "NotificationPayload",
     "ResultPayload",
+    "RunbookCompletePayload",
+    "RunbookStartedPayload",
     "StageCompletePayload",
     "StageGatedPayload",
+    "StepResultPayload",
+    "StepStartedPayload",
     "TaskProgress",
     "WaveSummary",
 ]

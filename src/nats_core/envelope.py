@@ -42,13 +42,20 @@ from nats_core.events._pipeline import (
     StageCompletePayload,
     StageGatedPayload,
 )
+from nats_core.events._runbook import (
+    EscalatedPayload,
+    RunbookCompletePayload,
+    RunbookStartedPayload,
+    StepResultPayload,
+    StepStartedPayload,
+)
 from nats_core.manifest import AgentManifest
 
 
 class EventType(str, Enum):
     """Enumeration of all event types across fleet domains.
 
-    Covers four domains: Pipeline, Agent, Jarvis, and Fleet.
+    Covers five domains: Pipeline, Agent, Jarvis, Fleet, and Runbook.
     Each value is a lowercase snake_case string suitable for use
     as a NATS subject segment.
     """
@@ -86,6 +93,13 @@ class EventType(str, Enum):
     AGENT_HEARTBEAT = "agent_heartbeat"
     AGENT_DEREGISTER = "agent_deregister"
 
+    # Runbook domain (5)
+    RUNBOOK_STARTED = "runbook_started"
+    STEP_STARTED = "step_started"
+    STEP_RESULT = "step_result"
+    RUNBOOK_COMPLETE = "runbook_complete"
+    ESCALATED = "escalated"
+
 
 # Module-level registry mapping every EventType member to its payload class.
 # ERROR reuses AgentStatusPayload (with state="error") per the agent domain spec.
@@ -119,6 +133,12 @@ _EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
     EventType.AGENT_REGISTER: AgentManifest,
     EventType.AGENT_HEARTBEAT: AgentHeartbeatPayload,
     EventType.AGENT_DEREGISTER: AgentDeregistrationPayload,
+    # Runbook domain
+    EventType.RUNBOOK_STARTED: RunbookStartedPayload,
+    EventType.STEP_STARTED: StepStartedPayload,
+    EventType.STEP_RESULT: StepResultPayload,
+    EventType.RUNBOOK_COMPLETE: RunbookCompletePayload,
+    EventType.ESCALATED: EscalatedPayload,
 }
 
 
