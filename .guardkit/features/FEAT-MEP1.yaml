@@ -1,0 +1,79 @@
+id: FEAT-MEP1
+name: Memory Episode Publisher
+description: Canonical framework-neutral MemoryEpisodeV1 Pydantic schema + publish_episode()
+  helper (raw publish, Nats-Msg-Id=episode_id dedupe header, reject-only 900KB guard)
+  on subject memory.episode.{project_id}.{episode_type}; Topics.Memory registry entry.
+  P1 of the post-Graphiti memory write path; cross-repo contract imported by the fleet-memory
+  relay (P3).
+created: '2026-06-24T19:13:10.771414'
+status: planned
+complexity: 5
+estimated_tasks: 5
+tasks:
+- id: TASK-MEP-001
+  name: MemoryEpisodeV1 canonical schema and MAX_EPISODE_BODY_BYTES
+  file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-001-memory-episode-schema.md
+  complexity: 4
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-MEP-002
+  name: Topics.Memory namespace wired into ALL_TOPICS
+  file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-002-topics-memory-namespace.md
+  complexity: 4
+  dependencies: []
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-MEP-003
+  name: publish_episode helper raw publish Nats-Msg-Id header and 900KB reject guard
+  file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-003-publish-episode-helper.md
+  complexity: 5
+  dependencies:
+  - TASK-MEP-001
+  - TASK-MEP-002
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 75
+- id: TASK-MEP-004
+  name: Unit test suite and make_memory_episode factory
+  file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-004-unit-test-suite.md
+  complexity: 4
+  dependencies:
+  - TASK-MEP-001
+  - TASK-MEP-003
+  status: pending
+  description: ''
+  implementation_mode: task-work
+  estimated_minutes: 50
+- id: TASK-MEP-005
+  name: Optional live integration round-trip echo on GB10
+  file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-005-live-integration-echo.md
+  complexity: 3
+  dependencies:
+  - TASK-MEP-001
+  - TASK-MEP-003
+  status: pending
+  description: ''
+  implementation_mode: direct
+  estimated_minutes: 33
+orchestration:
+  parallel_groups:
+  - - TASK-MEP-001
+    - TASK-MEP-002
+  - - TASK-MEP-003
+  - - TASK-MEP-004
+    - TASK-MEP-005
+  estimated_duration_minutes: 258
+  recommended_parallel: 2
+smoke_gates:
+  after_wave: [2, 3]
+  command: |
+    set -e
+    pytest tests/ -x -m "not integration"
+  expected_exit: 0
+  timeout: 180

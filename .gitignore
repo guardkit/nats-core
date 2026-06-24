@@ -206,3 +206,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Claude Code
+#  Transient per-session hook state (UUID-named); not meant to be committed.
+.claude/hooks/.state/
