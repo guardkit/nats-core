@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
@@ -188,14 +188,14 @@ class TestPublish:
 
     async def test_envelope_timestamp_within_1s_of_now(self) -> None:
         """AC: envelope.timestamp is within 1 second of now in UTC."""
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         _, data = await self._publish_and_capture()
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         ts = datetime.fromisoformat(data["timestamp"])
         # Ensure tz-aware comparison
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         assert before <= ts <= after
 
     async def test_envelope_version_is_1_0(self) -> None:
@@ -1564,6 +1564,7 @@ class TestPublishEpisode:
     """Tests for NATSClient.publish_episode() method (TASK-MEP-003)."""
 
     @pytest.mark.unit
+    @pytest.mark.negative
     async def test_publish_episode_raises_runtime_error_when_not_connected(self) -> None:
         """AC-001: publish_episode() raises RuntimeError when client is not connected."""
         from nats_core.client import NATSClient
@@ -1582,6 +1583,7 @@ class TestPublishEpisode:
             await client.publish_episode(episode)
 
     @pytest.mark.unit
+    @pytest.mark.smoke
     async def test_publish_episode_publishes_raw_json_with_nats_msg_id_header(self) -> None:
         """AC-002: publishes raw model JSON with Nats-Msg-Id header."""
         from nats_core.client import NATSClient
@@ -1620,7 +1622,13 @@ class TestPublishEpisode:
             # Headers must include Nats-Msg-Id with episode_id
             assert headers == {"Nats-Msg-Id": "e1"}
 
+            # Verify the body re-parses as MemoryEpisodeV1 (raw, not enveloped)
+            reparsed = MemoryEpisodeV1.model_validate_json(data)
+            assert reparsed.episode_id == "e1"
+
     @pytest.mark.unit
+    @pytest.mark.boundary
+    @pytest.mark.negative
     async def test_publish_episode_rejects_oversized_episode(self) -> None:
         """AC-003: raises ValueError when episode exceeds MAX_EPISODE_BODY_BYTES."""
         from nats_core.client import NATSClient
@@ -1657,6 +1665,7 @@ class TestPublishEpisode:
             mock_nc.publish.assert_not_awaited()
 
     @pytest.mark.unit
+    @pytest.mark.boundary
     async def test_publish_episode_accepts_episode_at_size_limit(self) -> None:
         """AC-003: episodes exactly at the limit are accepted."""
         from nats_core.client import NATSClient

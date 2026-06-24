@@ -8,6 +8,7 @@ from typing import Any
 from nats_core.agent_config import AgentConfig, GraphitiConfig, ModelConfig
 from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope
+from nats_core.events import MemoryEpisodeV1
 from nats_core.manifest import (
     AgentManifest,
     InMemoryManifestRegistry,
@@ -236,3 +237,31 @@ def make_in_memory_registry() -> InMemoryManifestRegistry:
         A fresh InMemoryManifestRegistry with no registered manifests.
     """
     return InMemoryManifestRegistry()
+
+
+# ---------------------------------------------------------------------------
+# Memory Episode test helpers
+# ---------------------------------------------------------------------------
+
+
+def make_memory_episode(**overrides: Any) -> MemoryEpisodeV1:
+    """Create a MemoryEpisodeV1 with sensible defaults and optional overrides.
+
+    Supports building oversized bodies via body= override to test MAX_EPISODE_BODY_BYTES
+    boundary conditions.
+
+    Args:
+        **overrides: Keyword arguments to override default field values.
+
+    Returns:
+        A MemoryEpisodeV1 instance with defaults plus any caller-specified overrides.
+    """
+    defaults: dict[str, Any] = {
+        "episode_id": "test-episode-001",
+        "project_id": "test-project",
+        "episode_type": "test_outcome",
+        "content_format": "markdown",
+        "body": "Test episode content for unit testing.",
+    }
+    defaults.update(overrides)
+    return MemoryEpisodeV1(**defaults)

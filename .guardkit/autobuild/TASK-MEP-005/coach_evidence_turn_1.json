@@ -1,0 +1,103 @@
+{
+  "honesty": {
+    "verified": true,
+    "discrepancies": [],
+    "honesty_score": 1.0,
+    "resolved_paths": [],
+    "should_fix_count": 0
+  },
+  "gathering_status": "complete",
+  "gathering_error": null,
+  "quality_gates": {
+    "tests_passed": true,
+    "coverage_met": true,
+    "arch_review_passed": true,
+    "plan_audit_passed": true,
+    "tests_required": false,
+    "coverage_required": false,
+    "arch_review_required": false,
+    "plan_audit_required": true,
+    "all_gates_passed": true
+  },
+  "coverage_details": {
+    "coverage_met": true,
+    "line_coverage": null,
+    "branch_coverage": null,
+    "line_threshold": null,
+    "branch_threshold": null,
+    "coverage_required": false
+  },
+  "plan_audit": null,
+  "bdd": null,
+  "arch_review": null,
+  "tests": {
+    "tests_passed": true,
+    "tests_required": false,
+    "tests_run": null,
+    "tests_failed": 0,
+    "all_passed": true,
+    "requires_infrastructure": []
+  },
+  "wiring": null,
+  "mocked_seam": null,
+  "spec_gap": null,
+  "independent_tests": {
+    "tests_passed": true,
+    "test_command": "skipped",
+    "test_output_summary": "Independent test verification skipped (tests not required for testing tasks)",
+    "duration_seconds": 0.0,
+    "raw_output": null,
+    "signal_absent": false
+  },
+  "requirements": {
+    "criteria_total": 4,
+    "criteria_met": 4,
+    "all_criteria_met": true,
+    "missing": [],
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`tests/integration/test_memory_episode_live.py` exists, every test marked",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Created tests/integration/test_memory_episode_live.py with 4 integration tests. All tests are marked with pytestmark = [pytest.mark.integration, pytest.mark.asyncio(loop_scope='module')] at module level, ensuring every test in the file is properly marked for integration testing."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "The test publishes via a connected `NATSClient.publish_episode()` and self-subscribes",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All tests create a NATSClient instance, reuse the nats_client fixture connection, and call client.publish_episode(episode). Each test also subscribes to the resolved memory.episode.{project_id}.{episode_type} subject using nats_client.subscribe(subject, cb=on_message) before publishing, creating a self-contained publish-subscribe round-trip within the same test."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "The subscriber decodes the raw body with `MemoryEpisodeV1.model_validate_json` and asserts",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "All subscriber callbacks use MemoryEpisodeV1.model_validate_json(msg.data) to decode the raw message body. The tests then assert that the decoded episode fields match the original published episode, verifying episode_id, project_id, episode_type, content_format, body, and all optional fields as appropriate for each test case."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "The test does **not** assert JetStream server-side dedupe and does **not** point at the",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "The tests use direct NATS pub-sub without JetStream stream setup. They do not verify Nats-Msg-Id deduplication behavior and do not create or reference any JetStream streams. The tests simply publish episodes and subscribe to the core NATS subjects, demonstrating the basic message contract without JetStream-specific features."
+      }
+    ]
+  },
+  "runtime_parity": {
+    "ran": false,
+    "passed": false,
+    "command": "set -e\npytest tests/ -x -m \"not integration\"\n",
+    "exit_code": null,
+    "expected_exit": 0,
+    "timed_out": false,
+    "stderr_tail": "",
+    "skipped_reason": "parallel_wave"
+  },
+  "evidence_repo_tests": [],
+  "severity_recommendations": [],
+  "advisory_issues": [],
+  "task_type": "testing",
+  "profile_name": "testing"
+}

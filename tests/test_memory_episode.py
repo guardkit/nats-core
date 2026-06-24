@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
 
 from nats_core import MemoryEpisodeV1
-from nats_core.events import MAX_EPISODE_BODY_BYTES, MemoryEpisodeV1 as EventsMemoryEpisodeV1
+from nats_core.events import MAX_EPISODE_BODY_BYTES
 
 
 def test_max_episode_body_bytes_constant() -> None:
@@ -30,6 +30,8 @@ def test_memory_episode_imports() -> None:
     assert TopLevelEpisode is MemoryEpisodeV1
 
 
+@pytest.mark.unit
+@pytest.mark.smoke
 def test_memory_episode_required_fields() -> None:
     """Test that MemoryEpisodeV1 requires all mandatory fields."""
     # Valid minimal episode
@@ -84,6 +86,8 @@ def test_episode_type_nats_safe_identifier_valid() -> None:
         assert episode.episode_type == episode_type
 
 
+@pytest.mark.unit
+@pytest.mark.negative
 def test_episode_type_nats_safe_identifier_invalid() -> None:
     """Test that invalid NATS-safe identifiers are rejected."""
     invalid_types = [
@@ -113,7 +117,7 @@ def test_episode_type_nats_safe_identifier_invalid() -> None:
 
 def test_memory_episode_optional_fields() -> None:
     """Test that optional fields work correctly."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     episode = MemoryEpisodeV1(
         episode_id="e1",
@@ -158,6 +162,7 @@ def test_memory_episode_optional_fields_default_none() -> None:
     assert episode.ingest_hints is None
 
 
+@pytest.mark.unit
 def test_no_group_id_field() -> None:
     """Test that group_id is not a field (it was dropped)."""
     episode = MemoryEpisodeV1(
@@ -189,6 +194,7 @@ def test_content_format_is_string_not_enum() -> None:
         assert episode.content_format == fmt
 
 
+@pytest.mark.unit
 def test_extra_fields_ignored_forward_compat() -> None:
     """Test that extra unknown fields are ignored (forward compatibility)."""
     json_data = {

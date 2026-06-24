@@ -1,38 +1,37 @@
 ---
-id: TASK-MEP-004
-title: Unit test suite — MemoryEpisodeV1, publish_episode, make_memory_episode factory
-status: backlog
+complexity: 4
+consumer_context:
+- consumes: MemoryEpisodeV1
+  driver: pydantic
+  format_note: Tests construct and round-trip MemoryEpisodeV1; the factory builds
+    bodies just over/under MAX_EPISODE_BODY_BYTES via a body override.
+  framework: Pydantic BaseModel (nats_core.events._memory)
+  task: TASK-MEP-001
+- consumes: NATSClient.publish_episode
+  driver: pytest
+  format_note: Reuse the existing _make_mock_nc() harness and patch('nats_core.client.nats.connect');
+    assert mock_nc.publish.call_args for subject / raw body / headers['Nats-Msg-Id'].
+  framework: AsyncMock over nats-py (unittest.mock)
+  task: TASK-MEP-003
 created: 2026-06-24 00:00:00+00:00
-updated: '2026-06-24T00:00:00+00:00'
+dependencies:
+- TASK-MEP-001
+- TASK-MEP-003
+feature_id: FEAT-MEP1
+id: TASK-MEP-004
+implementation_mode: task-work
+parent_review: TASK-REV-MEP1
 priority: high
-task_type: testing
+status: design_approved
 tags:
 - memory-publisher
 - tests
 - pytest
 - factory
-complexity: 4
+task_type: testing
+title: Unit test suite — MemoryEpisodeV1, publish_episode, make_memory_episode factory
+updated: '2026-06-24T00:00:00+00:00'
 wave: 3
-implementation_mode: task-work
-parent_review: TASK-REV-MEP1
-feature_id: FEAT-MEP1
-dependencies:
-- TASK-MEP-001
-- TASK-MEP-003
-consumer_context:
-- task: TASK-MEP-001
-  consumes: MemoryEpisodeV1
-  framework: Pydantic BaseModel (nats_core.events._memory)
-  driver: pydantic
-  format_note: Tests construct and round-trip MemoryEpisodeV1; the factory builds
-    bodies just over/under MAX_EPISODE_BODY_BYTES via a body override.
-- task: TASK-MEP-003
-  consumes: NATSClient.publish_episode
-  framework: AsyncMock over nats-py (unittest.mock)
-  driver: pytest
-  format_note: Reuse the existing _make_mock_nc() harness and
-    patch('nats_core.client.nats.connect'); assert mock_nc.publish.call_args for
-    subject / raw body / headers['Nats-Msg-Id'].
 ---
 
 # Task: Unit test suite — MemoryEpisodeV1, publish_episode, make_memory_episode factory
