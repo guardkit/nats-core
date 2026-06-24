@@ -368,6 +368,10 @@ class TestNoHardcodedStrings:
                 [
                     "grep",
                     "-rn",
+                    # -F: match patterns as fixed strings so the dots in topic
+                    # patterns (e.g. "memory.episode.") are literal and do not
+                    # regex-match prose like "memory episode body ...".
+                    "-F",
                     pattern,
                     "src/",
                     "--include=*.py",

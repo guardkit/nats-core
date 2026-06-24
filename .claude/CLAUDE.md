@@ -37,7 +37,7 @@ work on relevant files.
 
 ## Technology Stack
 
-**Language**: Python >=3.10
+**Language**: Python >=3.11
 **Build**: hatchling (pyproject.toml)
 **Testing**: pytest with asyncio_mode = "auto"
 **Linting**: ruff (select = ["E", "F", "W", "I", "N", "UP"], line-length 100)

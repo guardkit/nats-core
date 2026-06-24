@@ -8,7 +8,7 @@ version = "0.4.0"
 description = "Shared contract layer for the Jarvis Ship's Computer fleet"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "nats-py>=2.0",
     "pydantic>=2.0",

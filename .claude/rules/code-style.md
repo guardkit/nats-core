@@ -4,7 +4,7 @@ paths: **/*.py
 
 # Code Style Guide
 
-## Language: Python >=3.10
+## Language: Python >=3.11
 
 ### Naming Conventions
 
