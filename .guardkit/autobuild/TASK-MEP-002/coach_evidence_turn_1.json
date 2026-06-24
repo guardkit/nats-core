@@ -1,0 +1,185 @@
+{
+  "honesty": {
+    "verified": true,
+    "discrepancies": [],
+    "honesty_score": 1.0,
+    "resolved_paths": [],
+    "should_fix_count": 0
+  },
+  "gathering_status": "complete",
+  "gathering_error": null,
+  "quality_gates": {
+    "tests_passed": true,
+    "coverage_met": true,
+    "arch_review_passed": true,
+    "plan_audit_passed": true,
+    "tests_required": true,
+    "coverage_required": true,
+    "arch_review_required": false,
+    "plan_audit_required": true,
+    "all_gates_passed": true
+  },
+  "coverage_details": {
+    "coverage_met": null,
+    "line_coverage": null,
+    "branch_coverage": null,
+    "line_threshold": null,
+    "branch_threshold": null,
+    "coverage_required": true
+  },
+  "plan_audit": {
+    "status": "skipped",
+    "severity": null,
+    "violations": 0,
+    "extra_files": [],
+    "missing_files": [],
+    "extra_modifications": [],
+    "missing_modifications": [],
+    "extra_dependencies": [],
+    "missing_dependencies": [],
+    "loc_variance_pct": null,
+    "discrepancies_count": 0,
+    "message": "no implementation plan on disk"
+  },
+  "bdd": null,
+  "arch_review": null,
+  "tests": {
+    "tests_passed": true,
+    "tests_required": true,
+    "tests_run": null,
+    "tests_failed": 0,
+    "all_passed": null,
+    "requires_infrastructure": []
+  },
+  "wiring": {
+    "status": "parse_degraded",
+    "dialect": "python",
+    "language": "python",
+    "dialects": [
+      "python"
+    ],
+    "languages": [
+      "python"
+    ],
+    "targets_scanned": 1,
+    "symbols_examined": 0,
+    "findings": [],
+    "degraded_files": [
+      "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/src/nats_core/topics.py"
+    ],
+    "ctor_arity": {
+      "status": "skipped_no_composition_root",
+      "ran": false,
+      "skip_reason": "no composition root found",
+      "dialect": "python",
+      "language": "python",
+      "composition_roots_scanned": 0,
+      "findings": []
+    }
+  },
+  "mocked_seam": {
+    "status": "skipped_no_acceptance_files",
+    "ran": false,
+    "skip_reason": "no acceptance files found",
+    "dialect": "python",
+    "language": "python",
+    "findings": [],
+    "external_mocks_ignored": []
+  },
+  "spec_gap": {
+    "status": "unsupported_stack",
+    "ground_truth_count": 0,
+    "executed_count": 0,
+    "pending_count": 0,
+    "findings": [],
+    "whole_file_deselection": false,
+    "bdd_plugin_name": null,
+    "executed_evidence": "counts_only"
+  },
+  "independent_tests": {
+    "tests_passed": false,
+    "test_command": "pytest tests/test_memory_episode.py tests/test_topics.py -v --tb=short",
+    "test_output_summary": "I'll run the test command for you.",
+    "duration_seconds": 7.747779846191406,
+    "raw_output": "\nI'll run the test command for you.\n",
+    "signal_absent": false
+  },
+  "requirements": {
+    "criteria_total": 6,
+    "criteria_met": 6,
+    "all_criteria_met": true,
+    "missing": [],
+    "criteria_results": [
+      {
+        "criterion_id": "AC-001",
+        "criterion_text": "`Topics.Memory.EPISODE == \"memory.episode.{project_id}.{episode_type}\"` and",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Added Topics.Memory class with EPISODE and ALL constants using _ImmutableNamespaceMeta. Tests verify correct values and immutability (test_memory_episode_constant_value, test_memory_all_constant_value, test_memory_namespace_is_immutable)."
+      },
+      {
+        "criterion_id": "AC-002",
+        "criterion_text": "`Memory` is appended to the `ALL_TOPICS` tuple; `Topics.Memory.EPISODE in Topics.ALL_TOPICS`",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Appended Memory to the ALL_TOPICS tuple at line 138. Tests verify EPISODE is included and ALL (wildcard) is excluded (test_memory_episode_in_all_topics, test_memory_all_not_in_all_topics)."
+      },
+      {
+        "criterion_id": "AC-003",
+        "criterion_text": "`Topics.resolve(Topics.Memory.EPISODE, project_id=\"finproxy\", episode_type=\"feature_outcome\")",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Existing Topics.resolve() with _validate_identifier() handles resolution correctly. Tests verify feature_outcome and structured_json resolve correctly, and evil.> raises ValueError (test_resolve_memory_episode_feature_outcome, test_resolve_memory_episode_structured_json, test_resolve_memory_episode_rejects_wildcard_in_episode_type)."
+      },
+      {
+        "criterion_id": "AC-004",
+        "criterion_text": "`tests/test_topics.py::test_all_topics_count` asserts `== 28` with the comment block updated to match.",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Updated test_all_topics_count to assert len == 28 and updated comment block to include 'Memory: 1 (excl ALL)' and 'Total: 28'."
+      },
+      {
+        "criterion_id": "AC-005",
+        "criterion_text": "`'memory.episode.'` is added to the hardcoded-string patterns list so stray memory literals",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Added 'memory.episode.' to the patterns list in test_no_hardcoded_topic_strings_outside_registry at line 364."
+      },
+      {
+        "criterion_id": "AC-006",
+        "criterion_text": "All modified files pass project-configured lint/format checks (ruff + mypy strict) with zero errors.",
+        "result": "verified",
+        "status": "verified",
+        "evidence": "Both files pass ruff and mypy strict checks with zero errors. Verified via 'ruff check src/nats_core/topics.py tests/test_topics.py' and 'mypy src/nats_core/topics.py --strict'."
+      }
+    ]
+  },
+  "runtime_parity": {
+    "ran": false,
+    "passed": false,
+    "command": "set -e\npytest tests/ -x -m \"not integration\"\n",
+    "exit_code": null,
+    "expected_exit": 0,
+    "timed_out": false,
+    "stderr_tail": "",
+    "skipped_reason": "parallel_wave"
+  },
+  "evidence_repo_tests": [],
+  "severity_recommendations": [],
+  "advisory_issues": [
+    {
+      "severity": "warning",
+      "category": "agent_invocations_advisory",
+      "description": "Advisory (non-blocking): task-work produced a report with 2 of 3 expected agent invocations. Missing phases: 3 (Implementation). Consider invoking these agents via the Task tool to strengthen stack-specific quality:\n- Phase 3: `the stack-specific Phase-3 specialist` (Implementation)",
+      "details": {
+        "missing_phases": [
+          "3"
+        ],
+        "expected_phases": 3,
+        "actual_invocations": 2
+      }
+    }
+  ],
+  "task_type": "feature",
+  "profile_name": "feature"
+}

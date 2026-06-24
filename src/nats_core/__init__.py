@@ -6,6 +6,7 @@ from nats_core.agent_config import AgentConfig, GraphitiConfig, ModelConfig
 from nats_core.client import NATSClient, NATSKVManifestRegistry
 from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope, payload_class_for_event_type
+from nats_core.events import MAX_EPISODE_BODY_BYTES, MemoryEpisodeV1
 from nats_core.manifest import (
     AgentManifest,
     InMemoryManifestRegistry,
@@ -24,7 +25,9 @@ __all__ = [
     "GraphitiConfig",
     "InMemoryManifestRegistry",
     "IntentCapability",
+    "MAX_EPISODE_BODY_BYTES",
     "ManifestRegistry",
+    "MemoryEpisodeV1",
     "MessageEnvelope",
     "ModelConfig",
     "NATSClient",

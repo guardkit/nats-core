@@ -277,6 +277,7 @@ class TestEdgeCases:
         assert hasattr(Topics, "Fleet")
         assert hasattr(Topics, "Jarvis")
         assert hasattr(Topics, "System")
+        assert hasattr(Topics, "Memory")
 
     @pytest.mark.edge_case
     def test_resolve_idempotent(self) -> None:
@@ -361,6 +362,7 @@ class TestNoHardcodedStrings:
             "jarvis.command.",
             "jarvis.dispatch.",
             "system.health.",
+            "memory.episode.",
         ]
         repo_root = Path(__file__).resolve().parent.parent
         for pattern in patterns:
@@ -437,8 +439,9 @@ class TestAllTopics:
         # Fleet: 3 (excl HEARTBEAT_ALL, ALL)
         # Jarvis: 4 (none are wildcards)
         # System: 1
-        # Total: 27
-        assert len(Topics.ALL_TOPICS) == 27
+        # Memory: 1 (excl ALL)
+        # Total: 28
+        assert len(Topics.ALL_TOPICS) == 28
 
 
 # ---------------------------------------------------------------------------
@@ -507,6 +510,10 @@ class TestAllConstantsExist:
     def test_system_constants(self) -> None:
         assert Topics.System.HEALTH == "system.health.{component}"
 
+    def test_memory_constants(self) -> None:
+        assert Topics.Memory.EPISODE == "memory.episode.{project_id}.{episode_type}"
+        assert Topics.Memory.ALL == "memory.episode.>"
+
 
 # ---------------------------------------------------------------------------
 # @seam — Integration contract verification
@@ -532,8 +539,8 @@ class TestSeam:
         # Module is importable
         assert TopicsFromModule is not None, "Topics class must be importable"
 
-        # All 5 namespaces present
-        for ns in ("Pipeline", "Agents", "Fleet", "Jarvis", "System"):
+        # All 6 namespaces present
+        for ns in ("Pipeline", "Agents", "Fleet", "Jarvis", "System", "Memory"):
             assert hasattr(TopicsFromModule, ns), f"Topics must have {ns} namespace"
 
         # Constants are strings (not None, not instances)
@@ -688,3 +695,60 @@ class TestTaskNCFA003Topics:
             Topics.Pipeline.BUILD_RESUMED, feature_id="FEAT-XXX"
         )
         assert result == "pipeline.build-resumed.FEAT-XXX"
+
+
+# ---------------------------------------------------------------------------
+# TASK-MEP-002 Acceptance Criteria — Memory namespace tests
+# ---------------------------------------------------------------------------
+
+
+class TestTaskMemoryTopics:
+    """Acceptance criteria verification for TASK-MEP-002 (Memory namespace)."""
+
+    def test_memory_episode_constant_value(self) -> None:
+        """AC: Topics.Memory.EPISODE == 'memory.episode.{project_id}.{episode_type}'."""
+        assert Topics.Memory.EPISODE == "memory.episode.{project_id}.{episode_type}"
+
+    def test_memory_all_constant_value(self) -> None:
+        """AC: Topics.Memory.ALL == 'memory.episode.>'."""
+        assert Topics.Memory.ALL == "memory.episode.>"
+
+    def test_memory_namespace_is_immutable(self) -> None:
+        """AC: Memory uses _ImmutableNamespaceMeta (reassigning raises AttributeError)."""
+        with pytest.raises(AttributeError, match="cannot reassign Memory.EPISODE"):
+            Topics.Memory.EPISODE = "modified.value"
+
+    def test_memory_episode_in_all_topics(self) -> None:
+        """AC: Topics.Memory.EPISODE in Topics.ALL_TOPICS is True."""
+        assert Topics.Memory.EPISODE in Topics.ALL_TOPICS
+
+    def test_memory_all_not_in_all_topics(self) -> None:
+        """AC: Topics.Memory.ALL in Topics.ALL_TOPICS is False (wildcard excluded)."""
+        assert Topics.Memory.ALL not in Topics.ALL_TOPICS
+
+    def test_resolve_memory_episode_feature_outcome(self) -> None:
+        """AC: Resolve EPISODE with project_id='finproxy', episode_type='feature_outcome'."""
+        result = Topics.resolve(
+            Topics.Memory.EPISODE,
+            project_id="finproxy",
+            episode_type="feature_outcome"
+        )
+        assert result == "memory.episode.finproxy.feature_outcome"
+
+    def test_resolve_memory_episode_structured_json(self) -> None:
+        """AC: Resolve EPISODE with episode_type='structured_json'."""
+        result = Topics.resolve(
+            Topics.Memory.EPISODE,
+            project_id="finproxy",
+            episode_type="structured_json"
+        )
+        assert result == "memory.episode.finproxy.structured_json"
+
+    def test_resolve_memory_episode_rejects_wildcard_in_episode_type(self) -> None:
+        """AC: episode_type='evil.>' raises ValueError (dots forbidden)."""
+        with pytest.raises(ValueError, match="episode_type must not contain dots"):
+            Topics.resolve(
+                Topics.Memory.EPISODE,
+                project_id="finproxy",
+                episode_type="evil.>"
+            )
