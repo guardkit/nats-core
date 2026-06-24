@@ -1,0 +1,16 @@
+{
+  "task_id": "TASK-MEP-001",
+  "checkpoints": [
+    {
+      "turn": 1,
+      "commit_hash": "058227cfed70460e889030c52041c8354a981324",
+      "timestamp": "2026-06-24T20:38:55.291932",
+      "tests_passed": true,
+      "test_count": 16,
+      "message": "[guardkit-checkpoint] Turn 1 complete (tests: pass)",
+      "from_prior_run": false,
+      "evidence_commits": {}
+    }
+  ],
+  "last_updated": "2026-06-24T20:38:55.292188"
+}
