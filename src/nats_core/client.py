@@ -13,7 +13,7 @@ import json
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import nats
@@ -200,7 +200,7 @@ class NATSClient:
 
         envelope = MessageEnvelope(
             message_id=str(uuid.uuid4()),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             version="1.0",
             source_id=source_id,
             event_type=event_type,
