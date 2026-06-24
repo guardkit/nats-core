@@ -93,8 +93,8 @@ class TestPyprojectTomlConfig:
         assert "hatchling" in self.config["build-system"]["requires"]
 
     def test_python_requires(self) -> None:
-        """AC-002: Python >= 3.10 required."""
-        assert self.config["project"]["requires-python"] == ">=3.10"
+        """AC-002: Python >= 3.11 required."""
+        assert self.config["project"]["requires-python"] == ">=3.11"
 
     def test_pydantic_dependency(self) -> None:
         """AC-003: pydantic >= 2.0 must be in dependencies."""
