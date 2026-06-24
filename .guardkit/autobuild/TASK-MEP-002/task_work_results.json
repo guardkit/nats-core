@@ -1,0 +1,157 @@
+{
+  "task_id": "TASK-MEP-002",
+  "timestamp": "2026-06-24T20:34:57.622851",
+  "completed": true,
+  "phases": {
+    "phase_3": {
+      "detected": true,
+      "text": "Implementation",
+      "completed": true
+    }
+  },
+  "quality_gates": {
+    "tests_passing": true,
+    "tests_passed": 79,
+    "tests_failed": 0,
+    "coverage": null,
+    "coverage_met": null,
+    "all_passed": null
+  },
+  "files_modified": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/src/nats_core/topics.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/tests/test_topics.py",
+    "src/nats_core/__init__.py",
+    "src/nats_core/events/__init__.py",
+    "src/nats_core/topics.py",
+    "tests/test_topics.py"
+  ],
+  "files_created": [
+    "features/conftest.py",
+    "src/nats_core/events/_memory.py",
+    "tests/test_memory_episode.py"
+  ],
+  "files_authored": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/.guardkit/autobuild/TASK-MEP-002/player_turn_1.json",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/src/nats_core/topics.py",
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/tests/test_topics.py"
+  ],
+  "tests_written": [
+    "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/tests/test_topics.py"
+  ],
+  "summary": "79 tests passed",
+  "sdk_turns": {
+    "turns_used": 38,
+    "max_turns": 150,
+    "ceiling_hit": false
+  },
+  "task_type": "feature",
+  "agent_invocations_validation": {
+    "status": "violation",
+    "expected_phases": 3,
+    "actual_invocations": 2,
+    "missing_phases": [
+      "3"
+    ],
+    "violation_message": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\u274c PROTOCOL VIOLATION: Agent invocation incomplete\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\nExpected: 3 agent invocations\nActual: 2 completed invocations\n\nMissing phases:\n  - Phase 3 (Implementation)\n\nCannot generate completion report until all agents are invoked.\nReview the AGENT INVOCATIONS LOG above to see which phases were skipped.\n\nAGENT INVOCATIONS LOG:\n\u2705 Phase 4 (Phase 4): test-orchestrator (completed in ?s)\n\u2705 Phase 5 (Phase 5): code-reviewer (completed in ?s)\n\nTASK WILL BE MOVED TO BLOCKED STATE\nReason: Protocol violation - required agents not invoked\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550"
+  },
+  "plan_audit": {
+    "status": "skipped",
+    "severity": null,
+    "violations": 0,
+    "extra_files": [],
+    "missing_files": [],
+    "extra_modifications": [],
+    "missing_modifications": [],
+    "extra_dependencies": [],
+    "missing_dependencies": [],
+    "loc_variance_pct": null,
+    "discrepancies_count": 0,
+    "message": "no implementation plan on disk"
+  },
+  "unconfirmed_low_confidence_assumptions": {
+    "status": "ok",
+    "unconfirmed": [],
+    "files_scanned": 0,
+    "files_skipped": 0,
+    "message": null
+  },
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "Topics.Memory.EPISODE == 'memory.episode.{project_id}.{episode_type}' and Topics.Memory.ALL == 'memory.episode.>'; Memory uses _ImmutableNamespaceMeta (reassigning a constant raises AttributeError).",
+      "status": "complete",
+      "evidence": "Added Topics.Memory class with EPISODE and ALL constants using _ImmutableNamespaceMeta. Tests verify correct values and immutability (test_memory_episode_constant_value, test_memory_all_constant_value, test_memory_namespace_is_immutable).",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "Memory is appended to the ALL_TOPICS tuple; Topics.Memory.EPISODE in Topics.ALL_TOPICS is True and Topics.Memory.ALL in Topics.ALL_TOPICS is False \u2014 both asserted explicitly in TestTaskMemoryTopics.",
+      "status": "complete",
+      "evidence": "Appended Memory to the ALL_TOPICS tuple at line 138. Tests verify EPISODE is included and ALL (wildcard) is excluded (test_memory_episode_in_all_topics, test_memory_all_not_in_all_topics).",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "Topics.resolve(Topics.Memory.EPISODE, project_id='finproxy', episode_type='feature_outcome') == 'memory.episode.finproxy.feature_outcome'; episode_type='structured_json' also resolves; episode_type='evil.>' raises ValueError.",
+      "status": "complete",
+      "evidence": "Existing Topics.resolve() with _validate_identifier() handles resolution correctly. Tests verify feature_outcome and structured_json resolve correctly, and evil.> raises ValueError (test_resolve_memory_episode_feature_outcome, test_resolve_memory_episode_structured_json, test_resolve_memory_episode_rejects_wildcard_in_episode_type).",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "src/nats_core/topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "tests/test_topics.py::test_all_topics_count asserts == 28 with the comment block updated to match.",
+      "status": "complete",
+      "evidence": "Updated test_all_topics_count to assert len == 28 and updated comment block to include 'Memory: 1 (excl ALL)' and 'Total: 28'.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "tests/test_topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-005",
+      "criterion_text": "'memory.episode.' is added to the hardcoded-string patterns list so stray memory literals outside topics.py are caught.",
+      "status": "complete",
+      "evidence": "Added 'memory.episode.' to the patterns list in test_no_hardcoded_topic_strings_outside_registry at line 364.",
+      "test_file": "tests/test_topics.py",
+      "implementation_files": [
+        "tests/test_topics.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-006",
+      "criterion_text": "All modified files pass project-configured lint/format checks (ruff + mypy strict) with zero errors.",
+      "status": "complete",
+      "evidence": "Both files pass ruff and mypy strict checks with zero errors. Verified via 'ruff check src/nats_core/topics.py tests/test_topics.py' and 'mypy src/nats_core/topics.py --strict'.",
+      "test_file": null,
+      "implementation_files": [
+        "src/nats_core/topics.py",
+        "tests/test_topics.py"
+      ]
+    }
+  ],
+  "agent_invocations": [
+    {
+      "phase": "4",
+      "agent": "test-orchestrator",
+      "status": "completed",
+      "source": "orchestrator",
+      "duration_seconds": 0.46190737502183765
+    },
+    {
+      "phase": "5",
+      "agent": "code-reviewer",
+      "status": "completed",
+      "source": "orchestrator",
+      "duration_seconds": 125.4295687499689
+    }
+  ]
+}

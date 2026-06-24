@@ -13,7 +13,7 @@ import json
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import nats
@@ -24,6 +24,7 @@ from pydantic import BaseModel, ValidationError
 
 from nats_core.config import NATSConfig
 from nats_core.envelope import EventType, MessageEnvelope
+from nats_core.events import MAX_EPISODE_BODY_BYTES, MemoryEpisodeV1
 from nats_core.events._fleet import AgentDeregistrationPayload, AgentHeartbeatPayload
 from nats_core.manifest import AgentManifest, ManifestRegistry
 from nats_core.topics import Topics
@@ -199,7 +200,7 @@ class NATSClient:
 
         envelope = MessageEnvelope(
             message_id=str(uuid.uuid4()),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             version="1.0",
             source_id=source_id,
             event_type=event_type,
@@ -317,6 +318,42 @@ class NATSClient:
             msg = "client is not connected"
             raise RuntimeError(msg)
         await self._nc.publish(subject, data)
+
+    async def publish_episode(self, episode: MemoryEpisodeV1) -> None:
+        """Publish a memory episode (raw body + Nats-Msg-Id header, ≤900KB guard).
+
+        Publishes the raw ``MemoryEpisodeV1`` JSON to the
+        ``memory.episode.{project_id}.{episode_type}`` subject with the
+        ``Nats-Msg-Id`` header set to the episode ID for JetStream deduplication.
+
+        The method bypasses ``MessageEnvelope`` wrapping — the fleet-memory relay
+        decodes the body directly as ``MemoryEpisodeV1.model_validate_json(msg.data)``.
+
+        Args:
+            episode: The memory episode to publish.
+
+        Raises:
+            RuntimeError: If the client is not connected.
+            ValueError: If the encoded episode size exceeds MAX_EPISODE_BODY_BYTES (900KB).
+        """
+        if self._nc is None:
+            msg = "client is not connected"
+            raise RuntimeError(msg)
+
+        data = episode.model_dump_json().encode()
+        if len(data) > MAX_EPISODE_BODY_BYTES:
+            msg = (
+                f"memory episode body is {len(data)} bytes, exceeding the "
+                f"{MAX_EPISODE_BODY_BYTES} byte (900KB) limit; chunk the content upstream"
+            )
+            raise ValueError(msg)
+
+        subject = Topics.resolve(
+            Topics.Memory.EPISODE,
+            project_id=episode.project_id,
+            episode_type=episode.episode_type,
+        )
+        await self._nc.publish(subject, data, headers={"Nats-Msg-Id": episode.episode_id})
 
     # ------------------------------------------------------------------
     # Fleet convenience methods

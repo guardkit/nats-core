@@ -1,0 +1,16 @@
+[
+  {
+    "task_id": "TASK-MEP-003",
+    "pre_path": "tasks/backlog/TASK-MEP-003-publish-episode-helper.md",
+    "post_path": "tasks/design_approved/TASK-MEP-003-publish-episode-helper.md",
+    "timestamp": "2026-06-24T19:39:45.450965+00:00",
+    "kind": "design_approved_transition"
+  },
+  {
+    "task_id": "TASK-MEP-003",
+    "pre_path": "tasks/backlog/memory-episode-publisher/TASK-MEP-003-publish-episode-helper.md",
+    "post_path": "tasks/design_approved/TASK-MEP-003-publish-episode-helper.md",
+    "timestamp": "2026-06-24T19:50:19.977821+00:00",
+    "kind": "design_approved_transition"
+  }
+]

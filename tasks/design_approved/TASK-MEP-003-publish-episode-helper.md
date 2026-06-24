@@ -1,45 +1,46 @@
 ---
-id: TASK-MEP-003
-title: NATSClient.publish_episode() — raw publish, Nats-Msg-Id header, 900KB reject guard
-status: backlog
+complexity: 5
+consumer_context:
+- consumes: MemoryEpisodeV1
+  driver: pydantic
+  format_note: Publish the RAW model JSON (model_dump_json().encode()) as the NATS
+    message body — NO MessageEnvelope wrapping. The fleet-memory relay decodes the
+    body directly via MemoryEpisodeV1.model_validate_json(msg.data).
+  framework: Pydantic BaseModel (nats_core.events._memory)
+  task: TASK-MEP-001
+- consumes: MAX_EPISODE_BODY_BYTES
+  driver: stdlib
+  format_note: Measure len(episode.model_dump_json().encode()) (FULL encoded wire
+    bytes, not the body field alone); reject with ValueError if it exceeds the limit.
+  framework: int module constant (nats_core.events._memory)
+  task: TASK-MEP-001
+- consumes: Topics.Memory.EPISODE
+  driver: nats_core
+  format_note: Build the subject via Topics.resolve(Topics.Memory.EPISODE, project_id=...,
+    episode_type=...) — never Topics.for_project (project_id is already the first
+    segment).
+  framework: Topics registry template (nats_core.topics)
+  task: TASK-MEP-002
 created: 2026-06-24 00:00:00+00:00
-updated: '2026-06-24T00:00:00+00:00'
+dependencies:
+- TASK-MEP-001
+- TASK-MEP-002
+feature_id: FEAT-MEP1
+id: TASK-MEP-003
+implementation_mode: task-work
+parent_review: TASK-REV-MEP1
 priority: high
-task_type: feature
+status: design_approved
 tags:
 - memory-publisher
 - nats-client
 - publish
 - jetstream-dedupe
-complexity: 5
+task_type: feature
+title: NATSClient.publish_episode() — raw publish, Nats-Msg-Id header, 900KB reject
+  guard
+updated: '2026-06-24T00:00:00+00:00'
 wave: 2
-implementation_mode: task-work
-parent_review: TASK-REV-MEP1
-feature_id: FEAT-MEP1
-dependencies:
-- TASK-MEP-001
-- TASK-MEP-002
-consumer_context:
-- task: TASK-MEP-001
-  consumes: MemoryEpisodeV1
-  framework: Pydantic BaseModel (nats_core.events._memory)
-  driver: pydantic
-  format_note: Publish the RAW model JSON (model_dump_json().encode()) as the NATS
-    message body — NO MessageEnvelope wrapping. The fleet-memory relay decodes the
-    body directly via MemoryEpisodeV1.model_validate_json(msg.data).
-- task: TASK-MEP-001
-  consumes: MAX_EPISODE_BODY_BYTES
-  framework: int module constant (nats_core.events._memory)
-  driver: stdlib
-  format_note: Measure len(episode.model_dump_json().encode()) (FULL encoded wire
-    bytes, not the body field alone); reject with ValueError if it exceeds the limit.
-- task: TASK-MEP-002
-  consumes: Topics.Memory.EPISODE
-  framework: Topics registry template (nats_core.topics)
-  driver: nats_core
-  format_note: Build the subject via Topics.resolve(Topics.Memory.EPISODE,
-    project_id=..., episode_type=...) — never Topics.for_project (project_id is
-    already the first segment).
 ---
 
 # Task: NATSClient.publish_episode() — raw publish, Nats-Msg-Id header, 900KB reject guard

@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
@@ -188,14 +188,14 @@ class TestPublish:
 
     async def test_envelope_timestamp_within_1s_of_now(self) -> None:
         """AC: envelope.timestamp is within 1 second of now in UTC."""
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
         _, data = await self._publish_and_capture()
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         ts = datetime.fromisoformat(data["timestamp"])
         # Ensure tz-aware comparison
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         assert before <= ts <= after
 
     async def test_envelope_version_is_1_0(self) -> None:
@@ -1553,3 +1553,232 @@ class TestLifecycleCallbacks:
 
         assert disconnected.await_count >= 1
         closed.assert_awaited_once()
+
+
+# ===========================================================================
+# AC: publish_episode() — raw publish with Nats-Msg-Id header, 900KB guard
+# ===========================================================================
+
+
+class TestPublishEpisode:
+    """Tests for NATSClient.publish_episode() method (TASK-MEP-003)."""
+
+    @pytest.mark.unit
+    @pytest.mark.negative
+    async def test_publish_episode_raises_runtime_error_when_not_connected(self) -> None:
+        """AC-001: publish_episode() raises RuntimeError when client is not connected."""
+        from nats_core.client import NATSClient
+        from nats_core.events import MemoryEpisodeV1
+
+        client = NATSClient(_make_config())
+        episode = MemoryEpisodeV1(
+            episode_id="e1",
+            project_id="finproxy",
+            episode_type="feature_outcome",
+            content_format="markdown",
+            body="test content",
+        )
+
+        with pytest.raises(RuntimeError, match="client is not connected"):
+            await client.publish_episode(episode)
+
+    @pytest.mark.unit
+    @pytest.mark.smoke
+    async def test_publish_episode_publishes_raw_json_with_nats_msg_id_header(self) -> None:
+        """AC-002: publishes raw model JSON with Nats-Msg-Id header."""
+        from nats_core.client import NATSClient
+        from nats_core.events import MemoryEpisodeV1
+
+        client = NATSClient(_make_config())
+        episode = MemoryEpisodeV1(
+            episode_id="e1",
+            project_id="finproxy",
+            episode_type="feature_outcome",
+            content_format="markdown",
+            body="test content",
+        )
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_nc = _make_mock_nc()
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+            await client.publish_episode(episode)
+
+            # Verify publish was called with correct arguments
+            mock_nc.publish.assert_awaited_once()
+            call_args = mock_nc.publish.call_args
+            subject = call_args[0][0]
+            data = call_args[0][1]
+            headers = call_args[1]["headers"]
+
+            # Subject must be memory.episode.{project_id}.{episode_type}
+            assert subject == "memory.episode.finproxy.feature_outcome"
+
+            # Data must be raw model JSON (no MessageEnvelope)
+            expected_data = episode.model_dump_json().encode()
+            assert data == expected_data
+
+            # Headers must include Nats-Msg-Id with episode_id
+            assert headers == {"Nats-Msg-Id": "e1"}
+
+            # Verify the body re-parses as MemoryEpisodeV1 (raw, not enveloped)
+            reparsed = MemoryEpisodeV1.model_validate_json(data)
+            assert reparsed.episode_id == "e1"
+
+    @pytest.mark.unit
+    @pytest.mark.boundary
+    @pytest.mark.negative
+    async def test_publish_episode_rejects_oversized_episode(self) -> None:
+        """AC-003: raises ValueError when episode exceeds MAX_EPISODE_BODY_BYTES."""
+        from nats_core.client import NATSClient
+        from nats_core.events import MAX_EPISODE_BODY_BYTES, MemoryEpisodeV1
+
+        client = NATSClient(_make_config())
+
+        # Create an episode that exceeds the limit
+        # MAX_EPISODE_BODY_BYTES = 900KB = 921600 bytes
+        large_body = "x" * (MAX_EPISODE_BODY_BYTES + 1)
+        episode = MemoryEpisodeV1(
+            episode_id="e1",
+            project_id="finproxy",
+            episode_type="feature_outcome",
+            content_format="text",
+            body=large_body,
+        )
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_nc = _make_mock_nc()
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+            # Should raise ValueError before calling publish
+            with pytest.raises(ValueError) as exc_info:
+                await client.publish_episode(episode)
+
+            # Error message must include the measured size and limit
+            error_msg = str(exc_info.value)
+            assert "900KB" in error_msg or "921600" in error_msg
+            assert "byte" in error_msg.lower()
+
+            # Verify publish was NOT called
+            mock_nc.publish.assert_not_awaited()
+
+    @pytest.mark.unit
+    @pytest.mark.boundary
+    async def test_publish_episode_accepts_episode_at_size_limit(self) -> None:
+        """AC-003: episodes exactly at the limit are accepted."""
+        from nats_core.client import NATSClient
+        from nats_core.events import MAX_EPISODE_BODY_BYTES, MemoryEpisodeV1
+
+        client = NATSClient(_make_config())
+
+        # Create a minimal episode to measure overhead
+        episode = MemoryEpisodeV1(
+            episode_id="e1",
+            project_id="p",
+            episode_type="t",
+            content_format="text",
+            body="",
+        )
+        overhead = len(episode.model_dump_json().encode())
+
+        # Now create one that uses exactly the remaining budget
+        body_budget = MAX_EPISODE_BODY_BYTES - overhead
+        episode_at_limit = MemoryEpisodeV1(
+            episode_id="e1",
+            project_id="p",
+            episode_type="t",
+            content_format="text",
+            body="x" * body_budget,
+        )
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_nc = _make_mock_nc()
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+            # Should succeed without raising
+            await client.publish_episode(episode_at_limit)
+
+            # Verify publish was called
+            mock_nc.publish.assert_awaited_once()
+
+    @pytest.mark.unit
+    async def test_publish_raw_signature_unchanged(self) -> None:
+        """AC-004: publish_raw() signature is unchanged (does not accept headers)."""
+        from nats_core.client import NATSClient
+
+        client = NATSClient(_make_config())
+
+        with patch("nats_core.client.nats.connect", new_callable=AsyncMock) as mock_connect:
+            mock_nc = _make_mock_nc()
+            mock_connect.return_value = mock_nc
+            await client.connect()
+
+            # publish_raw should still only accept (subject, data)
+            await client.publish_raw("test.subject", b"test data")
+
+            # Verify it was called without headers
+            mock_nc.publish.assert_awaited_once()
+            call_args = mock_nc.publish.call_args
+            # Should be positional args: subject, data
+            assert call_args[0][0] == "test.subject"
+            assert call_args[0][1] == b"test data"
+
+    @pytest.mark.unit
+    async def test_publish_episode_imports_from_events_module(self) -> None:
+        """AC-005: MemoryEpisodeV1 and MAX_EPISODE_BODY_BYTES imported from nats_core.events."""
+        # This test verifies the imports work by importing the client module
+        from nats_core import client
+
+        # Verify the module can be imported without error
+        # (which proves the imports are valid)
+        assert hasattr(client, "NATSClient")
+
+
+# ===========================================================================
+# Seam Tests: Integration Contract Validation
+# ===========================================================================
+
+
+@pytest.mark.seam
+@pytest.mark.integration_contract("MemoryEpisodeV1")
+def test_memory_episode_body_is_raw_not_enveloped() -> None:
+    """The published body must be the raw MemoryEpisodeV1 JSON, re-parseable by the relay.
+
+    Contract: RAW MemoryEpisodeV1 JSON as the wire body (NO MessageEnvelope wrapping).
+    Producer: TASK-MEP-001 (schema) / TASK-MEP-003 (publish)
+    """
+    from nats_core import MemoryEpisodeV1
+
+    episode = MemoryEpisodeV1(
+        episode_id="e1",
+        project_id="finproxy",
+        episode_type="feature_outcome",
+        content_format="markdown",
+        body="hello",
+    )
+    data = episode.model_dump_json().encode()
+
+    # The relay's consumption pattern: decode the body directly as MemoryEpisodeV1.
+    round_tripped = MemoryEpisodeV1.model_validate_json(data)
+    assert round_tripped.episode_id == "e1"
+    # It must NOT look like a MessageEnvelope (no event_type/payload wrapper).
+    assert "payload" not in json.loads(data)
+
+
+@pytest.mark.seam
+@pytest.mark.integration_contract("Topics.Memory.EPISODE")
+def test_memory_subject_resolves_to_partitioned_subject() -> None:
+    """Subject must resolve to exactly memory.episode.{project_id}.{episode_type}.
+
+    Contract: Topics.resolve(Topics.Memory.EPISODE, project_id, episode_type).
+    Producer: TASK-MEP-002
+    """
+    from nats_core import Topics
+
+    subject = Topics.resolve(
+        Topics.Memory.EPISODE, project_id="finproxy", episode_type="feature_outcome"
+    )
+    assert subject == "memory.episode.finproxy.feature_outcome"

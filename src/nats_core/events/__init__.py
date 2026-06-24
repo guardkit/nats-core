@@ -16,6 +16,7 @@ from nats_core.events._jarvis import (
     IntentClassifiedPayload,
     NotificationPayload,
 )
+from nats_core.events._memory import MAX_EPISODE_BODY_BYTES, MemoryEpisodeV1
 from nats_core.events._pipeline import (
     BuildCancelledPayload,
     BuildCompletePayload,
@@ -61,6 +62,8 @@ __all__ = [
     "FeaturePlannedPayload",
     "FeatureReadyForBuildPayload",
     "IntentClassifiedPayload",
+    "MAX_EPISODE_BODY_BYTES",
+    "MemoryEpisodeV1",
     "NotificationPayload",
     "ResultPayload",
     "RunbookCompletePayload",

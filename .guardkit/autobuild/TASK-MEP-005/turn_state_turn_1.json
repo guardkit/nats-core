@@ -1,0 +1,26 @@
+{
+  "id": "TURN-FEAT-MEP1-1",
+  "feature_id": "FEAT-MEP1",
+  "task_id": "TASK-MEP-005",
+  "turn_number": 1,
+  "player_summary": "Implementation attempt",
+  "player_decision": "approve",
+  "coach_decision": "approve",
+  "coach_feedback": null,
+  "mode": "fresh_start",
+  "blockers_found": [],
+  "progress_summary": "Turn 1: approve",
+  "acceptance_criteria_status": {},
+  "files_modified": [
+    "tests/integration/test_memory_episode_live.py"
+  ],
+  "tests_passed": 1,
+  "tests_failed": 0,
+  "coverage": null,
+  "arch_score": null,
+  "started_at": "2026-06-24T21:10:01.960811",
+  "completed_at": "2026-06-24T21:10:01.960811",
+  "duration_seconds": null,
+  "lessons_from_turn": [],
+  "what_to_try_next": null
+}

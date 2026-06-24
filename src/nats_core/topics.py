@@ -1,7 +1,7 @@
 """Topic Registry — single source of truth for all NATS subject strings.
 
-Provides typed string constants organised into five namespace classes
-(Pipeline, Agents, Fleet, Jarvis, System), template resolution via
+Provides typed string constants organised into six namespace classes
+(Pipeline, Agents, Fleet, Jarvis, System, Memory), template resolution via
 ``Topics.resolve()``, and multi-tenancy project scoping via
 ``Topics.for_project()``.
 
@@ -64,8 +64,9 @@ class _ImmutableNamespaceMeta(type):
 class Topics:
     """Registry of all NATS subject templates used by the fleet.
 
-    Access topic templates as class attributes on the five inner namespace
-    classes: ``Pipeline``, ``Agents``, ``Fleet``, ``Jarvis``, ``System``.
+    Access topic templates as class attributes on the six inner namespace
+    classes: ``Pipeline``, ``Agents``, ``Fleet``, ``Jarvis``, ``System``,
+    ``Memory``.
 
     Use :meth:`resolve` to substitute ``{placeholder}`` tokens and
     :meth:`for_project` to scope a subject to a project namespace.
@@ -127,11 +128,17 @@ class Topics:
 
         HEALTH: str = "system.health.{component}"
 
+    class Memory(metaclass=_ImmutableNamespaceMeta):
+        """Memory domain topics (post-Graphiti memory write path)."""
+
+        EPISODE: str = "memory.episode.{project_id}.{episode_type}"
+        ALL: str = "memory.episode.>"
+
     # -- ALL_TOPICS ----------------------------------------------------------
 
     ALL_TOPICS: list[str] = [
         v
-        for cls in (Pipeline, Agents, Fleet, Jarvis, System)  # noqa: RUF012
+        for cls in (Pipeline, Agents, Fleet, Jarvis, System, Memory)  # noqa: RUF012
         for k, v in vars(cls).items()
         if isinstance(v, str) and not k.startswith("_") and ">" not in v and "*" not in v
     ]

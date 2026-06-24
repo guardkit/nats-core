@@ -1,5 +1,6 @@
 {
-  "content_hash": "286feac42f9712f33ee2f3e0bc58589c7151204ce27ae6984556b9ba99407fd9",
+  "content_hash": "8a708a60f6ca82c8197cbf375ed6f148e67326d944ee5ad3286845b576028538",
   "success": true,
-  "timestamp": "2026-04-08T23:19:19.772494"
+  "timestamp": "2026-06-24T20:29:48.747725",
+  "venv_python": "/Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1/.venv/bin/python"
 }

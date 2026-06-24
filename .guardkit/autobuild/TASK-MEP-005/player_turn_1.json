@@ -1,0 +1,67 @@
+{
+  "task_id": "TASK-MEP-005",
+  "turn": 1,
+  "files_modified": [],
+  "files_created": [
+    "tests/integration/test_memory_episode_live.py"
+  ],
+  "tests_written": [
+    "tests/integration/test_memory_episode_live.py"
+  ],
+  "tests_run": true,
+  "tests_passed": true,
+  "test_output_summary": "Created 4 integration tests for memory episode live round-trip. All tests are properly marked with @pytest.mark.integration and skip when RICH_NATS_PASSWORD is not available. All existing unit tests (843 tests) still pass. Code passes ruff linting and mypy strict type checking.",
+  "implementation_notes": "Created comprehensive integration tests for MemoryEpisodeV1 live round-trip on GB10. The tests demonstrate publish-subscribe patterns using NATSClient.publish_episode() and direct subscription to memory.episode.{project_id}.{episode_type} subjects. The subscriber decodes raw message bodies using MemoryEpisodeV1.model_validate_json(msg.data). Tests cover: (1) basic round-trip, (2) minimal fields only, (3) all optional fields populated, and (4) multiple subscribers receiving the same message. The tests do NOT assert JetStream server-side deduplication and do NOT require a pre-configured JetStream stream, focusing on the basic pub-sub contract.",
+  "concerns": [],
+  "requirements_addressed": [
+    "Created tests/integration/test_memory_episode_live.py with all tests marked @pytest.mark.integration",
+    "Tests publish via NATSClient.publish_episode() and self-subscribe to memory.episode subjects",
+    "Subscriber decodes with MemoryEpisodeV1.model_validate_json(msg.data) and asserts correctness",
+    "Tests do NOT assert JetStream server-side dedupe and do NOT require stream setup"
+  ],
+  "requirements_remaining": [],
+  "implementation_mode": "direct",
+  "completion_promises": [
+    {
+      "criterion_id": "AC-001",
+      "criterion_text": "[ ] `tests/integration/test_memory_episode_live.py` exists, every test marked",
+      "status": "complete",
+      "evidence": "Created tests/integration/test_memory_episode_live.py with 4 integration tests. All tests are marked with pytestmark = [pytest.mark.integration, pytest.mark.asyncio(loop_scope='module')] at module level, ensuring every test in the file is properly marked for integration testing.",
+      "test_file": "tests/integration/test_memory_episode_live.py",
+      "implementation_files": [
+        "tests/integration/test_memory_episode_live.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-002",
+      "criterion_text": "[ ] The test publishes via a connected `NATSClient.publish_episode()` and self-subscribes",
+      "status": "complete",
+      "evidence": "All tests create a NATSClient instance, reuse the nats_client fixture connection, and call client.publish_episode(episode). Each test also subscribes to the resolved memory.episode.{project_id}.{episode_type} subject using nats_client.subscribe(subject, cb=on_message) before publishing, creating a self-contained publish-subscribe round-trip within the same test.",
+      "test_file": "tests/integration/test_memory_episode_live.py",
+      "implementation_files": [
+        "tests/integration/test_memory_episode_live.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-003",
+      "criterion_text": "[ ] The subscriber decodes the raw body with `MemoryEpisodeV1.model_validate_json` and asserts",
+      "status": "complete",
+      "evidence": "All subscriber callbacks use MemoryEpisodeV1.model_validate_json(msg.data) to decode the raw message body. The tests then assert that the decoded episode fields match the original published episode, verifying episode_id, project_id, episode_type, content_format, body, and all optional fields as appropriate for each test case.",
+      "test_file": "tests/integration/test_memory_episode_live.py",
+      "implementation_files": [
+        "tests/integration/test_memory_episode_live.py"
+      ]
+    },
+    {
+      "criterion_id": "AC-004",
+      "criterion_text": "[ ] The test does **not** assert JetStream server-side dedupe and does **not** point at the",
+      "status": "complete",
+      "evidence": "The tests use direct NATS pub-sub without JetStream stream setup. They do not verify Nats-Msg-Id deduplication behavior and do not create or reference any JetStream streams. The tests simply publish episodes and subscribe to the core NATS subjects, demonstrating the basic message contract without JetStream-specific features.",
+      "test_file": "tests/integration/test_memory_episode_live.py",
+      "implementation_files": [
+        "tests/integration/test_memory_episode_live.py"
+      ]
+    }
+  ],
+  "success": true
+}
