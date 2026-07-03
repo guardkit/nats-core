@@ -1,0 +1,11 @@
+{
+  "session_id": "d2c923fc-ab93-4cb1-b7f6-9500574c2f7d",
+  "command": "feature-plan",
+  "slug": "memory-episode-publisher-canonical-framework-neutral-memorye",
+  "prompt": "/feature-plan \"Memory episode publisher: canonical framework-neutral MemoryEpisodeV1 Pydantic\nschema + publish_episode() helper. Helper validates the schema, sets Nats-Msg-Id=episode_id for\nJetStream server-side dedupe, enforces a <=900KB body (reject/split with an actionable error), and\npublishes to subject memory.episode.{project_id}.{episode_type}. Add memory.episode.> to the Topics\nregistry. Tests: round-trip via TestNatsBroker, >900KB rejected, Msg-Id set, subject resolves\ncorrectly. This schema is the cross-repo contract the fleet-memory relay imports (FEAT-MEM-04).\"",
+  "transcript_path": "/Users/richardwoollcott/.claude/projects/-Users-richardwoollcott-Projects-appmilla-github-nats-core/d2c923fc-ab93-4cb1-b7f6-9500574c2f7d.jsonl",
+  "started_at": "2026-06-24T17:05:12Z",
+  "started_at_epoch": 1782320712.4578571,
+  "completion_written": true,
+  "completed_at": "2026-06-24T17:11:57Z"
+}

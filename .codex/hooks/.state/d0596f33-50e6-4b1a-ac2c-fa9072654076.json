@@ -1,0 +1,11 @@
+{
+  "session_id": "d0596f33-50e6-4b1a-ac2c-fa9072654076",
+  "command": "feature-complete",
+  "slug": "FEAT-MEP1",
+  "prompt": "/feature-complete FEAT-MEP1",
+  "transcript_path": "/Users/richardwoollcott/.claude/projects/-Users-richardwoollcott-Projects-appmilla-github-nats-core/d0596f33-50e6-4b1a-ac2c-fa9072654076.jsonl",
+  "started_at": "2026-06-24T20:27:39Z",
+  "started_at_epoch": 1782332859.196034,
+  "completion_written": true,
+  "completed_at": "2026-06-24T20:34:30Z"
+}
