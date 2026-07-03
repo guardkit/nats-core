@@ -6,7 +6,7 @@ description: Canonical framework-neutral MemoryEpisodeV1 Pydantic schema + publi
   P1 of the post-Graphiti memory write path; cross-repo contract imported by the fleet-memory
   relay (P3).
 created: '2026-06-24T19:13:10.771414'
-status: planned
+status: completed
 complexity: 5
 estimated_tasks: 5
 tasks:
@@ -15,19 +15,37 @@ tasks:
   file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-001-memory-episode-schema.md
   complexity: 4
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+    deferred_reason: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-06-24T20:29:48.985078'
+  completed_at: '2026-06-24T20:39:44.514390'
 - id: TASK-MEP-002
   name: Topics.Memory namespace wired into ALL_TOPICS
   file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-002-topics-memory-namespace.md
   complexity: 4
   dependencies: []
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+    deferred_reason: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-06-24T20:29:48.988485'
+  completed_at: '2026-06-24T20:39:44.517344'
 - id: TASK-MEP-003
   name: publish_episode helper raw publish Nats-Msg-Id header and 900KB reject guard
   file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-003-publish-episode-helper.md
@@ -35,10 +53,19 @@ tasks:
   dependencies:
   - TASK-MEP-001
   - TASK-MEP-002
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 75
+  requires_infrastructure: []
+  result:
+    total_turns: 3
+    final_decision: approved
+    error: null
+    deferred_reason: null
+  turns_completed: 3
+  current_turn: 0
+  started_at: '2026-06-24T20:39:44.534777'
+  completed_at: '2026-06-24T21:05:04.502085'
 - id: TASK-MEP-004
   name: Unit test suite and make_memory_episode factory
   file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-004-unit-test-suite.md
@@ -46,10 +73,19 @@ tasks:
   dependencies:
   - TASK-MEP-001
   - TASK-MEP-003
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: task-work
   estimated_minutes: 50
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+    deferred_reason: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-06-24T21:05:05.685152'
+  completed_at: '2026-06-24T21:14:43.069476'
 - id: TASK-MEP-005
   name: Optional live integration round-trip echo on GB10
   file_path: tasks/backlog/memory-episode-publisher/TASK-MEP-005-live-integration-echo.md
@@ -57,10 +93,19 @@ tasks:
   dependencies:
   - TASK-MEP-001
   - TASK-MEP-003
-  status: pending
-  description: ''
+  status: completed
   implementation_mode: direct
   estimated_minutes: 33
+  requires_infrastructure: []
+  result:
+    total_turns: 1
+    final_decision: approved
+    error: null
+    deferred_reason: null
+  turns_completed: 1
+  current_turn: 0
+  started_at: '2026-06-24T21:05:05.688898'
+  completed_at: '2026-06-24T21:14:43.072627'
 orchestration:
   parallel_groups:
   - - TASK-MEP-001
@@ -71,9 +116,31 @@ orchestration:
   estimated_duration_minutes: 258
   recommended_parallel: 2
 smoke_gates:
-  after_wave: [2, 3]
-  command: |
-    set -e
+  after_wave:
+  - 2
+  - 3
+  command: 'set -e
+
     pytest tests/ -x -m "not integration"
+
+    '
   expected_exit: 0
   timeout: 180
+  exit5_is_hard_fail: false
+preflight_strict: false
+evidence_repos: []
+execution:
+  started_at: '2026-06-24T20:29:48.749409'
+  completed_at: '2026-06-24T21:14:44.435797'
+  worktree_path: /Users/richardwoollcott/Projects/appmilla_github/nats-core/.guardkit/worktrees/FEAT-MEP1
+  total_turns: 7
+  tasks_completed: 5
+  tasks_failed: 0
+  current_wave: 3
+  completed_waves:
+  - 1
+  - 2
+  - 3
+  last_updated: '2026-06-24T21:14:44.432607'
+  archived_at: null
+  archived_to: null
