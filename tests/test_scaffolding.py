@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -49,12 +48,16 @@ class TestPackageImport:
         assert nats_core is not None
 
     def test_version_defined(self) -> None:
-        """AC-008: __version__ must be defined in __init__.py."""
+        """AC-008: __version__ must be defined and match pyproject.toml."""
+        import tomllib
+
         import nats_core
 
         assert hasattr(nats_core, "__version__")
         assert isinstance(nats_core.__version__, str)
-        assert nats_core.__version__ == "0.3.0"
+        with (ROOT / "pyproject.toml").open("rb") as f:
+            pyproject = tomllib.load(f)
+        assert nats_core.__version__ == pyproject["project"]["version"]
 
     def test_nats_core_has_docstring(self) -> None:
         """AC-008: nats_core must have a module docstring."""
@@ -76,13 +79,7 @@ class TestPyprojectTomlConfig:
     @pytest.fixture(autouse=True)
     def _load_toml(self) -> None:
         """Load pyproject.toml contents once for this test class."""
-        if sys.version_info >= (3, 11):
-            import tomllib
-        else:
-            try:
-                import tomllib  # type: ignore[no-redef]
-            except ModuleNotFoundError:
-                import tomli as tomllib  # type: ignore[no-redef]
+        import tomllib
 
         with open(ROOT / "pyproject.toml", "rb") as f:
             self.config = tomllib.load(f)
