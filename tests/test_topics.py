@@ -434,14 +434,15 @@ class TestAllTopics:
 
     def test_all_topics_count(self) -> None:
         # Total non-wildcard constants:
-        # Pipeline: 12 (excl ALL, ALL_BUILDS — adds BUILD_CANCELLED per TASK-NCFA-003)
+        # Pipeline: 13 (excl ALL, ALL_BUILDS — adds BUILD_CANCELLED per TASK-NCFA-003,
+        #               PLANNING_QUEUED per Phase SPL)
         # Agents: 7 (excl STATUS_ALL, TOOLS_ALL)
         # Fleet: 3 (excl HEARTBEAT_ALL, ALL)
         # Jarvis: 4 (none are wildcards)
         # System: 1
         # Memory: 1 (excl ALL)
-        # Total: 28
-        assert len(Topics.ALL_TOPICS) == 28
+        # Total: 29
+        assert len(Topics.ALL_TOPICS) == 29  # noqa: PLR2004
 
 
 # ---------------------------------------------------------------------------

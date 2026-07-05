@@ -80,6 +80,7 @@ class Topics:
         # DEPRECATED: use BUILD_QUEUED
         FEATURE_PLANNED: str = "pipeline.feature-planned.{feature_id}"
         FEATURE_READY_FOR_BUILD: str = "pipeline.feature-ready-for-build.{feature_id}"
+        PLANNING_QUEUED: str = "pipeline.planning-queued.{correlation_id}"
         BUILD_QUEUED: str = "pipeline.build-queued.{feature_id}"
         BUILD_STARTED: str = "pipeline.build-started.{feature_id}"
         BUILD_PROGRESS: str = "pipeline.build-progress.{feature_id}"

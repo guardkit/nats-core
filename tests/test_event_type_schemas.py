@@ -171,14 +171,15 @@ class TestSmoke:
 
     @pytest.mark.smoke
     def test_event_type_enum_contains_all_25_members(self) -> None:
-        """EventType enum contains all 30 documented event type strings.
+        """EventType enum contains all 31 documented event type strings.
 
-        Pipeline(12) + Agent(6) + Jarvis(4) + Fleet(3) + Runbook(5) = 30 after
-        TASK-RBX-002 added runbook lifecycle events.
+        Pipeline(13) + Agent(6) + Jarvis(4) + Fleet(3) + Runbook(5) = 31 after
+        Phase SPL added the planning-queued intake event.
         """
         expected = {
             "feature_planned",
             "feature_ready_for_build",
+            "planning_queued",
             "build_queued",
             "build_started",
             "build_progress",
@@ -210,7 +211,7 @@ class TestSmoke:
         }
         actual = {member.value for member in EventType}
         assert actual == expected
-        assert len(EventType) == 30  # noqa: PLR2004
+        assert len(EventType) == 31  # noqa: PLR2004
 
     @pytest.mark.smoke
     def test_every_event_type_has_registered_payload_class(self) -> None:
@@ -839,7 +840,7 @@ class TestDispatcher:
         assert hasattr(envelope, "_EVENT_TYPE_REGISTRY")
         registry = envelope._EVENT_TYPE_REGISTRY
         assert isinstance(registry, dict)
-        assert len(registry) == 30  # noqa: PLR2004
+        assert len(registry) == 31  # noqa: PLR2004
         for key, value in registry.items():
             assert isinstance(key, EventType)
             assert issubclass(value, BaseModel)

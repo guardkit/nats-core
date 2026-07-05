@@ -461,6 +461,148 @@ class BuildQueuedPayload(BaseModel):
         return self
 
 
+class PlanningQueuedPayload(BaseModel):
+    """Published to pipeline.planning-queued.{correlation_id} to enqueue a planning run.
+
+    The planning-stage sibling of :class:`BuildQueuedPayload` (Phase SPL,
+    FEAT-SPL-001/002): a free-text product idea from an identity-pinned
+    originator enters the Forge planning chain (Mode P — product_owner stage,
+    then the product_docs approval checkpoint). Unlike a build there is no
+    feature identity yet — the roadmap and feature specs are the planning
+    chain's *output* — so the payload is keyed by ``correlation_id`` and
+    carries the raw request text instead of a feature YAML path.
+
+    ``originating_user`` is required (not optional as on builds): DF-009 makes
+    planning attendance an approval-gate property, and the approval routing
+    downstream needs the pinned originator identity from the first message.
+
+    Attributes:
+        stage: Always "planning" — discriminates this payload from build-queued.
+        request_text: The originator's free-text product idea or hypothesis.
+        target_repo: GitHub org/repo the planning output should land in, or None.
+        triggered_by: Which layer originated this planning-queued message.
+        originating_adapter: Which Jarvis adapter the human interacted with.
+        originating_user: Pinned identity of the originator (e.g. Slack member id).
+        correlation_id: Stable ID for tracing this planning run across stages.
+        parent_request_id: Adapter-native message ID that spawned this request.
+        retry_count: Incremented by Forge on crash-recovery redelivery.
+        requested_at: When the request was made at the originating layer.
+        queued_at: When the message was published to JetStream.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    # --- identity ---
+    stage: Literal["planning"] = Field(
+        default="planning",
+        description="Always 'planning' — discriminates this payload from build-queued",
+    )
+    request_text: str = Field(
+        description="The originator's free-text product idea or hypothesis"
+    )
+    target_repo: str | None = Field(
+        default=None,
+        description=(
+            "GitHub org/repo the planning output should land in, e.g. "
+            "guardkit/lpa-platform. None when the originator did not name one; "
+            "Mode P configuration then supplies the default."
+        ),
+    )
+
+    # --- provenance ---
+    triggered_by: TriggerSource = Field(
+        description="Which layer originated this planning-queued message"
+    )
+    originating_adapter: OriginatingAdapter | None = Field(
+        default=None,
+        description=(
+            "Which Jarvis adapter the human interacted with. "
+            "Required when triggered_by == 'jarvis'. None for CLI."
+        ),
+    )
+    originating_user: str = Field(
+        description=(
+            "Pinned identity of the originator (e.g. Slack member id). Required: "
+            "planning approval routing depends on it (DF-009)."
+        ),
+    )
+
+    # --- correlation & tracing ---
+    correlation_id: str = Field(
+        description="Stable ID for tracing this planning run across stages and streams"
+    )
+    parent_request_id: str | None = Field(
+        default=None,
+        description=(
+            "Adapter-native message ID that spawned this request (e.g. the Slack "
+            "message/thread ts). Lets Jarvis correlate approval requests and acks "
+            "back to the originating conversation."
+        ),
+    )
+
+    # --- retry semantics ---
+    retry_count: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Incremented by Forge on crash-recovery redelivery. Publishers "
+            "should leave this at 0."
+        ),
+    )
+
+    # --- timing ---
+    requested_at: datetime = Field(
+        description="When the request was made at the originating layer"
+    )
+    queued_at: datetime = Field(
+        description="When the message was published to JetStream"
+    )
+
+    # --- validators ---
+    @field_validator("request_text")
+    @classmethod
+    def _request_text_must_not_be_blank(cls, v: str) -> str:
+        if not v.strip():
+            msg = "request_text must not be blank"
+            raise ValueError(msg)
+        return v.strip()
+
+    @field_validator("originating_user")
+    @classmethod
+    def _originating_user_must_not_be_blank(cls, v: str) -> str:
+        if not v.strip():
+            msg = "originating_user must not be blank"
+            raise ValueError(msg)
+        return v.strip()
+
+    @field_validator("target_repo")
+    @classmethod
+    def _validate_target_repo(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not REPO_PATTERN.match(v):
+            msg = f"target_repo must be 'org/name' format, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("originating_adapter")
+    @classmethod
+    def _adapter_required_for_jarvis(
+        cls, v: OriginatingAdapter | None, info: Any
+    ) -> OriginatingAdapter | None:
+        triggered_by = info.data.get("triggered_by")
+        if triggered_by == "jarvis" and v is None:
+            msg = "originating_adapter is required when triggered_by == 'jarvis'"
+            raise ValueError(msg)
+        if triggered_by == "cli" and v not in (None, "terminal", "cli-wrapper"):
+            msg = (
+                "CLI trigger must use originating_adapter 'terminal', "
+                "'cli-wrapper', or None"
+            )
+            raise ValueError(msg)
+        return v
+
+
 class BuildPausedPayload(BaseModel):
     """Payload emitted when a build is paused at a quality gate.
 
