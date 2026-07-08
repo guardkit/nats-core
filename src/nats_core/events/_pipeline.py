@@ -43,6 +43,65 @@ OriginatingAdapter = Literal[
 ]
 
 
+class UsageRollup(BaseModel):
+    """Per-lane LLM usage rollup for the cost lens (dashboard ask A-4).
+
+    An **aggregated** rollup — one entry per (lane, provider, model) — computed
+    at the producer from ``LLMCallEvent``-class instrumentation. This is the
+    frontier-lane capture point for spend that never transits the LiteLLM
+    gateway (the Claude SDK Player). Rollups only — never per-request events on
+    the bus (A-4: volume). ``cost_gbp`` is nullable: local lanes have no real
+    £, so the dashboard applies nominal pricing (labelled nominal).
+
+    Companion producer obligation A-4b (guardkit/WS3 lane, NOT this session):
+    wire a persistent ``LLMCallEvent`` emitter (today ``NullEmitter`` discards
+    events) and fix the ``model="default"`` fallback so these rollups carry
+    true model names. Without A-4b the block is present but zero — the field is
+    defined here so the producer half has a wire to fill.
+
+    Attributes:
+        lane: Which cost lane the calls ran on.
+        provider: LLM provider (e.g. 'anthropic', 'litellm', 'ollama').
+        model: Model name (true name, not the 'default' fallback — A-4b).
+        calls: Number of LLM calls aggregated into this rollup entry.
+        input_tokens: Total input (prompt) tokens across the calls.
+        output_tokens: Total output (completion) tokens across the calls.
+        cost_gbp: Real cost in GBP, or None for local lanes (nominal applied downstream).
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    lane: Literal["frontier", "local"] = Field(description="Which cost lane the calls ran on")
+    provider: str = Field(description="LLM provider (e.g. 'anthropic', 'litellm', 'ollama')")
+    model: str = Field(description="Model name (true name, not the 'default' fallback — A-4b)")
+    calls: int = Field(default=0, ge=0, description="Number of LLM calls aggregated")
+    input_tokens: int = Field(default=0, ge=0, description="Total input (prompt) tokens")
+    output_tokens: int = Field(default=0, ge=0, description="Total output (completion) tokens")
+    cost_gbp: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Real cost in GBP, or None for local lanes (nominal applied downstream)",
+    )
+
+
+class LoopStats(BaseModel):
+    """Per-stage/-build outer-loop counters (dashboard ask A-4 loop-stats sub-ask).
+
+    Two of the dashboard's on-track norms have no live feed without these
+    counters (design §1 measured-or-excluded rule). Carried as a sibling of the
+    ``usage`` rollup block on StageComplete/BuildComplete-class payloads.
+
+    Attributes:
+        turns: Player-Coach turns consumed at this stage/build.
+        sdk_ceiling_hits: Times the SDK max-turns ceiling was hit.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    turns: int = Field(default=0, ge=0, description="Player-Coach turns consumed")
+    sdk_ceiling_hits: int = Field(default=0, ge=0, description="Times the SDK ceiling was hit")
+
+
 class WaveSummary(BaseModel):
     """Summary of a single wave within a feature plan.
 
@@ -225,6 +284,20 @@ class BuildCompletePayload(BaseModel):
     pr_url: str | None = Field(default=None, description="URL of the created pull request, or None")
     duration_seconds: int = Field(ge=0, description="Total build duration in seconds")
     summary: str = Field(description="Human-readable summary of the build outcome")
+
+    # --- cost lens (dashboard ask A-4; additive, optional) ---
+    usage: list[UsageRollup] | None = Field(
+        default=None,
+        description=(
+            "Optional per-lane LLM usage rollups for this build (A-4). Aggregated "
+            "at the producer from LLMCallEvent-class instrumentation. None until "
+            "the A-4b guardkit emitter lands."
+        ),
+    )
+    loop_stats: LoopStats | None = Field(
+        default=None,
+        description="Optional outer-loop counters (turns / sdk_ceiling_hits) for this build (A-4).",
+    )
 
     @model_validator(mode="after")
     def _tasks_sum_must_equal_total(self) -> BuildCompletePayload:
@@ -893,6 +966,20 @@ class StageCompletePayload(BaseModel):
     completed_at: str = Field(description="ISO 8601 timestamp when the stage completed")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
+    )
+
+    # --- cost lens (dashboard ask A-4; additive, optional) ---
+    usage: list[UsageRollup] | None = Field(
+        default=None,
+        description=(
+            "Optional per-lane LLM usage rollups for this stage (A-4). Aggregated "
+            "at the producer from LLMCallEvent-class instrumentation. None until "
+            "the A-4b guardkit emitter lands."
+        ),
+    )
+    loop_stats: LoopStats | None = Field(
+        default=None,
+        description="Optional outer-loop counters (turns / sdk_ceiling_hits) for this stage (A-4).",
     )
 
 

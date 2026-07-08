@@ -171,12 +171,12 @@ class TestSmoke:
 
     @pytest.mark.smoke
     def test_event_type_enum_contains_all_25_members(self) -> None:
-        """EventType enum contains all 35 documented event type strings.
+        """EventType enum contains all 41 documented event type strings.
 
-        Pipeline(17) + Agent(6) + Jarvis(4) + Fleet(3) + Runbook(5) = 35 after
-        Phase SPL added the planning-queued intake event plus the WS1 Session I
-        planning lifecycle (started/complete/failed) and spec-ready handoff
-        events.
+        Pipeline(17) + Deploy(6) + Agent(6) + Jarvis(4) + Fleet(3) + Runbook(5)
+        = 41 after Phase SPL added the planning events and WS2 B7 added the
+        deploy/QA/live-gate last-mile domain (deploy queued/started/complete/
+        failed + qa_verdict + live_gate_result).
         """
         expected = {
             "feature_planned",
@@ -196,6 +196,12 @@ class TestSmoke:
             "build_failed",
             "stage_complete",
             "stage_gated",
+            "deploy_queued",
+            "deploy_started",
+            "deploy_complete",
+            "deploy_failed",
+            "qa_verdict",
+            "live_gate_result",
             "status",
             "approval_request",
             "approval_response",
@@ -217,7 +223,7 @@ class TestSmoke:
         }
         actual = {member.value for member in EventType}
         assert actual == expected
-        assert len(EventType) == 35  # noqa: PLR2004
+        assert len(EventType) == 41  # noqa: PLR2004
 
     @pytest.mark.smoke
     def test_every_event_type_has_registered_payload_class(self) -> None:
@@ -846,7 +852,7 @@ class TestDispatcher:
         assert hasattr(envelope, "_EVENT_TYPE_REGISTRY")
         registry = envelope._EVENT_TYPE_REGISTRY
         assert isinstance(registry, dict)
-        assert len(registry) == 35  # noqa: PLR2004
+        assert len(registry) == 41  # noqa: PLR2004
         for key, value in registry.items():
             assert isinstance(key, EventType)
             assert issubclass(value, BaseModel)

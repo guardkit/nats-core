@@ -10,6 +10,17 @@ from nats_core.events._agent import (
     CommandPayload,
     ResultPayload,
 )
+from nats_core.events._deploy import (
+    FLEET_CAPABILITY_KINDS,
+    AssertionResult,
+    DeployCompletePayload,
+    DeployFailedPayload,
+    DeployQueuedPayload,
+    DeployStartedPayload,
+    FleetCapabilityKind,
+    LiveGateResultPayload,
+    QAVerdictPayload,
+)
 from nats_core.events._fleet import AgentDeregistrationPayload, AgentHeartbeatPayload
 from nats_core.events._jarvis import (
     AgentResultPayload,
@@ -29,6 +40,7 @@ from nats_core.events._pipeline import (
     BuildStartedPayload,
     FeaturePlannedPayload,
     FeatureReadyForBuildPayload,
+    LoopStats,
     PlanningCompletePayload,
     PlanningFailedPayload,
     PlanningQueuedPayload,
@@ -37,6 +49,7 @@ from nats_core.events._pipeline import (
     StageCompletePayload,
     StageGatedPayload,
     TaskProgress,
+    UsageRollup,
     WaveSummary,
 )
 from nats_core.events._runbook import (
@@ -48,12 +61,14 @@ from nats_core.events._runbook import (
 )
 
 __all__ = [
+    "FLEET_CAPABILITY_KINDS",
     "AgentDeregistrationPayload",
     "AgentHeartbeatPayload",
     "AgentResultPayload",
     "AgentStatusPayload",
     "ApprovalRequestPayload",
     "ApprovalResponsePayload",
+    "AssertionResult",
     "AssumptionDisposition",
     "BuildCancelledPayload",
     "BuildCompletePayload",
@@ -64,11 +79,18 @@ __all__ = [
     "BuildResumedPayload",
     "BuildStartedPayload",
     "CommandPayload",
+    "DeployCompletePayload",
+    "DeployFailedPayload",
+    "DeployQueuedPayload",
+    "DeployStartedPayload",
     "DispatchPayload",
     "EscalatedPayload",
     "FeaturePlannedPayload",
     "FeatureReadyForBuildPayload",
+    "FleetCapabilityKind",
     "IntentClassifiedPayload",
+    "LiveGateResultPayload",
+    "LoopStats",
     "MAX_EPISODE_BODY_BYTES",
     "MemoryEpisodeV1",
     "NotificationPayload",
@@ -76,6 +98,7 @@ __all__ = [
     "PlanningFailedPayload",
     "PlanningQueuedPayload",
     "PlanningStartedPayload",
+    "QAVerdictPayload",
     "ResultPayload",
     "SpecReadyForBuildPayload",
     "RunbookCompletePayload",
@@ -85,5 +108,6 @@ __all__ = [
     "StepResultPayload",
     "StepStartedPayload",
     "TaskProgress",
+    "UsageRollup",
     "WaveSummary",
 ]

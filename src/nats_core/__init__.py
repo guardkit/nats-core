@@ -16,7 +16,7 @@ from nats_core.manifest import (
 )
 from nats_core.topics import Topics
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
     "AgentConfig",

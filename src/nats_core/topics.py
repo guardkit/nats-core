@@ -135,6 +135,27 @@ class Topics:
         TOOLS: str = "agents.{agent_id}.tools.{tool_name}"
         TOOLS_ALL: str = "agents.{agent_id}.tools.>"
 
+    class Deploy(metaclass=_ImmutableNamespaceMeta):
+        """Deploy domain topics (WS2 B7 — the last-mile deploy/QA/live-gate stage).
+
+        The DEPLOY and LIVE_GATE forge stages after PULL_REQUEST_REVIEW
+        (scope-design §4). Every subject is keyed on ``correlation_id`` — the
+        build/feature spine — because a deploy run has no identity of its own
+        beyond its forge run id (which rides in the payload, not the subject).
+        The QA-verdict and live-gate-result notifications live here too so the
+        whole last-mile stage shares one namespace. These are notifications for
+        jarvis (the phone loop) and the dashboard; forge's authoritative
+        live-gate input stays the frozen seam's stdout envelope.
+        """
+
+        DEPLOY_QUEUED: str = "deploy.queued.{correlation_id}"
+        DEPLOY_STARTED: str = "deploy.started.{correlation_id}"
+        DEPLOY_COMPLETE: str = "deploy.complete.{correlation_id}"
+        DEPLOY_FAILED: str = "deploy.failed.{correlation_id}"
+        QA_VERDICT: str = "deploy.qa-verdict.{correlation_id}"
+        LIVE_GATE_RESULT: str = "deploy.live-gate-result.{correlation_id}"
+        ALL: str = "deploy.>"
+
     class Fleet(metaclass=_ImmutableNamespaceMeta):
         """Fleet domain topics."""
 
@@ -167,7 +188,7 @@ class Topics:
 
     ALL_TOPICS: list[str] = [
         v
-        for cls in (Pipeline, Agents, Fleet, Jarvis, System, Memory)  # noqa: RUF012
+        for cls in (Pipeline, Agents, Deploy, Fleet, Jarvis, System, Memory)  # noqa: RUF012
         for k, v in vars(cls).items()
         if isinstance(v, str) and not k.startswith("_") and ">" not in v and "*" not in v
     ]
@@ -212,12 +233,25 @@ class Topics:
     def for_project(project: str, topic: str) -> str:
         """Scope *topic* to a project namespace for multi-tenancy.
 
+        **NORMATIVE (dashboard ask A-6):** this ``{leading-token}.{topic}``
+        prefix is THE tenant fan-out convention for client-visible delivery
+        events — not an ad-hoc string. Amended 2026-07-08 (Rich): the leading
+        token is the **TENANT slug** (account-aligned), NOT a repo name — a
+        client tenant may own several repos, so the reduced client-facing event
+        carries the ``project``/repo in its payload while the subject prefix
+        carries the tenant (first instance: ``finproxy.delivery….{feat}``). The
+        producer half (forge's DF-008-reduced client-facing delivery event on
+        ``{tenant_prefix}.>``) is dashboard ask A-8, owned by WS2 B8 — the
+        repo→tenant mapping is producer-side configuration, never code. Internal
+        payloads (tasks_failed, branch, evidence refs) must NEVER appear on a
+        tenant prefix (directly readable by the client's own NATS users).
+
         Args:
-            project: The project identifier (e.g. ``"finproxy"``).
+            project: The tenant slug (e.g. ``"finproxy"``); account-aligned.
             topic: A resolved or template NATS subject string.
 
         Returns:
-            The project-scoped subject: ``"{project}.{topic}"``.
+            The tenant-scoped subject: ``"{project}.{topic}"``.
 
         Raises:
             ValueError: If *project* is empty or contains invalid characters.

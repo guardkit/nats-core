@@ -67,7 +67,7 @@ class TestEventType:
 
     def test_total_event_type_count(self) -> None:
         """AC-001: Exactly 35 event types total (17+6+4+3+5 after WS1 Session I planning lifecycle)."""
-        assert len(EventType) == 35  # noqa: PLR2004
+        assert len(EventType) == 41  # noqa: PLR2004
 
     def test_event_type_usable_as_string(self) -> None:
         """EventType values can be used as strings."""

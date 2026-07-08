@@ -452,7 +452,7 @@ class TestAllTopics:
         # System: 1
         # Memory: 1 (excl ALL)
         # Total: 35
-        assert len(Topics.ALL_TOPICS) == 35  # noqa: PLR2004
+        assert len(Topics.ALL_TOPICS) == 41  # noqa: PLR2004
 
 
 # ---------------------------------------------------------------------------

@@ -21,6 +21,14 @@ from nats_core.events._agent import (
     CommandPayload,
     ResultPayload,
 )
+from nats_core.events._deploy import (
+    DeployCompletePayload,
+    DeployFailedPayload,
+    DeployQueuedPayload,
+    DeployStartedPayload,
+    LiveGateResultPayload,
+    QAVerdictPayload,
+)
 from nats_core.events._fleet import AgentDeregistrationPayload, AgentHeartbeatPayload
 from nats_core.events._jarvis import (
     AgentResultPayload,
@@ -60,7 +68,7 @@ from nats_core.manifest import AgentManifest
 class EventType(str, Enum):
     """Enumeration of all event types across fleet domains.
 
-    Covers five domains: Pipeline, Agent, Jarvis, Fleet, and Runbook.
+    Covers six domains: Pipeline, Deploy, Agent, Jarvis, Fleet, and Runbook.
     Each value is a lowercase snake_case string suitable for use
     as a NATS subject segment.
     """
@@ -83,6 +91,14 @@ class EventType(str, Enum):
     BUILD_FAILED = "build_failed"
     STAGE_COMPLETE = "stage_complete"
     STAGE_GATED = "stage_gated"
+
+    # Deploy domain (6) — WS2 B7 last-mile stage
+    DEPLOY_QUEUED = "deploy_queued"
+    DEPLOY_STARTED = "deploy_started"
+    DEPLOY_COMPLETE = "deploy_complete"
+    DEPLOY_FAILED = "deploy_failed"
+    QA_VERDICT = "qa_verdict"
+    LIVE_GATE_RESULT = "live_gate_result"
 
     # Agent domain (6)
     STATUS = "status"
@@ -132,6 +148,13 @@ _EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
     EventType.BUILD_FAILED: BuildFailedPayload,
     EventType.STAGE_COMPLETE: StageCompletePayload,
     EventType.STAGE_GATED: StageGatedPayload,
+    # Deploy domain
+    EventType.DEPLOY_QUEUED: DeployQueuedPayload,
+    EventType.DEPLOY_STARTED: DeployStartedPayload,
+    EventType.DEPLOY_COMPLETE: DeployCompletePayload,
+    EventType.DEPLOY_FAILED: DeployFailedPayload,
+    EventType.QA_VERDICT: QAVerdictPayload,
+    EventType.LIVE_GATE_RESULT: LiveGateResultPayload,
     # Agent domain
     EventType.STATUS: AgentStatusPayload,
     EventType.APPROVAL_REQUEST: ApprovalRequestPayload,
