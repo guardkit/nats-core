@@ -39,7 +39,11 @@ from nats_core.events._pipeline import (
     BuildStartedPayload,
     FeaturePlannedPayload,
     FeatureReadyForBuildPayload,
+    PlanningCompletePayload,
+    PlanningFailedPayload,
     PlanningQueuedPayload,
+    PlanningStartedPayload,
+    SpecReadyForBuildPayload,
     StageCompletePayload,
     StageGatedPayload,
 )
@@ -61,10 +65,14 @@ class EventType(str, Enum):
     as a NATS subject segment.
     """
 
-    # Pipeline domain (13)
+    # Pipeline domain (17)
     FEATURE_PLANNED = "feature_planned"
     FEATURE_READY_FOR_BUILD = "feature_ready_for_build"
     PLANNING_QUEUED = "planning_queued"
+    PLANNING_STARTED = "planning_started"
+    PLANNING_COMPLETE = "planning_complete"
+    PLANNING_FAILED = "planning_failed"
+    SPEC_READY_FOR_BUILD = "spec_ready_for_build"
     BUILD_QUEUED = "build_queued"
     BUILD_STARTED = "build_started"
     BUILD_PROGRESS = "build_progress"
@@ -110,6 +118,10 @@ _EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
     EventType.FEATURE_PLANNED: FeaturePlannedPayload,
     EventType.FEATURE_READY_FOR_BUILD: FeatureReadyForBuildPayload,
     EventType.PLANNING_QUEUED: PlanningQueuedPayload,
+    EventType.PLANNING_STARTED: PlanningStartedPayload,
+    EventType.PLANNING_COMPLETE: PlanningCompletePayload,
+    EventType.PLANNING_FAILED: PlanningFailedPayload,
+    EventType.SPEC_READY_FOR_BUILD: SpecReadyForBuildPayload,
     EventType.BUILD_QUEUED: BuildQueuedPayload,
     EventType.BUILD_STARTED: BuildStartedPayload,
     EventType.BUILD_PROGRESS: BuildProgressPayload,

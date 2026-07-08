@@ -6,6 +6,10 @@ from nats_core.events._pipeline import (
     BuildCancelledPayload,
     BuildPausedPayload,
     BuildResumedPayload,
+    PlanningCompletePayload,
+    PlanningFailedPayload,
+    PlanningStartedPayload,
+    SpecReadyForBuildPayload,
     StageCompletePayload,
 )
 
@@ -13,5 +17,9 @@ __all__ = [
     "BuildCancelledPayload",
     "BuildPausedPayload",
     "BuildResumedPayload",
+    "PlanningCompletePayload",
+    "PlanningFailedPayload",
+    "PlanningStartedPayload",
+    "SpecReadyForBuildPayload",
     "StageCompletePayload",
 ]

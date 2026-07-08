@@ -320,8 +320,16 @@ class TestEventTypeSync:
     @pytest.mark.smoke
     def test_agent_topics_correspond_to_event_types(self) -> None:
         """Every non-wildcard, non-tool Agent topic template has a matching EventType."""
-        # TOOLS is an RPC topic, COMMAND_BROADCAST is a broadcast mechanism — not events
-        excluded = {"TOOLS", "COMMAND_BROADCAST"}
+        # TOOLS is an RPC topic, COMMAND_BROADCAST is a broadcast mechanism — not events.
+        # PLANNING_APPROVAL_REQUEST/RESPONSE are the normative plan-{cid} subject
+        # convention (WS1-I item 2): they reuse the approval_request/approval_response
+        # event types, so they intentionally have no dedicated EventType member.
+        excluded = {
+            "TOOLS",
+            "COMMAND_BROADCAST",
+            "PLANNING_APPROVAL_REQUEST",
+            "PLANNING_APPROVAL_RESPONSE",
+        }
         agent_names = {
             k
             for k, v in vars(Topics.Agents).items()
@@ -434,15 +442,17 @@ class TestAllTopics:
 
     def test_all_topics_count(self) -> None:
         # Total non-wildcard constants:
-        # Pipeline: 13 (excl ALL, ALL_BUILDS — adds BUILD_CANCELLED per TASK-NCFA-003,
-        #               PLANNING_QUEUED per Phase SPL)
-        # Agents: 7 (excl STATUS_ALL, TOOLS_ALL)
+        # Pipeline: 17 (excl ALL, ALL_BUILDS — adds BUILD_CANCELLED per TASK-NCFA-003,
+        #               PLANNING_QUEUED per Phase SPL, plus PLANNING_STARTED/
+        #               PLANNING_COMPLETE/PLANNING_FAILED/SPEC_READY_FOR_BUILD per WS1-I)
+        # Agents: 9 (excl STATUS_ALL, TOOLS_ALL — adds PLANNING_APPROVAL_REQUEST/
+        #            PLANNING_APPROVAL_RESPONSE, the normative plan-{cid} convention per WS1-I)
         # Fleet: 3 (excl HEARTBEAT_ALL, ALL)
         # Jarvis: 4 (none are wildcards)
         # System: 1
         # Memory: 1 (excl ALL)
-        # Total: 29
-        assert len(Topics.ALL_TOPICS) == 29  # noqa: PLR2004
+        # Total: 35
+        assert len(Topics.ALL_TOPICS) == 35  # noqa: PLR2004
 
 
 # ---------------------------------------------------------------------------

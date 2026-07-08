@@ -81,6 +81,12 @@ class Topics:
         FEATURE_PLANNED: str = "pipeline.feature-planned.{feature_id}"
         FEATURE_READY_FOR_BUILD: str = "pipeline.feature-ready-for-build.{feature_id}"
         PLANNING_QUEUED: str = "pipeline.planning-queued.{correlation_id}"
+        # Planning lifecycle (Phase SPL — keyed on correlation_id; no feature
+        # identity exists until the spec-ready handoff mints one).
+        PLANNING_STARTED: str = "pipeline.planning-started.{correlation_id}"
+        PLANNING_COMPLETE: str = "pipeline.planning-complete.{correlation_id}"
+        PLANNING_FAILED: str = "pipeline.planning-failed.{correlation_id}"
+        SPEC_READY_FOR_BUILD: str = "pipeline.spec-ready-for-build.{correlation_id}"
         BUILD_QUEUED: str = "pipeline.build-queued.{feature_id}"
         BUILD_STARTED: str = "pipeline.build-started.{feature_id}"
         BUILD_PROGRESS: str = "pipeline.build-progress.{feature_id}"
@@ -95,12 +101,34 @@ class Topics:
         ALL_BUILDS: str = "pipeline.build-*.>"
 
     class Agents(metaclass=_ImmutableNamespaceMeta):
-        """Agents domain topics."""
+        """Agents domain topics.
+
+        **The ``plan-{correlation_id}`` approval-topic convention (NORMATIVE —
+        WS1 Session I item 2; FEAT-SPL-003 ASSUM-002).** A build approval rides
+        ``agents.approval.{agent_id}.{task_id}`` keyed on a build ``task_id``,
+        but a Mode P planning run has no ``task_id`` until the spec-ready
+        handoff mints a feature. Mode P therefore fills the ``{task_id}`` slot
+        with the literal ``plan-{correlation_id}`` — i.e. it publishes on
+        ``agents.approval.{agent_id}.plan-{correlation_id}`` (and the response
+        on the same subject plus ``.response``). This is a namespacing of the
+        existing subject, NOT a new stream: the fourth subject token stays
+        opaque to consumers, which detect a planning checkpoint by the
+        request's checkpoint details (never by parsing the run-id shape out of
+        the subject). ``PLANNING_APPROVAL_REQUEST`` / ``PLANNING_APPROVAL_RESPONSE``
+        pin the convention so jarvis and WS2 consumers can resolve it directly;
+        ``approval_decision.gate_id`` (backward-edge contract §7 item 4) cites it.
+        """
 
         STATUS: str = "agents.status.{agent_id}"
         STATUS_ALL: str = "agents.status.>"
         APPROVAL_REQUEST: str = "agents.approval.{agent_id}.{task_id}"
         APPROVAL_RESPONSE: str = "agents.approval.{agent_id}.{task_id}.response"
+        # Planning approval convention (NORMATIVE): the {task_id} slot is the
+        # literal ``plan-{correlation_id}`` — see the class docstring.
+        PLANNING_APPROVAL_REQUEST: str = "agents.approval.{agent_id}.plan-{correlation_id}"
+        PLANNING_APPROVAL_RESPONSE: str = (
+            "agents.approval.{agent_id}.plan-{correlation_id}.response"
+        )
         COMMAND: str = "agents.command.{agent_id}"
         COMMAND_BROADCAST: str = "agents.command.broadcast"
         RESULT: str = "agents.result.{agent_id}"

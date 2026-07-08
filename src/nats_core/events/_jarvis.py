@@ -127,11 +127,26 @@ class NotificationPayload(BaseModel):
     Published on ``jarvis.notification.{adapter}`` when Jarvis needs to
     send a notification through an adapter (e.g., Slack, email).
 
+    The ``thread_ts`` / ``parent_request_id`` / ``target_user`` / ``blocks``
+    round-trip fields (WS1 Session I item 3; FEAT-SPL-003 ASSUM-001) are all
+    OPTIONAL and default to ``None``: a producer that pre-dates them omits
+    them and validates unchanged, and a consumer renders threaded when a
+    thread anchor is present and degrades to a top-level channel post when it
+    is absent. They exist so a Mode P planning notification can be rendered
+    back into the originating Slack thread.
+
     Attributes:
         message: The notification message text.
         level: Severity level of the notification.
         adapter: Target adapter for delivery (e.g., ``"slack"``, ``"email"``).
         correlation_id: Optional identifier linking related messages.
+        thread_ts: Slack thread timestamp to render this notification into, or None.
+        parent_request_id: Adapter-native anchor of the originating request
+            (e.g. the Slack thread ts), mirroring
+            ``PlanningQueuedPayload.parent_request_id`` so acks/notifications
+            thread back to the originating conversation.
+        target_user: Adapter member id to mention (e.g. the escalation approver), or None.
+        blocks: Optional structured adapter content (e.g. Slack Block Kit blocks).
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -149,4 +164,24 @@ class NotificationPayload(BaseModel):
     correlation_id: str | None = Field(
         default=None,
         description="Optional identifier linking related messages",
+    )
+    thread_ts: str | None = Field(
+        default=None,
+        description="Slack thread timestamp to render this notification into, or None",
+    )
+    parent_request_id: str | None = Field(
+        default=None,
+        description=(
+            "Adapter-native anchor of the originating request (e.g. the Slack "
+            "thread ts), mirroring PlanningQueuedPayload.parent_request_id so "
+            "acks/notifications thread back to the originating conversation."
+        ),
+    )
+    target_user: str | None = Field(
+        default=None,
+        description=("Adapter member id to mention (e.g. the escalation approver), or None"),
+    )
+    blocks: list[dict[str, Any]] | None = Field(
+        default=None,
+        description=("Optional structured adapter content (e.g. Slack Block Kit blocks)"),
     )

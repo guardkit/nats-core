@@ -299,9 +299,7 @@ class BuildQueuedPayload(BaseModel):
     feature_id: str = Field(description="FEAT-XXX identifier")
     repo: str = Field(description="GitHub org/repo, e.g. guardkit/lpa-platform")
     branch: str = Field(default="main", description="Base branch to branch from")
-    feature_yaml_path: str = Field(
-        description="Path to feature YAML spec, relative to repo root"
-    )
+    feature_yaml_path: str = Field(description="Path to feature YAML spec, relative to repo root")
 
     # --- build config (narrow overrides only) ---
     max_turns: int = Field(
@@ -334,6 +332,7 @@ class BuildQueuedPayload(BaseModel):
     )
     originating_adapter: OriginatingAdapter | None = Field(
         default=None,
+        validate_default=True,
         description=(
             "Which Jarvis adapter the human interacted with. "
             "Required when triggered_by == 'jarvis'. None for CLI."
@@ -362,18 +361,13 @@ class BuildQueuedPayload(BaseModel):
         default=0,
         ge=0,
         description=(
-            "Incremented by Forge on crash-recovery redelivery. Publishers "
-            "should leave this at 0."
+            "Incremented by Forge on crash-recovery redelivery. Publishers should leave this at 0."
         ),
     )
 
     # --- timing ---
-    requested_at: datetime = Field(
-        description="When the request was made at the originating layer"
-    )
-    queued_at: datetime = Field(
-        description="When the message was published to JetStream"
-    )
+    requested_at: datetime = Field(description="When the request was made at the originating layer")
+    queued_at: datetime = Field(description="When the message was published to JetStream")
 
     # --- mode-aware identity (FEAT-F8 / F008-VAL-002 — TASK-F8-002) ---
     # ``feature_id`` above stays strict (FEAT-XXX) per ADR-FB-002 / the
@@ -434,10 +428,7 @@ class BuildQueuedPayload(BaseModel):
             msg = "originating_adapter is required when triggered_by == 'jarvis'"
             raise ValueError(msg)
         if triggered_by == "cli" and v not in (None, "terminal", "cli-wrapper"):
-            msg = (
-                "CLI trigger must use originating_adapter 'terminal', "
-                "'cli-wrapper', or None"
-            )
+            msg = "CLI trigger must use originating_adapter 'terminal', 'cli-wrapper', or None"
             raise ValueError(msg)
         return v
 
@@ -450,13 +441,10 @@ class BuildQueuedPayload(BaseModel):
         # A/B publish a feature-only build, so a task_id slot would be
         # ambiguous and is rejected at the wire layer.
         if self.mode == "mode-c" and self.task_id is None:
-            raise ValueError(
-                "task_id is required when mode == 'mode-c' (TASK-F8-002)"
-            )
+            raise ValueError("task_id is required when mode == 'mode-c' (TASK-F8-002)")
         if self.mode in ("mode-a", "mode-b") and self.task_id is not None:
             raise ValueError(
-                f"task_id must be None for mode={self.mode!r} "
-                "(Mode C only — TASK-F8-002)"
+                f"task_id must be None for mode={self.mode!r} (Mode C only — TASK-F8-002)"
             )
         return self
 
@@ -497,9 +485,7 @@ class PlanningQueuedPayload(BaseModel):
         default="planning",
         description="Always 'planning' — discriminates this payload from build-queued",
     )
-    request_text: str = Field(
-        description="The originator's free-text product idea or hypothesis"
-    )
+    request_text: str = Field(description="The originator's free-text product idea or hypothesis")
     target_repo: str | None = Field(
         default=None,
         description=(
@@ -515,6 +501,7 @@ class PlanningQueuedPayload(BaseModel):
     )
     originating_adapter: OriginatingAdapter | None = Field(
         default=None,
+        validate_default=True,
         description=(
             "Which Jarvis adapter the human interacted with. "
             "Required when triggered_by == 'jarvis'. None for CLI."
@@ -545,18 +532,13 @@ class PlanningQueuedPayload(BaseModel):
         default=0,
         ge=0,
         description=(
-            "Incremented by Forge on crash-recovery redelivery. Publishers "
-            "should leave this at 0."
+            "Incremented by Forge on crash-recovery redelivery. Publishers should leave this at 0."
         ),
     )
 
     # --- timing ---
-    requested_at: datetime = Field(
-        description="When the request was made at the originating layer"
-    )
-    queued_at: datetime = Field(
-        description="When the message was published to JetStream"
-    )
+    requested_at: datetime = Field(description="When the request was made at the originating layer")
+    queued_at: datetime = Field(description="When the message was published to JetStream")
 
     # --- validators ---
     @field_validator("request_text")
@@ -595,10 +577,214 @@ class PlanningQueuedPayload(BaseModel):
             msg = "originating_adapter is required when triggered_by == 'jarvis'"
             raise ValueError(msg)
         if triggered_by == "cli" and v not in (None, "terminal", "cli-wrapper"):
-            msg = (
-                "CLI trigger must use originating_adapter 'terminal', "
-                "'cli-wrapper', or None"
-            )
+            msg = "CLI trigger must use originating_adapter 'terminal', 'cli-wrapper', or None"
+            raise ValueError(msg)
+        return v
+
+
+# ---------------------------------------------------------------------------
+# Planning lifecycle events (Phase SPL — FEAT-SPL-003 / WS1 Session I item 1)
+# ---------------------------------------------------------------------------
+#
+# The planning-run analogues of the build-lifecycle events. A Mode P planning
+# run moves QUEUED -> started -> (approval cycles) -> complete | failed. Each
+# event carries ``correlation_id`` (the intake-minted planning spine), the
+# planning ``mode``, and the *observed* ``originator`` member id, so the
+# fleet-memory ``planning_outcome`` / ``approval_decision`` producers can
+# attribute every row without a side channel (backward-edge episode schema
+# contract 2026-07-07, §7 item 3). The spec-ready handoff event
+# (SpecReadyForBuildPayload) is a companion — NOT a duplicate — of
+# FeatureReadyForBuildPayload: it links ``correlation_id`` to the planning
+# outputs and carries the Mode-P-minted ``feat_id`` (008-006), the
+# cross-workstream join key (§7 item 2).
+
+
+class PlanningStartedPayload(BaseModel):
+    """Emitted on pipeline.planning-started.{correlation_id} when a run begins.
+
+    Attributes:
+        correlation_id: Intake-minted planning spine id.
+        mode: Planning mode (e.g. 'mode_p').
+        originator: Observed originating member id (never a config echo).
+        target_repo: GitHub org/repo the run targets, or None.
+        started_at: When the planning run began executing.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    correlation_id: str = Field(
+        description="Intake-minted planning spine id (traces the run across stages)"
+    )
+    mode: str = Field(default="mode_p", description="Planning mode (e.g. 'mode_p')")
+    originator: str = Field(description="Observed originating member id (never a config echo)")
+    target_repo: str | None = Field(
+        default=None, description="GitHub org/repo the run targets, or None"
+    )
+    started_at: datetime = Field(description="When the planning run began executing")
+
+    @field_validator("target_repo")
+    @classmethod
+    def _validate_target_repo(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not REPO_PATTERN.match(v):
+            msg = f"target_repo must be 'org/name' format, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+
+class PlanningCompletePayload(BaseModel):
+    """Emitted on pipeline.planning-complete.{correlation_id} at a successful terminal.
+
+    Maps 1:1 onto the ``planning_outcome.terminal_state == 'planned_handoff'``
+    episode. Escalation is a transition, not a terminal — it is visible via
+    ``approval_cycles_used``, not a distinct event.
+
+    Attributes:
+        correlation_id: Intake-minted planning spine id.
+        mode: Planning mode (e.g. 'mode_p').
+        originator: Observed originating member id.
+        terminal_state: Always 'planned_handoff' for a completed run.
+        feat_id: Mode-P-minted FEAT id (008-006), set once the run reaches handoff.
+        assumption_count: Total assumptions surfaced during the run, or None.
+        approval_cycles_used: Cycles consumed against the cap (cap-3 visibility).
+        completed_at: When the run reached its successful terminal.
+        duration_seconds: Run wall time in seconds, or None.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    correlation_id: str = Field(description="Intake-minted planning spine id")
+    mode: str = Field(default="mode_p", description="Planning mode (e.g. 'mode_p')")
+    originator: str = Field(description="Observed originating member id")
+    terminal_state: Literal["planned_handoff"] = Field(
+        default="planned_handoff",
+        description="Always 'planned_handoff' for a completed run",
+    )
+    feat_id: str | None = Field(
+        default=None,
+        description=(
+            "Mode-P-minted FEAT id (008-006), set once the run reaches spec "
+            "handoff. The cross-workstream join key."
+        ),
+    )
+    assumption_count: int | None = Field(
+        default=None, ge=0, description="Total assumptions surfaced, or None"
+    )
+    approval_cycles_used: int | None = Field(
+        default=None,
+        ge=0,
+        description="Cycles consumed against the cap (cap-3 escalation visibility)",
+    )
+    completed_at: datetime = Field(description="When the run reached its successful terminal")
+    duration_seconds: int | None = Field(
+        default=None, ge=0, description="Run wall time in seconds, or None"
+    )
+
+    @field_validator("feat_id")
+    @classmethod
+    def _validate_feat_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not FEATURE_ID_PATTERN.match(v):
+            msg = f"feat_id must match {FEATURE_ID_PATTERN.pattern}, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+
+class PlanningFailedPayload(BaseModel):
+    """Emitted on pipeline.planning-failed.{correlation_id} at a failed terminal.
+
+    Covers both hard failure and the MP-012 timeout ceiling. Maps 1:1 onto
+    ``planning_outcome.terminal_state ∈ {failed, timed_out}``.
+
+    Attributes:
+        correlation_id: Intake-minted planning spine id.
+        mode: Planning mode (e.g. 'mode_p').
+        originator: Observed originating member id.
+        terminal_state: 'failed' (hard failure) or 'timed_out' (ceiling reached).
+        failure_reason: Human-readable description of the failure cause.
+        recoverable: Whether the planning run can be retried.
+        failed_at: When the run reached its failed terminal.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    correlation_id: str = Field(description="Intake-minted planning spine id")
+    mode: str = Field(default="mode_p", description="Planning mode (e.g. 'mode_p')")
+    originator: str = Field(description="Observed originating member id")
+    terminal_state: Literal["failed", "timed_out"] = Field(
+        description="'failed' (hard failure) or 'timed_out' (ceiling reached)"
+    )
+    failure_reason: str = Field(description="Human-readable description of the failure cause")
+    recoverable: bool = Field(default=False, description="Whether the planning run can be retried")
+    failed_at: datetime = Field(description="When the run reached its failed terminal")
+
+
+class SpecReadyForBuildPayload(BaseModel):
+    """Emitted on pipeline.spec-ready-for-build.{correlation_id} at PLANNED-HANDOFF.
+
+    The spec-ready handoff event: a **companion** to
+    :class:`FeatureReadyForBuildPayload` (never a duplicate). Unlike the
+    build-ready event — which keys on a pre-existing ``feature_id`` and points
+    at a finished plan — this event links the planning ``correlation_id`` to
+    the planning *outputs* (roadmap + feature-spec paths) and carries the
+    Mode-P-minted ``feat_id`` (008-006), the cross-workstream join key that
+    ``spec_survival``'s v1 edge is written against (backward-edge contract
+    §7 item 2). jarvis and WS2 consume this event.
+
+    Attributes:
+        correlation_id: Intake-minted planning spine id (the join spine).
+        feat_id: Mode-P-minted FEAT id (008-006), the cross-workstream join key.
+        originator: Observed originating member id, or None.
+        mode: Planning mode that produced the outputs (e.g. 'mode_p').
+        roadmap_path: Path/ref to the roadmap output, or None.
+        spec_path: Path/ref to the feature-spec output (e.g. feature_spec_inputs/<cid>.md).
+        target_repo: GitHub org/repo the outputs target, or None.
+        source_commands: GuardKit commands that produced the outputs.
+        created_at: When the handoff was produced.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    correlation_id: str = Field(description="Intake-minted planning spine id (the join spine)")
+    feat_id: str = Field(
+        description="Mode-P-minted FEAT id (008-006), the cross-workstream join key"
+    )
+    originator: str | None = Field(
+        default=None, description="Observed originating member id, or None"
+    )
+    mode: str = Field(default="mode_p", description="Planning mode that produced the outputs")
+    roadmap_path: str | None = Field(
+        default=None, description="Path/ref to the roadmap output, or None"
+    )
+    spec_path: str = Field(
+        description=("Path/ref to the feature-spec output (e.g. feature_spec_inputs/<cid>.md)")
+    )
+    target_repo: str | None = Field(
+        default=None, description="GitHub org/repo the outputs target, or None"
+    )
+    source_commands: list[str] = Field(
+        default_factory=list,
+        description="GuardKit commands that produced the outputs",
+    )
+    created_at: datetime = Field(description="When the handoff was produced")
+
+    @field_validator("feat_id")
+    @classmethod
+    def _validate_feat_id(cls, v: str) -> str:
+        if not FEATURE_ID_PATTERN.match(v):
+            msg = f"feat_id must match {FEATURE_ID_PATTERN.pattern}, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("target_repo")
+    @classmethod
+    def _validate_target_repo(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not REPO_PATTERN.match(v):
+            msg = f"target_repo must be 'org/name' format, got {v!r}"
             raise ValueError(msg)
         return v
 
@@ -627,18 +813,14 @@ class BuildPausedPayload(BaseModel):
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
     stage_label: str = Field(description="Pipeline stage that triggered the pause")
-    gate_mode: Literal[
-        "FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"
-    ] = Field(description="Gate enforcement mode (excludes AUTO_APPROVE)")
+    gate_mode: Literal["FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"] = Field(
+        description="Gate enforcement mode (excludes AUTO_APPROVE)"
+    )
     coach_score: float | None = Field(
         description="Coach quality score that triggered the gate, or None"
     )
-    rationale: str = Field(
-        description="Human-readable explanation of why the build was paused"
-    )
-    approval_subject: str = Field(
-        description="NATS subject where approval responses are expected"
-    )
+    rationale: str = Field(description="Human-readable explanation of why the build was paused")
+    approval_subject: str = Field(description="NATS subject where approval responses are expected")
     paused_at: str = Field(description="ISO 8601 timestamp when the build was paused")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
@@ -701,15 +883,11 @@ class StageCompletePayload(BaseModel):
     target_kind: Literal["local_tool", "fleet_capability", "subagent"] = Field(
         description="Kind of execution target that ran the stage"
     )
-    target_identifier: str = Field(
-        description="Identifier of the specific target instance"
-    )
-    status: Literal["PASSED", "FAILED", "GATED", "SKIPPED"] = Field(
-        description="Stage outcome"
-    )
-    gate_mode: Literal[
-        "AUTO_APPROVE", "FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"
-    ] | None = Field(description="Gate enforcement mode applied to this stage, or None")
+    target_identifier: str = Field(description="Identifier of the specific target instance")
+    status: Literal["PASSED", "FAILED", "GATED", "SKIPPED"] = Field(description="Stage outcome")
+    gate_mode: (
+        Literal["AUTO_APPROVE", "FLAG_FOR_REVIEW", "HARD_STOP", "MANDATORY_HUMAN_APPROVAL"] | None
+    ) = Field(description="Gate enforcement mode applied to this stage, or None")
     coach_score: float | None = Field(description="Coach quality score, if applicable")
     duration_secs: float = Field(description="Stage duration in seconds")
     completed_at: str = Field(description="ISO 8601 timestamp when the stage completed")
@@ -734,15 +912,9 @@ class BuildCancelledPayload(BaseModel):
 
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
-    reason: str = Field(
-        description="Human-readable description of why the build was cancelled"
-    )
-    cancelled_by: str = Field(
-        description="Identifier of the actor that cancelled the build"
-    )
-    cancelled_at: str = Field(
-        description="ISO 8601 timestamp when the build was cancelled"
-    )
+    reason: str = Field(description="Human-readable description of why the build was cancelled")
+    cancelled_by: str = Field(description="Identifier of the actor that cancelled the build")
+    cancelled_at: str = Field(description="ISO 8601 timestamp when the build was cancelled")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
     )
@@ -768,19 +940,11 @@ class StageGatedPayload(BaseModel):
     feature_id: str = Field(description="Unique identifier for the feature")
     build_id: str = Field(description="Build identifier")
     stage: str = Field(description="Pipeline stage that was gated")
-    gate_mode: Literal["flag_for_review", "hard_stop"] = Field(
-        description="Gate enforcement mode"
-    )
-    coach_score: float = Field(
-        description="Coach quality score that triggered the gate"
-    )
+    gate_mode: Literal["flag_for_review", "hard_stop"] = Field(description="Gate enforcement mode")
+    coach_score: float = Field(description="Coach quality score that triggered the gate")
     threshold: float = Field(description="Minimum score threshold for this gate")
-    details: str = Field(
-        description="Human-readable explanation of the gating decision"
-    )
+    details: str = Field(description="Human-readable explanation of the gating decision")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
     )
-    gated_at: datetime = Field(
-        description="UTC timestamp when the stage was gated"
-    )
+    gated_at: datetime = Field(description="UTC timestamp when the stage was gated")

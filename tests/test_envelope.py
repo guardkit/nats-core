@@ -66,8 +66,8 @@ class TestEventType:
         assert EventType.AGENT_DEREGISTER == "agent_deregister"
 
     def test_total_event_type_count(self) -> None:
-        """AC-001: Exactly 31 event types total (13+6+4+3+5 after Phase SPL planning intake)."""
-        assert len(EventType) == 31  # noqa: PLR2004
+        """AC-001: Exactly 35 event types total (17+6+4+3+5 after WS1 Session I planning lifecycle)."""
+        assert len(EventType) == 35  # noqa: PLR2004
 
     def test_event_type_usable_as_string(self) -> None:
         """EventType values can be used as strings."""

@@ -14,7 +14,25 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Disposition vocabulary and the UX/bus-verb synonym map for per-assumption
+# dispositions (WS1 Session I item 5; backward-edge episode schema contract
+# 2026-07-07 §4.1 / §7 item 1). The canonical values match the fleet-memory
+# ``planning_outcome.assumptions[].disposition`` vocabulary verbatim;
+# ``undecided`` (a run terminated before an assumption was decided) is included
+# for round-trip parity but is not part of the synonym map — it is never a
+# human submission.
+Disposition = Literal["accepted", "modified", "rejected", "deferred", "undecided"]
+
+# UX/bus verb -> contract value (§4.1 "Disposition synonym map", binding on WS1-I):
+#   approve -> accepted, edit -> modified, reject -> rejected, defer -> deferred.
+_DISPOSITION_SYNONYMS: dict[str, str] = {
+    "approve": "accepted",
+    "edit": "modified",
+    "reject": "rejected",
+    "defer": "deferred",
+}
 
 
 class AgentStatusPayload(BaseModel):
@@ -98,17 +116,76 @@ class ApprovalRequestPayload(BaseModel):
     )
 
 
+class AssumptionDisposition(BaseModel):
+    """One human decision on a single surfaced assumption.
+
+    The structured, first-class replacement for the FEAT-SPL-003 ASSUM-003
+    JSON-in-``notes`` bridge (WS1 Session I item 5). Every field maps verbatim
+    onto the fleet-memory ``planning_outcome.assumptions[]`` entry
+    (backward-edge episode schema contract §4.1), so the Mode P producer emits
+    the structured block with no reshaping.
+
+    ``disposition`` accepts the UX/bus verbs (``approve`` / ``edit`` /
+    ``reject`` / ``defer``) and normalises them to the canonical vocabulary
+    (``accepted`` / ``modified`` / ``rejected`` / ``deferred``) via the
+    binding synonym map.
+
+    Attributes:
+        assumption_id: Identifier of the assumption being decided.
+        disposition: Canonical disposition (synonyms are normalised on input).
+        edit_delta: Replacement text / unified diff when modified, or None.
+        notes: Optional free-text note for this specific assumption.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    assumption_id: str = Field(
+        min_length=1,
+        description="Identifier of the assumption being decided",
+    )
+    disposition: Disposition = Field(
+        description=(
+            "Canonical disposition: accepted | modified | rejected | deferred | "
+            "undecided. UX/bus verbs approve/edit/reject/defer are normalised on "
+            "input."
+        ),
+    )
+    edit_delta: str | None = Field(
+        default=None,
+        description="Replacement text / unified diff when modified, or None",
+    )
+    notes: str | None = Field(
+        default=None,
+        description="Optional free-text note for this specific assumption",
+    )
+
+    @field_validator("disposition", mode="before")
+    @classmethod
+    def _normalise_disposition(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return _DISPOSITION_SYNONYMS.get(v, v)
+        return v
+
+
 class ApprovalResponsePayload(BaseModel):
     """Payload for human-in-the-loop approval responses.
 
     Published on ``agents.approval.{agent_id}.{task_id}.response``
     to convey the human (or Jarvis) decision on an approval request.
 
+    ``dispositions`` (WS1 Session I item 5) carries the structured
+    per-assumption decisions for a planning-assumption checkpoint. It is
+    OPTIONAL and defaults to ``None``: build/other gates omit it, and it
+    supersedes the FEAT-SPL-003 ASSUM-003 JSON-in-``notes`` bridge without
+    breaking it (``notes`` stays available, so a producer may populate either
+    or both during the migration window).
+
     Attributes:
         request_id: Identifier of the approval request being answered.
         decision: The approval decision.
         decided_by: Identifier of the entity that made the decision.
         notes: Optional free-text notes explaining the decision.
+        dispositions: Structured per-assumption decisions, or None.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -127,6 +204,14 @@ class ApprovalResponsePayload(BaseModel):
     notes: str | None = Field(
         default=None,
         description="Optional free-text notes explaining the decision",
+    )
+    dispositions: list[AssumptionDisposition] | None = Field(
+        default=None,
+        description=(
+            "Structured per-assumption decisions for a planning-assumption "
+            "checkpoint (WS1-I item 5), or None. Supersedes the ASSUM-003 "
+            "JSON-in-notes bridge without breaking it."
+        ),
     )
 
 
