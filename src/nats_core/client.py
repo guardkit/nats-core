@@ -492,6 +492,16 @@ class NATSClient:
         watcher = await kv.watch(">")
 
         async for entry in watcher:
+            if entry is None:
+                # nats-py's KeyWatcher enqueues a ``None`` sentinel once the
+                # initial key set has been replayed (its ``_init_done``
+                # marker — see nats.js.kv). The sentinel carries no
+                # ``operation``; accessing ``entry.operation`` on it raises
+                # ``'NoneType' object has no attribute 'operation'``, which
+                # wedges the caller's watch/reconnect loop and leaves
+                # specialist discovery permanently empty. Skip it and keep
+                # watching for real put/delete events.
+                continue
             if entry.operation == "PUT":
                 manifest = AgentManifest.model_validate_json(entry.value)
                 await callback(entry.key, manifest)

@@ -344,6 +344,65 @@ class TestWatchFleet:
             except asyncio.CancelledError:
                 pass
 
+    async def test_watch_fleet_skips_none_init_done_sentinel(self) -> None:
+        """Regression: nats-py yields a ``None`` init-done sentinel from the
+        KV watcher once initial values are replayed. ``watch_fleet`` must skip
+        it instead of raising ``'NoneType' object has no attribute
+        'operation'`` (which wedges the fleet-watch reconnect loop and leaves
+        specialist discovery permanently empty). A real PUT after the sentinel
+        must still be delivered."""
+        mock_nc = _make_mock_nc()
+        mock_kv = _make_mock_kv()
+        mock_js = _make_mock_js(mock_kv)
+        client = await _connect_client_with_js(mock_nc, mock_js)
+
+        manifest = _make_manifest("product-owner-agent")
+
+        put_entry = MagicMock()
+        put_entry.key = "product-owner-agent"
+        put_entry.value = manifest.model_dump_json().encode()
+        put_entry.operation = "PUT"
+
+        # ``None`` FIRST — exactly the nats-py init-done sentinel ordering.
+        async def _mock_watch_iter() -> Any:
+            yield None
+            yield put_entry
+
+        watcher = MagicMock()
+        watcher.__aiter__ = lambda self: _mock_watch_iter()
+        watcher.stop = AsyncMock()
+        mock_kv.watch = AsyncMock(return_value=watcher)
+
+        received: list[tuple[str, AgentManifest | None]] = []
+        errors: list[BaseException] = []
+
+        async def _callback(key: str, manifest_or_none: AgentManifest | None) -> None:
+            received.append((key, manifest_or_none))
+
+        async def _runner() -> None:
+            try:
+                await client.watch_fleet(_callback)
+            except asyncio.CancelledError:
+                raise
+            except BaseException as exc:  # noqa: BLE001 — capture for assertion
+                errors.append(exc)
+
+        task = asyncio.create_task(_runner())
+        await asyncio.sleep(0.05)
+
+        # The sentinel must NOT have raised, and the real PUT must land.
+        assert errors == [], f"watch_fleet raised on the None sentinel: {errors}"
+        assert len(received) == 1
+        assert received[0][0] == "product-owner-agent"
+        assert isinstance(received[0][1], AgentManifest)
+
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
 
 # ===========================================================================
 # AC: Simultaneous register+deregister leaves KV in consistent final state
