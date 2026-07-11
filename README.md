@@ -46,6 +46,7 @@ await client.publish_build_complete(BuildCompletePayload(
 ## Docs
 
 - `docs/design/specs/nats-core-system-spec.md` — Full spec with BDD acceptance criteria (5 features)
+- `docs/design/contracts/agent-execution-contract.md` — Agent command/result execution contract of record (forge ↔ specialist-agent; import these shapes, never copy them)
 - `docs/design/decisions/ADR-001-nats-as-event-bus.md` — Why NATS over Kafka/Redis
 - `docs/design/decisions/ADR-002-schema-versioning.md` — Forward/backward compatibility strategy
 - `docs/design/decisions/ADR-003-nats-py-vs-faststream.md` — nats-py for library, FastStream for services
