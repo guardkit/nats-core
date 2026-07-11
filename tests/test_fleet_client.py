@@ -403,6 +403,67 @@ class TestWatchFleet:
             except asyncio.CancelledError:
                 pass
 
+    async def test_watch_fleet_treats_initial_state_none_operation_as_upsert(
+        self,
+    ) -> None:
+        """Regression (TASK-FWD-PLAN-FLEETWATCHER pt.2): nats-py replays each
+        PRE-EXISTING key's current value with ``operation=None`` (a value-bearing
+        entry, NOT a delete) before the init-done sentinel. ``watch_fleet`` must
+        UPSERT those (deliver the manifest), not treat them as deletions —
+        otherwise every registration that existed before the watcher started is
+        silently dropped and specialist discovery stays empty on boot even after
+        the sentinel-crash guard. A genuine DEL still deletes."""
+        mock_nc = _make_mock_nc()
+        mock_kv = _make_mock_kv()
+        mock_js = _make_mock_js(mock_kv)
+        client = await _connect_client_with_js(mock_nc, mock_js)
+
+        manifest = _make_manifest("product-owner-agent")
+
+        initial_entry = MagicMock()  # initial-state replay: value present, op None
+        initial_entry.key = "product-owner-agent"
+        initial_entry.value = manifest.model_dump_json().encode()
+        initial_entry.operation = None
+
+        del_entry = MagicMock()  # a genuine delete after the replay
+        del_entry.key = "gcse-tutor"
+        del_entry.value = None
+        del_entry.operation = "DEL"
+
+        async def _mock_watch_iter() -> Any:
+            yield initial_entry  # op None + value -> upsert
+            yield None  # init-done sentinel -> skip
+            yield del_entry  # DEL -> delete
+
+        watcher = MagicMock()
+        watcher.__aiter__ = lambda self: _mock_watch_iter()
+        watcher.stop = AsyncMock()
+        mock_kv.watch = AsyncMock(return_value=watcher)
+
+        received: list[tuple[str, AgentManifest | None]] = []
+
+        async def _callback(key: str, m: AgentManifest | None) -> None:
+            received.append((key, m))
+
+        task = asyncio.create_task(client.watch_fleet(_callback))
+        await asyncio.sleep(0.05)
+
+        assert len(received) == 2
+        assert received[0][0] == "product-owner-agent"
+        assert isinstance(received[0][1], AgentManifest), (
+            "operation=None initial-state entry must upsert the manifest, "
+            "not be treated as a delete"
+        )
+        assert received[0][1].agent_id == "product-owner-agent"
+        assert received[1] == ("gcse-tutor", None)  # genuine DEL still deletes
+
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
 
 # ===========================================================================
 # AC: Simultaneous register+deregister leaves KV in consistent final state

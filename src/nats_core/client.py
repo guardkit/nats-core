@@ -502,12 +502,23 @@ class NATSClient:
                 # specialist discovery permanently empty. Skip it and keep
                 # watching for real put/delete events.
                 continue
-            if entry.operation == "PUT":
+            if entry.operation in ("DEL", "PURGE") or entry.value is None:
+                # a genuine deletion/purge (or a value-less tombstone) removes
+                # the agent from discovery
+                await callback(entry.key, None)
+            else:
+                # ``"PUT"`` (a live update) OR ``operation is None`` — nats-py
+                # delivers the INITIAL-STATE replay of each pre-existing key with
+                # ``operation=None`` (it carries the key's CURRENT value, it is
+                # NOT a delete), then the ``None`` sentinel above marks the end of
+                # that replay. Both a PUT and an initial-state entry carry a value,
+                # so upsert the manifest. The old ``operation == "PUT"`` / ``else``
+                # split treated the ``None`` initial-state entries as deletes, so
+                # every registration that existed BEFORE the watcher started was
+                # silently dropped — specialist discovery stayed empty on boot even
+                # after the sentinel-crash guard (TASK-FWD-PLAN-FLEETWATCHER pt.2).
                 manifest = AgentManifest.model_validate_json(entry.value)
                 await callback(entry.key, manifest)
-            else:
-                # DEL or PURGE
-                await callback(entry.key, None)
 
     async def call_agent_tool(
         self,
