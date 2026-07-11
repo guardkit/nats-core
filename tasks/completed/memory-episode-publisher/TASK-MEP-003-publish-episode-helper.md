@@ -30,7 +30,8 @@ id: TASK-MEP-003
 implementation_mode: task-work
 parent_review: TASK-REV-MEP1
 priority: high
-status: design_approved
+status: completed
+completed: '2026-06-24T00:00:00+00:00'
 tags:
 - memory-publisher
 - nats-client
@@ -184,3 +185,7 @@ pytest tests/test_client.py -q -k "episode or publish_episode"
 ruff check src/nats_core/client.py
 mypy src/nats_core/client.py
 ```
+
+---
+
+> **Tracker reconcile 2026-07-11 (WS3-S8 sweep).** FEAT-MEP1 shipped and merged at nats-core `d1f421e` (Merge FEAT-MEP1: Memory Episode Publisher, 2026-06-24); code landed in `src/nats_core/events/_memory.py` + `topics.py`. Status flipped `->` completed and file relocated to `tasks/completed/memory-episode-publisher/` to match the completed feature YAML rollup (`.guardkit/features/FEAT-MEP1.yaml` status=completed, this task status=completed). No content change.

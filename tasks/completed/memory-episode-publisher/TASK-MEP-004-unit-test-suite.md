@@ -1,7 +1,8 @@
 ---
 id: TASK-MEP-004
 title: Unit test suite — MemoryEpisodeV1, publish_episode, make_memory_episode factory
-status: backlog
+status: completed
+completed: '2026-06-24T00:00:00+00:00'
 created: 2026-06-24 00:00:00+00:00
 updated: '2026-06-24T00:00:00+00:00'
 priority: high
@@ -104,3 +105,8 @@ pytest tests/test_memory_episode.py tests/test_client.py -q -m "not integration"
 pytest tests/ -q -m "not integration"
 ruff check tests/test_memory_episode.py tests/test_client.py tests/conftest.py
 ```
+
+
+---
+
+> **Tracker reconcile 2026-07-11 (WS3-S8 sweep).** FEAT-MEP1 shipped and merged at nats-core `d1f421e` (Merge FEAT-MEP1: Memory Episode Publisher, 2026-06-24); code landed in `src/nats_core/events/_memory.py` + `topics.py`. Status flipped `->` completed and file relocated to `tasks/completed/memory-episode-publisher/` to match the completed feature YAML rollup (`.guardkit/features/FEAT-MEP1.yaml` status=completed, this task status=completed). No content change.

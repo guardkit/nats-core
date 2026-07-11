@@ -142,3 +142,8 @@ Tasks are architecturally sound. Three modifications applied to task files befor
 $ pytest tests/test_pipeline_payloads.py tests/test_event_type_schemas.py -v --tb=short -q
 114 passed in 0.08s (baseline verified 2026-04-16)
 ```
+
+
+---
+
+> **Tracker reconcile 2026-07-11 (WS3-S8 sweep).** This review anchor carries a terminal `status: review_complete` (decision recorded 2026-04-16, decision=proceed_with_modifications) but sat under `tasks/backlog/`. Relocated to `tasks/completed/TASK-7448/` to resolve the status/location conflict; the forge-v2-alignment tasks it reviewed (TASK-NCFA-001..003) are themselves already in `tasks/completed/forge-v2-alignment/`. Status unchanged (already terminal); no content change.

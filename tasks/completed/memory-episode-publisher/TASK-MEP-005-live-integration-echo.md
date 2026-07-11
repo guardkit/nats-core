@@ -1,7 +1,8 @@
 ---
 id: TASK-MEP-005
 title: Optional live @integration round-trip echo on GB10 (memory subject)
-status: backlog
+status: completed
+completed: '2026-06-24T00:00:00+00:00'
 created: 2026-06-24 00:00:00+00:00
 updated: '2026-06-24T00:00:00+00:00'
 priority: medium
@@ -82,3 +83,8 @@ pytest tests/integration/test_memory_episode_live.py -q -m integration -k memory
 pytest tests/ -q -m "not integration"   # confirm it is correctly skipped by default
 ruff check tests/integration/test_memory_episode_live.py
 ```
+
+
+---
+
+> **Tracker reconcile 2026-07-11 (WS3-S8 sweep).** FEAT-MEP1 shipped and merged at nats-core `d1f421e` (Merge FEAT-MEP1: Memory Episode Publisher, 2026-06-24); code landed in `src/nats_core/events/_memory.py` + `topics.py`. Status flipped `->` completed and file relocated to `tasks/completed/memory-episode-publisher/` to match the completed feature YAML rollup (`.guardkit/features/FEAT-MEP1.yaml` status=completed, this task status=completed). No content change.
