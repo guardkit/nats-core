@@ -449,10 +449,11 @@ class TestAllTopics:
         #            PLANNING_APPROVAL_RESPONSE, the normative plan-{cid} convention per WS1-I)
         # Fleet: 3 (excl HEARTBEAT_ALL, ALL)
         # Jarvis: 4 (none are wildcards)
+        # Deploy: 7 (excl ALL — +DEPLOY_REVERTED, the O-32 receipt / 0.7.1)
         # System: 1
         # Memory: 1 (excl ALL)
         # Total: 35
-        assert len(Topics.ALL_TOPICS) == 41  # noqa: PLR2004
+        assert len(Topics.ALL_TOPICS) == 42  # noqa: PLR2004
 
 
 # ---------------------------------------------------------------------------

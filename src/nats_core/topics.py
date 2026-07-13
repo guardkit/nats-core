@@ -152,6 +152,8 @@ class Topics:
         DEPLOY_STARTED: str = "deploy.started.{correlation_id}"
         DEPLOY_COMPLETE: str = "deploy.complete.{correlation_id}"
         DEPLOY_FAILED: str = "deploy.failed.{correlation_id}"
+        # O-32 revert-on-gate-fail receipt (nats-core 0.7.1) — same family grammar.
+        DEPLOY_REVERTED: str = "deploy.reverted.{correlation_id}"
         QA_VERDICT: str = "deploy.qa-verdict.{correlation_id}"
         LIVE_GATE_RESULT: str = "deploy.live-gate-result.{correlation_id}"
         ALL: str = "deploy.>"

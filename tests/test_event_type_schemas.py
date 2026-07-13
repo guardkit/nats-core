@@ -200,6 +200,7 @@ class TestSmoke:
             "deploy_started",
             "deploy_complete",
             "deploy_failed",
+            "deploy_reverted",
             "qa_verdict",
             "live_gate_result",
             "status",
@@ -223,7 +224,7 @@ class TestSmoke:
         }
         actual = {member.value for member in EventType}
         assert actual == expected
-        assert len(EventType) == 41  # noqa: PLR2004
+        assert len(EventType) == 42  # noqa: PLR2004
 
     @pytest.mark.smoke
     def test_every_event_type_has_registered_payload_class(self) -> None:
@@ -852,7 +853,7 @@ class TestDispatcher:
         assert hasattr(envelope, "_EVENT_TYPE_REGISTRY")
         registry = envelope._EVENT_TYPE_REGISTRY
         assert isinstance(registry, dict)
-        assert len(registry) == 41  # noqa: PLR2004
+        assert len(registry) == 42  # noqa: PLR2004
         for key, value in registry.items():
             assert isinstance(key, EventType)
             assert issubclass(value, BaseModel)

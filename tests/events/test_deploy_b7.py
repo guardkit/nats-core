@@ -34,6 +34,7 @@ from nats_core.events import (
     DeployCompletePayload,
     DeployFailedPayload,
     DeployQueuedPayload,
+    DeployRevertedPayload,
     DeployStartedPayload,
     LiveGateResultPayload,
     LoopStats,
@@ -404,6 +405,58 @@ class TestUsageRollupBlock:
 # ---------------------------------------------------------------------------
 
 
+class TestDeployRevertedPayload:
+    """O-32 revert-on-gate-fail receipt (nats-core 0.7.1)."""
+
+    def _reverted(self, **overrides: object) -> DeployRevertedPayload:
+        defaults: dict[str, object] = {
+            "correlation_id": _CID,
+            "env_id": "gb10-prod",
+            "deploy_run_id": "deployrun-1",
+            "reverted_to_image_ref": "study-tutor:rollback-20260713",
+            "failing_verdict": "fail",
+            "reverted_at": _NOW,
+        }
+        defaults.update(overrides)
+        return DeployRevertedPayload(**defaults)  # type: ignore[arg-type]
+
+    def test_minimal_fields_and_status_default(self) -> None:
+        p = self._reverted()
+        assert p.status == "reverted"
+        assert p.reverted_to_image_ref == "study-tutor:rollback-20260713"
+        assert p.failing_verdict == "fail"
+
+    def test_failing_verdict_must_be_in_enum(self) -> None:
+        with pytest.raises(ValidationError):
+            self._reverted(failing_verdict="borked")
+
+    def test_bad_feat_id_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            self._reverted(feat_id="not a feat id")
+
+    def test_envelope_round_trip(self) -> None:
+        payload = self._reverted(
+            feat_id="FEAT-9A21",
+            failing_verdict_ref="ev/idx.json",
+            revert_runbook_ref="revert-deployrun-1",
+            deploy_record_ref="deploys/dr.md",
+        )
+        env = MessageEnvelope(
+            source_id="forge",
+            event_type=EventType.DEPLOY_REVERTED,
+            correlation_id=_CID,
+            payload=payload.model_dump(mode="json"),
+        )
+        raw = env.model_dump_json()
+        restored_env = MessageEnvelope.model_validate_json(raw)
+        cls = payload_class_for_event_type(restored_env.event_type)
+        restored = cls.model_validate(restored_env.payload)
+        assert isinstance(restored, DeployRevertedPayload)
+        assert restored.reverted_to_image_ref == "study-tutor:rollback-20260713"
+        assert restored.failing_verdict == "fail"
+        assert restored.feat_id == "FEAT-9A21"
+
+
 class TestDeployTopics:
     @pytest.mark.parametrize(
         "template",
@@ -412,6 +465,7 @@ class TestDeployTopics:
             Topics.Deploy.DEPLOY_STARTED,
             Topics.Deploy.DEPLOY_COMPLETE,
             Topics.Deploy.DEPLOY_FAILED,
+            Topics.Deploy.DEPLOY_REVERTED,
             Topics.Deploy.QA_VERDICT,
             Topics.Deploy.LIVE_GATE_RESULT,
         ],
@@ -440,6 +494,7 @@ class TestRegistryWiring:
             (EventType.DEPLOY_STARTED, DeployStartedPayload),
             (EventType.DEPLOY_COMPLETE, DeployCompletePayload),
             (EventType.DEPLOY_FAILED, DeployFailedPayload),
+            (EventType.DEPLOY_REVERTED, DeployRevertedPayload),
             (EventType.QA_VERDICT, QAVerdictPayload),
             (EventType.LIVE_GATE_RESULT, LiveGateResultPayload),
         ],

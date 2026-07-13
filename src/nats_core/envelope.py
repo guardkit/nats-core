@@ -25,6 +25,7 @@ from nats_core.events._deploy import (
     DeployCompletePayload,
     DeployFailedPayload,
     DeployQueuedPayload,
+    DeployRevertedPayload,
     DeployStartedPayload,
     LiveGateResultPayload,
     QAVerdictPayload,
@@ -92,11 +93,12 @@ class EventType(str, Enum):
     STAGE_COMPLETE = "stage_complete"
     STAGE_GATED = "stage_gated"
 
-    # Deploy domain (6) — WS2 B7 last-mile stage
+    # Deploy domain (7) — WS2 B7 last-mile stage (+ DEPLOY_REVERTED, 0.7.1 / O-32)
     DEPLOY_QUEUED = "deploy_queued"
     DEPLOY_STARTED = "deploy_started"
     DEPLOY_COMPLETE = "deploy_complete"
     DEPLOY_FAILED = "deploy_failed"
+    DEPLOY_REVERTED = "deploy_reverted"
     QA_VERDICT = "qa_verdict"
     LIVE_GATE_RESULT = "live_gate_result"
 
@@ -153,6 +155,7 @@ _EVENT_TYPE_REGISTRY: dict[EventType, type[BaseModel]] = {
     EventType.DEPLOY_STARTED: DeployStartedPayload,
     EventType.DEPLOY_COMPLETE: DeployCompletePayload,
     EventType.DEPLOY_FAILED: DeployFailedPayload,
+    EventType.DEPLOY_REVERTED: DeployRevertedPayload,
     EventType.QA_VERDICT: QAVerdictPayload,
     EventType.LIVE_GATE_RESULT: LiveGateResultPayload,
     # Agent domain

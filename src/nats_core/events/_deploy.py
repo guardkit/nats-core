@@ -1,5 +1,10 @@
 """Deploy / QA-verdict / live-gate wire payloads (WS2 B7, the last-mile stage).
 
+Version note: the deploy family landed in 0.7.0 (B7, ``b7d4d4e``). 0.7.1 adds
+:class:`DeployRevertedPayload` — the O-32 revert-on-gate-fail receipt — as an
+additive sibling of the DeployComplete/Failed family (no edits to the existing
+payloads; every consumer pinned ``<0.8`` picks it up unchanged).
+
 The factory's output definition graduates to **merged + QA-verified + deployed
 + live-gated** (WS2 scope-design §4, §5). These payloads carry the deploy stage
 and the live-gate runner's verdicts onto the bus so jarvis (the phone loop) and
@@ -405,6 +410,88 @@ class DeployFailedPayload(BaseModel):
         default=None, ge=0, description="Stage wall time in seconds, or None"
     )
     failed_at: datetime = Field(description="When the DEPLOY stage failed")
+
+    @field_validator("feat_id")
+    @classmethod
+    def _validate_feat_id(cls, v: str | None) -> str | None:
+        if v is not None and not FEATURE_ID_PATTERN.match(v):
+            msg = f"feat_id must match {FEATURE_ID_PATTERN.pattern}, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("task_id")
+    @classmethod
+    def _validate_task_id(cls, v: str | None) -> str | None:
+        if v is not None and not TASK_ID_PATTERN.match(v):
+            msg = f"task_id must match {TASK_ID_PATTERN.pattern}, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+
+class DeployRevertedPayload(BaseModel):
+    """Emitted on deploy.reverted.{correlation_id} when a FAILED live-gate is rolled back (O-32).
+
+    The revert-on-gate-fail receipt (nats-core 0.7.1). A post-deploy live-gate
+    that renders a verdict != ``"pass"`` means the deploy is NOT verified, so the
+    DeployStageRunner re-deploys the kept ``:rollback-*`` image tag through the
+    same deploy seam and publishes this receipt — the endpoint's word "verified"
+    enforced, not decorative. A sibling of the DeployComplete/Failed family (same
+    F7 vocabulary, keyed on ``correlation_id``); the factory-dashboard G-01
+    projection maps ``deploy_reverted`` to the ``REVERTED`` deploy status.
+
+    Attributes:
+        correlation_id: Build/feature correlation back to planning.
+        env_id: Deploy profile env_id (⇐ target_env).
+        deploy_run_id: Raw forge run id for the DEPLOY stage that was reverted.
+        status: Always 'reverted' — the terminal discriminator for this receipt.
+        reverted_to_image_ref: The kept rollback image tag re-deployed (:rollback-*).
+        failing_verdict: The live-gate verdict that triggered the revert (!= 'pass').
+        feat_id: Feature id (008-006), or None.
+        task_id: Fix-task id (Mode C), or None.
+        failing_verdict_ref: Ref to the failing QA/live-gate evidence (F5 index / run id), or None.
+        deploy_record_ref: Path/ref of the F7 record for the revert deploy, or None.
+        deploy_profile_ref: The deploy/profile.yaml ref consumed, or None.
+        revert_runbook_ref: The rendered revert runbook executed, or None.
+        hosts: Host set from the profile, or None.
+        reservation_resource: Reservation held during the revert, or None.
+        reverted_at: When the revert completed.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    correlation_id: str = Field(description="Build/feature correlation back to planning")
+    env_id: str = Field(description="Deploy profile env_id (⇐ target_env)")
+    deploy_run_id: str = Field(description="Raw forge run id for the reverted DEPLOY stage")
+    status: Literal["reverted"] = Field(
+        default="reverted", description="Always 'reverted' — the terminal discriminator"
+    )
+    reverted_to_image_ref: str = Field(
+        description="The kept rollback image tag re-deployed (:rollback-*)"
+    )
+    failing_verdict: Verdict = Field(
+        description="The live-gate verdict that triggered the revert (!= 'pass')"
+    )
+    feat_id: str | None = Field(default=None, description="Feature id (008-006), or None")
+    task_id: str | None = Field(default=None, description="Fix-task id (Mode C), or None")
+    failing_verdict_ref: str | None = Field(
+        default=None, description="Ref to the failing QA/live-gate evidence, or None"
+    )
+    deploy_record_ref: str | None = Field(
+        default=None, description="Path/ref of the F7 record for the revert deploy, or None"
+    )
+    deploy_profile_ref: str | None = Field(
+        default=None, description="The deploy/profile.yaml ref consumed, or None"
+    )
+    revert_runbook_ref: str | None = Field(
+        default=None, description="The rendered revert runbook executed, or None"
+    )
+    hosts: list[str] | None = Field(
+        default=None, description="Host set from the profile, or None"
+    )
+    reservation_resource: str | None = Field(
+        default=None, description="Reservation held during the revert, or None"
+    )
+    reverted_at: datetime = Field(description="When the revert completed")
 
     @field_validator("feat_id")
     @classmethod
