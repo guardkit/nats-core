@@ -33,9 +33,7 @@ REPO_PATTERN = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$")
 # and refuses a name it does not know out loud, so an unknown name is caught
 # where the allowed names are known rather than dropped silently at the wire.
 # Every other repository slot on the bus stays strict org/name (REPO_PATTERN).
-PLANNING_TARGET_REPO_PATTERN = re.compile(
-    r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$"
-)
+PLANNING_TARGET_REPO_PATTERN = re.compile(r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$")
 # TASK-F8-002 / F008-VAL-002 — Mode C carries a per-fix-task identifier
 # alongside the parent feature_id. The pattern mirrors FEATURE_ID_PATTERN
 # so the strictness budget is symmetric across the two identifier slots.
