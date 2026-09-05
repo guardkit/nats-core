@@ -26,6 +26,16 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # Regex patterns for BuildQueuedPayload validators.
 FEATURE_ID_PATTERN = re.compile(r"^FEAT-[A-Z0-9]{3,12}$")
 REPO_PATTERN = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$")
+# A planning sentence may name its repository the short way a person types it
+# ("study-tutor") as well as the long way a configuration key spells it
+# ("guardkit/study-tutor"). Only PlanningQueuedPayload.target_repo is this
+# lenient: the forge resolves the short name against its configured checkouts
+# and refuses a name it does not know out loud, so an unknown name is caught
+# where the allowed names are known rather than dropped silently at the wire.
+# Every other repository slot on the bus stays strict org/name (REPO_PATTERN).
+PLANNING_TARGET_REPO_PATTERN = re.compile(
+    r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$"
+)
 # TASK-F8-002 / F008-VAL-002 — Mode C carries a per-fix-task identifier
 # alongside the parent feature_id. The pattern mirrors FEATURE_ID_PATTERN
 # so the strictness budget is symmetric across the two identifier slots.
@@ -540,7 +550,8 @@ class PlanningQueuedPayload(BaseModel):
     Attributes:
         stage: Always "planning" — discriminates this payload from build-queued.
         request_text: The originator's free-text product idea or hypothesis.
-        target_repo: GitHub org/repo the planning output should land in, or None.
+        target_repo: The repository the planning output should land in — 'org/name'
+            or the short name on its own — or None.
         triggered_by: Which layer originated this planning-queued message.
         originating_adapter: Which Jarvis adapter the human interacted with.
         originating_user: Pinned identity of the originator (e.g. Slack member id).
@@ -562,8 +573,10 @@ class PlanningQueuedPayload(BaseModel):
     target_repo: str | None = Field(
         default=None,
         description=(
-            "GitHub org/repo the planning output should land in, e.g. "
-            "guardkit/lpa-platform. None when the originator did not name one; "
+            "The repository the planning output should land in, either "
+            "'org/name' (e.g. guardkit/lpa-platform) or the short name on its "
+            "own (e.g. lpa-platform), which the forge resolves against its "
+            "configured checkouts. None when the originator did not name one; "
             "Mode P configuration then supplies the default."
         ),
     )
@@ -635,8 +648,8 @@ class PlanningQueuedPayload(BaseModel):
     def _validate_target_repo(cls, v: str | None) -> str | None:
         if v is None:
             return v
-        if not REPO_PATTERN.match(v):
-            msg = f"target_repo must be 'org/name' format, got {v!r}"
+        if not PLANNING_TARGET_REPO_PATTERN.match(v):
+            msg = f"target_repo must be 'org/name' or a short name, got {v!r}"
             raise ValueError(msg)
         return v
 

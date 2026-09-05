@@ -4,7 +4,7 @@ Validates the planning-stage sibling of BuildQueuedPayload:
   - stage literal pinned to "planning"
   - request_text / originating_user non-blank invariants (originating_user is
     REQUIRED here, unlike builds — DF-009 identity-pinned approval routing)
-  - target_repo org/name format when present
+  - target_repo org/name OR short-name format when present
   - originating_adapter provenance rules mirrored from BuildQueuedPayload
   - forward-compat extra fields, JSON round-trip fidelity
   - Topics.Pipeline.PLANNING_QUEUED resolution and EventType registry wiring
@@ -114,16 +114,30 @@ class TestPlanningQueuedPayload:
         with pytest.raises(ValidationError):
             PlanningQueuedPayload(**data)  # type: ignore[arg-type]
 
-    def test_target_repo_validates_org_name_format(self) -> None:
-        """Rejects bare repo name, accepts org/name, accepts None."""
-        with pytest.raises(ValidationError, match="target_repo"):
-            _make_planning_queued(target_repo="study-tutor")
-
+    def test_target_repo_accepts_org_name_and_none(self) -> None:
+        """Accepts org/name, accepts None."""
         payload = _make_planning_queued(target_repo="guardkit/study-tutor")
         assert payload.target_repo == "guardkit/study-tutor"
 
         explicit_none = _make_planning_queued(target_repo=None)
         assert explicit_none.target_repo is None
+
+    def test_target_repo_accepts_a_short_name(self) -> None:
+        """A person types the short name; it must reach the forge.
+
+        The forge resolves a short name against its configured checkouts and
+        refuses a name it does not know out loud. Rejecting the short name
+        here would drop the sentence at the wire, before anyone could be told
+        (spec 2026-09-05, rules 3 and 4).
+        """
+        payload = _make_planning_queued(target_repo="study-tutor")
+        assert payload.target_repo == "study-tutor"
+
+    def test_target_repo_rejects_a_name_that_is_neither_shape(self) -> None:
+        """Slashes, spaces and empty names are still refused at the wire."""
+        for bad in ("guardkit/study/tutor", "guardkit/", "/study-tutor", "a b", ""):
+            with pytest.raises(ValidationError, match="target_repo"):
+                _make_planning_queued(target_repo=bad)
 
     def test_adapter_required_for_jarvis(self) -> None:
         """triggered_by='jarvis' with originating_adapter=None raises."""
