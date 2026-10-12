@@ -124,6 +124,47 @@ class TestReviewEvidence:
         with pytest.raises(ValidationError, match="https"):
             ReviewEvidence.model_validate(_ready(**{field: value}))
 
+    @pytest.mark.parametrize("field", ["app_url", "report_url", "diagnostics_url", "media_urls"])
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            # The reviewer's probes: a browser opens evil.test for each of these.
+            "https://evil.test\\@preview.example.test/",
+            "https://preview.example.test@evil.test/",
+            "https://user:pw@preview.example.test/",
+            "https://preview.example.test/a b",
+            "https://preview.example.test/\tx",
+            "https://preview.example.test/%0a\nx",
+            "https://preview.example.test/\x00",
+            "https://preview.example.test/\x7f",
+            "javascript://preview.example.test/%0aalert(1)",
+        ],
+    )
+    def test_ambiguous_url_rejected(self, field: str, bad: str) -> None:
+        value: Any = [bad] if field == "media_urls" else bad
+        with pytest.raises(ValidationError, match="https with a plain host"):
+            ReviewEvidence.model_validate(_ready(**{field: value}))
+
+    def test_url_error_never_echoes_the_url(self) -> None:
+        bad = "https://evil.test\\@preview.example.test/?preview=tok-secret"
+        with pytest.raises(ValidationError) as caught:
+            ReviewEvidence.model_validate(_ready(app_url=bad))
+        assert "tok-secret" not in str(caught.value.errors(include_input=False))
+
+    def test_fragment_at_sign_is_not_userinfo(self) -> None:
+        # '#@host' is in the fragment, so the host really is the first one.
+        ev = ReviewEvidence.model_validate(_ready(report_url=f"{_BASE}/r#@elsewhere.test"))
+        assert ev.report_url == f"{_BASE}/r#@elsewhere.test"
+
+    def test_preview_base_sha_optional_and_validated(self) -> None:
+        assert ReviewEvidence.model_validate(_ready()).preview_base_sha is None
+        ev = ReviewEvidence.model_validate(_ready(preview_base_sha="d" * 40))
+        assert ev.preview_base_sha == "d" * 40
+        assert ReviewEvidence.model_validate_json(ev.model_dump_json()) == ev
+        for bad in ["D" * 40, "d" * 39, "main", ""]:
+            with pytest.raises(ValidationError):
+                ReviewEvidence.model_validate(_ready(preview_base_sha=bad))
+
     def test_naive_datetime_rejected(self) -> None:
         with pytest.raises(ValidationError):
             ReviewEvidence.model_validate(_ready(app_expires_at="2026-10-13T14:00:00"))

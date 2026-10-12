@@ -41,6 +41,8 @@ PLANNING_TARGET_REPO_PATTERN = re.compile(r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)
 TASK_ID_PATTERN = re.compile(r"^TASK-[A-Z0-9]{3,12}$")
 # A full git commit or tree id, as ``git rev-parse`` prints it.
 GIT_OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+# Characters a review-evidence URL may never contain (see _require_https).
+_URL_FORBIDDEN_CHARS = re.compile(r"[\\\s\x00-\x1f\x7f-\x9f]")
 
 # Literal types for BuildQueuedPayload provenance fields.
 TriggerSource = Literal["cli", "jarvis", "forge-internal", "notification-adapter"]
@@ -920,6 +922,7 @@ class ReviewEvidence(BaseModel):
         candidate_sha: The offered candidate commit (40 hex).
         candidate_tree: The candidate commit's tree (40 hex).
         preview_tree: The tree actually previewed: the candidate joined onto main.
+        preview_base_sha: The main commit the candidate was joined onto, or None.
         run_id: The preparation run's ID.
         created_at: When the evidence was prepared.
         app_expires_at: When the preview and the Approve window end.
@@ -950,15 +953,21 @@ class ReviewEvidence(BaseModel):
     preview_tree: str = Field(
         description="The tree actually previewed: the candidate joined onto main (40 hex)"
     )
+    preview_base_sha: str | None = Field(
+        default=None,
+        description="The main commit the candidate was joined onto for the preview (40 hex)",
+    )
     run_id: str = Field(min_length=1, description="The preparation run's ID")
     created_at: AwareDatetime = Field(description="When the evidence was prepared")
     app_expires_at: AwareDatetime = Field(description="When the preview and the Approve window end")
     evidence_expires_at: AwareDatetime = Field(description="When the report and media are deleted")
     outcome: ReviewOutcome = Field(description="The counts the driver actually reported")
 
-    @field_validator("candidate_sha", "candidate_tree", "preview_tree")
+    @field_validator("candidate_sha", "candidate_tree", "preview_tree", "preview_base_sha")
     @classmethod
-    def _validate_object_id(cls, v: str) -> str:
+    def _validate_object_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
         if not GIT_OBJECT_ID_PATTERN.match(v):
             msg = f"must be a 40-character lowercase hex git object id, got {v!r}"
             raise ValueError(msg)
@@ -988,9 +997,21 @@ class ReviewEvidence(BaseModel):
 
 
 def _require_https(url: str) -> str:
+    # A browser reads a backslash as a slash and drops userinfo, so
+    # "https://evil.test\@good.test/" opens evil.test while a naive parse
+    # says good.test. Refuse every such shape outright. The URL itself is
+    # never echoed in the error: an app link carries its preview token.
     parsed = urlsplit(url)
-    if parsed.scheme != "https" or not parsed.hostname:
-        msg = f"URL must be https with a host, got {url!r}"
+    if (
+        _URL_FORBIDDEN_CHARS.search(url)
+        or parsed.scheme != "https"
+        or "@" in parsed.netloc
+        or not parsed.hostname
+    ):
+        msg = (
+            "URL must be https with a plain host: no userinfo, backslash, "
+            "whitespace or control characters"
+        )
         raise ValueError(msg)
     return url
 
