@@ -20,8 +20,9 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # Regex patterns for BuildQueuedPayload validators.
 FEATURE_ID_PATTERN = re.compile(r"^FEAT-[A-Z0-9]{3,12}$")
@@ -38,6 +39,8 @@ PLANNING_TARGET_REPO_PATTERN = re.compile(r"^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)
 # alongside the parent feature_id. The pattern mirrors FEATURE_ID_PATTERN
 # so the strictness budget is symmetric across the two identifier slots.
 TASK_ID_PATTERN = re.compile(r"^TASK-[A-Z0-9]{3,12}$")
+# A full git commit or tree id, as ``git rev-parse`` prints it.
+GIT_OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 # Literal types for BuildQueuedPayload provenance fields.
 TriggerSource = Literal["cli", "jarvis", "forge-internal", "notification-adapter"]
@@ -873,6 +876,125 @@ class SpecReadyForBuildPayload(BaseModel):
         return v
 
 
+class ReviewOutcome(BaseModel):
+    """Test counts the review journey's driver actually reported.
+
+    Each count is ``None`` when the driver did not report it. ``None`` means
+    unknown and is never written as 0, so a reader can tell "no tests failed"
+    from "nobody said how many failed".
+
+    Attributes:
+        passed: Tests that passed, or None when unknown.
+        failed: Tests that failed, or None when unknown.
+        skipped: Tests that were skipped, or None when unknown.
+        flaky: Tests that passed only on retry, or None when unknown.
+    """
+
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+    passed: int | None = Field(default=None, ge=0, description="Passed count, or None if unknown")
+    failed: int | None = Field(default=None, ge=0, description="Failed count, or None if unknown")
+    skipped: int | None = Field(default=None, ge=0, description="Skipped count, or None if unknown")
+    flaky: int | None = Field(default=None, ge=0, description="Flaky count, or None if unknown")
+
+
+class ReviewEvidence(BaseModel):
+    """Preview and test evidence prepared for a merge offer (web-readiness W7).
+
+    Forge prepares a preview of the candidate joined onto main, records the key
+    journey, keeps the evidence and attaches this record to the merge offer
+    (``details["review_evidence"]``) and to ``BuildPausedPayload``. Jarvis
+    renders it on the card. ``ready`` means preparation succeeded and the app
+    and report links are live; ``failed`` means it did not, and the card offers
+    only Reject.
+
+    URLs must be ``https``; allow-listing hosts is the consumer's job.
+
+    Attributes:
+        state: ``ready`` when preparation succeeded, ``failed`` when it did not.
+        app_url: "Try the app" URL including ``?preview=<token>``; None when failed.
+        report_url: The test report (HTML ``index.html``).
+        media_urls: Screenshots and the video of the key journey.
+        diagnostics_url: For ``failed``: the failure's logs, report or trace.
+        failure_reason: Plain-English reason preparation failed.
+        candidate_sha: The offered candidate commit (40 hex).
+        candidate_tree: The candidate commit's tree (40 hex).
+        preview_tree: The tree actually previewed: the candidate joined onto main.
+        run_id: The preparation run's ID.
+        created_at: When the evidence was prepared.
+        app_expires_at: When the preview and the Approve window end.
+        evidence_expires_at: When the report and media are deleted.
+        outcome: The counts the driver actually reported.
+    """
+
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+    state: Literal["ready", "failed"] = Field(
+        description="'ready' when preparation succeeded, 'failed' when it did not"
+    )
+    app_url: str | None = Field(
+        default=None, description="'Try the app' URL with its preview token; None when failed"
+    )
+    report_url: str | None = Field(default=None, description="Test report (HTML index.html)")
+    media_urls: list[str] = Field(
+        default_factory=list, description="Screenshots and the video of the key journey"
+    )
+    diagnostics_url: str | None = Field(
+        default=None, description="For 'failed': the failure's logs, report or trace"
+    )
+    failure_reason: str | None = Field(
+        default=None, description="Plain-English reason preparation failed"
+    )
+    candidate_sha: str = Field(description="The offered candidate commit (40 hex)")
+    candidate_tree: str = Field(description="The candidate commit's tree (40 hex)")
+    preview_tree: str = Field(
+        description="The tree actually previewed: the candidate joined onto main (40 hex)"
+    )
+    run_id: str = Field(min_length=1, description="The preparation run's ID")
+    created_at: AwareDatetime = Field(description="When the evidence was prepared")
+    app_expires_at: AwareDatetime = Field(description="When the preview and the Approve window end")
+    evidence_expires_at: AwareDatetime = Field(description="When the report and media are deleted")
+    outcome: ReviewOutcome = Field(description="The counts the driver actually reported")
+
+    @field_validator("candidate_sha", "candidate_tree", "preview_tree")
+    @classmethod
+    def _validate_object_id(cls, v: str) -> str:
+        if not GIT_OBJECT_ID_PATTERN.match(v):
+            msg = f"must be a 40-character lowercase hex git object id, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("app_url", "report_url", "diagnostics_url")
+    @classmethod
+    def _validate_optional_url(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        return _require_https(v)
+
+    @field_validator("media_urls")
+    @classmethod
+    def _validate_media_urls(cls, v: list[str]) -> list[str]:
+        return [_require_https(url) for url in v]
+
+    @model_validator(mode="after")
+    def _validate_state(self) -> ReviewEvidence:
+        if self.state == "ready" and (not self.app_url or not self.report_url):
+            msg = "state 'ready' requires app_url and report_url"
+            raise ValueError(msg)
+        if self.state == "failed" and not (self.failure_reason or "").strip():
+            msg = "state 'failed' requires failure_reason"
+            raise ValueError(msg)
+        return self
+
+
+def _require_https(url: str) -> str:
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or not parsed.hostname:
+        msg = f"URL must be https with a host, got {url!r}"
+        raise ValueError(msg)
+    return url
+
+
 class BuildPausedPayload(BaseModel):
     """Payload emitted when a build is paused at a quality gate.
 
@@ -890,6 +1012,7 @@ class BuildPausedPayload(BaseModel):
         approval_subject: NATS subject where approval responses are expected.
         paused_at: ISO 8601 timestamp when the build was paused.
         correlation_id: Correlates this event with other build lifecycle events.
+        review_evidence: Preview and test evidence for a merge offer, or None.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -908,6 +1031,13 @@ class BuildPausedPayload(BaseModel):
     paused_at: str = Field(description="ISO 8601 timestamp when the build was paused")
     correlation_id: str = Field(
         description="Correlates this event with other build lifecycle events"
+    )
+    review_evidence: ReviewEvidence | None = Field(
+        default=None,
+        description=(
+            "Preview and test evidence for a merge offer (web-readiness W7), or None. "
+            "Optional; producers that do not prepare a preview leave it out."
+        ),
     )
 
 
