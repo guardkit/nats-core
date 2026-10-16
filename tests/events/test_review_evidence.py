@@ -17,7 +17,8 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from nats_core.events import BuildPausedPayload, ReviewEvidence, ReviewOutcome
+from nats_core.events import BuildPausedPayload, MergeCard, ReviewEvidence, ReviewOutcome
+from nats_core.events.pipeline import MergeCard as PipelineMergeCard
 from nats_core.events.pipeline import ReviewEvidence as PipelineReviewEvidence
 
 pytestmark = pytest.mark.unit
@@ -214,3 +215,156 @@ class TestBuildPausedReviewEvidence:
         ev = ReviewEvidence.model_validate(_ready())
         as_details = ev.model_dump(mode="json")
         assert ReviewEvidence.model_validate(as_details) == ev
+
+
+# ---------------------------------------------------------------------------
+# 16 October 2026: an ended preview, and Forge's description of the card.
+# ---------------------------------------------------------------------------
+
+
+def _ended(**overrides: Any) -> dict[str, Any]:
+    data = _ready(
+        state="ended",
+        app_url=None,
+        failure_reason="the preview's time was up",
+    )
+    data.update(overrides)
+    return data
+
+
+def _card(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "request_id": "merge-build-FEAT-ABC123-20261012140000",
+        "build_id": "build-FEAT-ABC123-20261012140000",
+        "correlation_id": "corr-1",
+        "approval_subject": "agents.approval.forge.merge-FEAT-ABC123",
+        "candidate_sha": _SHA,
+        "status": "ready",
+        "revision": 3,
+        "words": "FEAT-ABC123 built - 3 of 3 tasks passed.",
+    }
+    data.update(overrides)
+    return data
+
+
+class TestEndedEvidence:
+    def test_valid_ended_keeps_its_report(self) -> None:
+        ev = ReviewEvidence.model_validate(_ended())
+        assert ev.state == "ended"
+        assert ev.app_url is None
+        assert ev.report_url is not None
+        assert ev.failure_reason == "the preview's time was up"
+
+    @pytest.mark.parametrize("reason", [None, "", "   "])
+    def test_ended_without_reason_rejected(self, reason: str | None) -> None:
+        with pytest.raises(ValidationError, match="requires failure_reason"):
+            ReviewEvidence.model_validate(_ended(failure_reason=reason))
+
+    def test_unknown_state_still_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            ReviewEvidence.model_validate(_ready(state="expired"))
+
+
+class TestMergeCard:
+    def test_reexported_from_pipeline_module(self) -> None:
+        assert PipelineMergeCard is MergeCard
+
+    def test_valid_ready_card(self) -> None:
+        card = MergeCard.model_validate(_card())
+        assert card.status == "ready"
+        assert card.revision == 3
+        assert card.rebuild_offered is False
+        assert card.decision is None
+
+    @pytest.mark.parametrize("status", ["ended", "failed"])
+    def test_rebuild_offered_when_ended_or_failed(self, status: str) -> None:
+        card = MergeCard.model_validate(
+            _card(status=status, rebuild_offered=True, status_text="Preview expired at 14:07 UTC.")
+        )
+        assert card.rebuild_offered is True
+
+    @pytest.mark.parametrize("status", ["ready", "rebuilding"])
+    def test_rebuild_not_offered_otherwise(self, status: str) -> None:
+        with pytest.raises(ValidationError, match="Rebuild preview"):
+            MergeCard.model_validate(_card(status=status, rebuild_offered=True))
+
+    def test_decided_requires_decision_and_who(self) -> None:
+        with pytest.raises(ValidationError, match="requires decision and decided_by"):
+            MergeCard.model_validate(_card(status="decided"))
+        with pytest.raises(ValidationError, match="requires decision and decided_by"):
+            MergeCard.model_validate(_card(status="decided", decision="approve"))
+        card = MergeCard.model_validate(
+            _card(status="decided", decision="reject", decided_by="rich")
+        )
+        assert card.decided_by == "rich"
+
+    def test_only_decided_carries_a_decision(self) -> None:
+        with pytest.raises(ValidationError, match="only status 'decided'"):
+            MergeCard.model_validate(_card(decision="approve", decided_by="rich"))
+
+    def test_decided_rebuild_refused(self) -> None:
+        with pytest.raises(ValidationError):
+            MergeCard.model_validate(
+                _card(status="decided", decision="approve", decided_by="rich", rebuild_offered=True)
+            )
+
+    @pytest.mark.parametrize(
+        "field", ["request_id", "build_id", "correlation_id", "approval_subject"]
+    )
+    def test_identity_fields_required(self, field: str) -> None:
+        with pytest.raises(ValidationError):
+            MergeCard.model_validate(_card(**{field: ""}))
+        data = _card()
+        del data[field]
+        with pytest.raises(ValidationError):
+            MergeCard.model_validate(data)
+
+    @pytest.mark.parametrize("bad", ["abc", "A" * 40, ""])
+    def test_candidate_sha_validated(self, bad: str) -> None:
+        with pytest.raises(ValidationError):
+            MergeCard.model_validate(_card(candidate_sha=bad))
+
+    def test_negative_revision_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            MergeCard.model_validate(_card(revision=-1))
+
+    def test_unknown_status_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            MergeCard.model_validate(_card(status="expired"))
+
+    def test_extra_unknown_fields_ignored(self) -> None:
+        card = MergeCard.model_validate(_card(future_field="x"))
+        assert "future_field" not in card.model_dump()
+
+
+class TestBuildPausedMergeCard:
+    def test_old_payload_without_block_validates(self) -> None:
+        payload = BuildPausedPayload.model_validate(_paused(review_evidence=_ready()))
+        assert payload.merge_card is None
+
+    def test_payload_carries_typed_block_and_ended_evidence(self) -> None:
+        payload = BuildPausedPayload.model_validate(
+            _paused(
+                build_id="merge-FEAT-ABC123",
+                review_evidence=_ended(),
+                merge_card=_card(status="ended", rebuild_offered=True, status_text="x"),
+            )
+        )
+        assert isinstance(payload.merge_card, MergeCard)
+        # The payload's own build_id stays the synthetic id the buttons carry.
+        assert payload.build_id == "merge-FEAT-ABC123"
+        assert payload.merge_card.build_id == "build-FEAT-ABC123-20261012140000"
+
+    def test_json_round_trip(self) -> None:
+        original = BuildPausedPayload.model_validate(
+            _paused(
+                review_evidence=_ready(),
+                merge_card=_card(status="decided", decision="approve", decided_by="rich"),
+            )
+        )
+        restored = BuildPausedPayload.model_validate_json(original.model_dump_json())
+        assert restored == original
+
+    def test_invalid_block_rejects_payload(self) -> None:
+        with pytest.raises(ValidationError):
+            BuildPausedPayload.model_validate(_paused(merge_card=_card(revision=-2)))
