@@ -908,17 +908,22 @@ class ReviewEvidence(BaseModel):
     (``details["review_evidence"]``) and to ``BuildPausedPayload``. Jarvis
     renders it on the card. ``ready`` means preparation succeeded and the app
     and report links are live; ``failed`` means it did not, and the card offers
-    only Reject.
+    no Approve; ``ended`` means a preview that was ready has since been
+    stopped (its time was up, it made room for another card, a restart), with
+    the reason in ``failure_reason`` (16 October 2026). An ended record keeps
+    its report and media links while they are kept, and offers no Approve.
 
     URLs must be ``https``; allow-listing hosts is the consumer's job.
 
     Attributes:
-        state: ``ready`` when preparation succeeded, ``failed`` when it did not.
+        state: ``ready`` when preparation succeeded, ``failed`` when it did not,
+            ``ended`` when a ready preview has since been stopped.
         app_url: "Try the app" URL including ``?preview=<token>``; None when failed.
         report_url: The test report (HTML ``index.html``).
         media_urls: Screenshots and the video of the key journey.
         diagnostics_url: For ``failed``: the failure's logs, report or trace.
-        failure_reason: Plain-English reason preparation failed.
+        failure_reason: Plain-English reason preparation failed, or why an
+            ended preview was stopped.
         candidate_sha: The offered candidate commit (40 hex).
         candidate_tree: The candidate commit's tree (40 hex).
         preview_tree: The tree actually previewed: the candidate joined onto main.
@@ -932,8 +937,11 @@ class ReviewEvidence(BaseModel):
 
     model_config = ConfigDict(extra="ignore", frozen=True)
 
-    state: Literal["ready", "failed"] = Field(
-        description="'ready' when preparation succeeded, 'failed' when it did not"
+    state: Literal["ready", "failed", "ended"] = Field(
+        description=(
+            "'ready' when preparation succeeded, 'failed' when it did not, "
+            "'ended' when a ready preview has since been stopped"
+        )
     )
     app_url: str | None = Field(
         default=None, description="'Try the app' URL with its preview token; None when failed"
@@ -990,8 +998,106 @@ class ReviewEvidence(BaseModel):
         if self.state == "ready" and (not self.app_url or not self.report_url):
             msg = "state 'ready' requires app_url and report_url"
             raise ValueError(msg)
-        if self.state == "failed" and not (self.failure_reason or "").strip():
-            msg = "state 'failed' requires failure_reason"
+        if self.state in ("failed", "ended") and not (self.failure_reason or "").strip():
+            msg = f"state {self.state!r} requires failure_reason"
+            raise ValueError(msg)
+        return self
+
+
+#: What a merge card can be showing (16 October 2026). See :class:`MergeCard`.
+MergeCardStatus = Literal["ready", "rebuilding", "ended", "failed", "decided"]
+
+
+class MergeCard(BaseModel):
+    """Forge's description of one merge card with a review preview (16 October 2026).
+
+    Rides on ``BuildPausedPayload.merge_card``. Forge sends it whenever the
+    card's offer, its preview or its decision changes, and again on every
+    preview sweep, so Jarvis can keep the Slack message it posted true:
+    Jarvis edits the posted card to match the newest description, and posts a
+    replacement card (whose buttons answer this same offer) when it has no
+    record of one. Sending the same description twice is harmless.
+
+    WHICH CARD IS MEANT. ``request_id`` names the offer; ``build_id`` (the
+    REAL build id) and ``correlation_id`` must match what was stored with the
+    card. The payload's own ``build_id`` stays the synthetic ``merge-FEAT-…``
+    id the buttons carry; the real build id is used only for this identity
+    check. Neither the feature nor the commit identifies a card;
+    ``candidate_sha`` is checked against the stored card separately.
+
+    REVISIONS. ``revision`` is the card's one counter in Forge's ledger. It
+    goes up with every change that can alter the card (an offer or amended
+    offer, a decision, a refused approval, any change to the build's preview
+    lease). Apply a description only when its revision is at least the one
+    last applied; a description with the same revision is still applied when
+    its drawing differs.
+
+    BUTTONS BY STATUS. ``ready``: Approve and Reject. ``rebuilding``: Reject.
+    ``ended`` and ``failed``: Reject, and Rebuild preview when
+    ``rebuild_offered``. ``decided``: none. A Rebuild press answers the
+    offer's ``approval_subject`` with this ``request_id``,
+    ``decision="defer"`` and ``notes="rebuild-preview"``.
+
+    Attributes:
+        request_id: The offer's approval request id (``merge-<real build id>``).
+        build_id: The real build id, for the identity check only.
+        correlation_id: The offer's correlation id.
+        approval_subject: Where the card's buttons reply.
+        candidate_sha: The offered candidate commit (40 hex).
+        status: What the card shows: ready, rebuilding, ended, failed or decided.
+        status_text: Forge's plain-English line about the preview for every
+            status but ``ready`` (for example "Preview expired at 14:07 UTC."),
+            or None.
+        rebuild_offered: True when the card offers Rebuild preview.
+        revision: The card's revision counter.
+        words: The card's own sentences (the offer's text).
+        decision: ``approve`` or ``reject`` once decided, else None.
+        decided_by: Who decided, once decided, else None.
+    """
+
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+    request_id: str = Field(min_length=1, description="The offer's approval request id")
+    build_id: str = Field(min_length=1, description="The real build id (identity check only)")
+    correlation_id: str = Field(min_length=1, description="The offer's correlation id")
+    approval_subject: str = Field(min_length=1, description="Where the card's buttons reply")
+    candidate_sha: str = Field(description="The offered candidate commit (40 hex)")
+    status: MergeCardStatus = Field(
+        description="What the card shows: ready, rebuilding, ended, failed or decided"
+    )
+    status_text: str | None = Field(
+        default=None,
+        description="Forge's plain-English line about the preview, for every status but ready",
+    )
+    rebuild_offered: bool = Field(
+        default=False, description="True when the card offers Rebuild preview"
+    )
+    revision: int = Field(ge=0, description="The card's revision counter")
+    words: str = Field(description="The card's own sentences (the offer's text)")
+    decision: Literal["approve", "reject"] | None = Field(
+        default=None, description="'approve' or 'reject' once decided, else None"
+    )
+    decided_by: str | None = Field(default=None, description="Who decided, once decided")
+
+    @field_validator("candidate_sha")
+    @classmethod
+    def _validate_candidate_sha(cls, v: str) -> str:
+        if not GIT_OBJECT_ID_PATTERN.match(v):
+            msg = f"must be a 40-character lowercase hex git object id, got {v!r}"
+            raise ValueError(msg)
+        return v
+
+    @model_validator(mode="after")
+    def _validate_status(self) -> MergeCard:
+        if self.status == "decided":
+            if self.decision is None or not (self.decided_by or "").strip():
+                msg = "status 'decided' requires decision and decided_by"
+                raise ValueError(msg)
+        elif self.decision is not None:
+            msg = "only status 'decided' carries a decision"
+            raise ValueError(msg)
+        if self.rebuild_offered and self.status not in ("ended", "failed"):
+            msg = "Rebuild preview is offered only when the preview has ended or failed"
             raise ValueError(msg)
         return self
 
@@ -1034,6 +1140,7 @@ class BuildPausedPayload(BaseModel):
         paused_at: ISO 8601 timestamp when the build was paused.
         correlation_id: Correlates this event with other build lifecycle events.
         review_evidence: Preview and test evidence for a merge offer, or None.
+        merge_card: Forge's description of a merge card with a preview, or None.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -1058,6 +1165,14 @@ class BuildPausedPayload(BaseModel):
         description=(
             "Preview and test evidence for a merge offer (web-readiness W7), or None. "
             "Optional; producers that do not prepare a preview leave it out."
+        ),
+    )
+    merge_card: MergeCard | None = Field(
+        default=None,
+        description=(
+            "Forge's description of a merge card with a review preview (16 October "
+            "2026): which offer it is, its status, revision and reply data. Optional; "
+            "every other card leaves it out."
         ),
     )
 
