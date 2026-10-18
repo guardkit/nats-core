@@ -149,6 +149,20 @@ class TestPlanningQueuedPayload:
         with pytest.raises(ValidationError, match="CLI trigger"):
             _make_planning_queued(triggered_by="cli", originating_adapter="slack")
 
+    def test_linear_adapter_via_jarvis(self) -> None:
+        """A request sent from the Linear front door validates."""
+        payload = _make_planning_queued(
+            triggered_by="jarvis",
+            originating_adapter="linear",
+            originating_user="linear:user-0001",
+        )
+        assert payload.originating_adapter == "linear"
+
+    def test_cli_rejects_linear_adapter(self) -> None:
+        """The CLI provenance rule is unchanged: 'linear' is not a CLI adapter."""
+        with pytest.raises(ValidationError, match="CLI trigger"):
+            _make_planning_queued(triggered_by="cli", originating_adapter="linear")
+
     def test_cli_trigger_with_terminal_adapter(self) -> None:
         """A CLI-originated planning request (testing path) validates."""
         payload = _make_planning_queued(

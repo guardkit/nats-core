@@ -218,6 +218,17 @@ class TestBuildQueuedPayload:
         assert payload.parent_request_id == "jarvis-dispatch-001"
         assert payload.max_turns == 10  # noqa: PLR2004
 
+    def test_build_queued_payload_linear_adapter(self) -> None:
+        """A build carried from the Linear front door validates and round-trips."""
+        payload = _make_build_queued(
+            triggered_by="jarvis",
+            originating_adapter="linear",
+            originating_user="linear:user-0001",
+        )
+        assert payload.originating_adapter == "linear"
+        restored = BuildQueuedPayload.model_validate(payload.model_dump(mode="json"))
+        assert restored.originating_adapter == "linear"
+
     def test_build_queued_payload_json_round_trip(self) -> None:
         """JSON round-trip fidelity."""
         payload = _make_build_queued()

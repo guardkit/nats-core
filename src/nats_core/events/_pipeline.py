@@ -53,6 +53,7 @@ OriginatingAdapter = Literal[
     "slack",
     "dashboard",
     "cli-wrapper",
+    "linear",
 ]
 
 
