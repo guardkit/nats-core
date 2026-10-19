@@ -114,16 +114,46 @@ def test_reconnect_time_wait_negative() -> None:
 
 
 def test_max_reconnect_attempts_zero() -> None:
-    """Scenario: Max reconnect attempts at zero means no retries."""
+    """Scenario: Max reconnect attempts at zero is accepted (nats-py reads it as unlimited)."""
     cfg = _make(max_reconnect_attempts=0)
     assert cfg.max_reconnect_attempts == 0
 
 
-def test_max_reconnect_attempts_negative() -> None:
-    """Scenario: Negative max reconnect attempts is rejected."""
+def test_max_reconnect_attempts_minus_one_reconnects_for_ever() -> None:
+    """Scenario: -1 is accepted, meaning reconnect for ever, and is passed on as it is."""
+    cfg = _make(max_reconnect_attempts=-1)
+    assert cfg.max_reconnect_attempts == -1
+    assert cfg.to_connect_kwargs()["max_reconnect_attempts"] == -1
+
+
+def test_max_reconnect_attempts_minus_one_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Scenario: NATS_MAX_RECONNECT_ATTEMPTS=-1 is accepted from the environment."""
+    monkeypatch.setenv("NATS_MAX_RECONNECT_ATTEMPTS", "-1")
+    assert NATSConfig().max_reconnect_attempts == -1
+
+
+def test_max_reconnect_attempts_below_minus_one_is_refused() -> None:
+    """Scenario: A value below -1 has no meaning and is rejected."""
     with pytest.raises(ValidationError) as exc_info:
-        _make(max_reconnect_attempts=-1)
+        _make(max_reconnect_attempts=-2)
     assert "max_reconnect_attempts" in str(exc_info.value)
+
+
+def test_max_reconnect_attempts_default_stays_sixty() -> None:
+    """Scenario: The default is unchanged: 60 attempts, then closed."""
+    cfg = NATSConfig()
+    assert cfg.max_reconnect_attempts == 60
+    assert cfg.to_connect_kwargs()["max_reconnect_attempts"] == 60
+
+
+def test_max_reconnect_attempts_description_says_what_nats_py_does() -> None:
+    """Scenario: The field's description no longer says 0 means no retries."""
+    said = NATSConfig.model_fields["max_reconnect_attempts"].description or ""
+    assert "-1 = reconnect for ever" in said
+    assert "0 also means unlimited" in said
+    assert "no retries" not in said
 
 
 # ---------------------------------------------------------------------------

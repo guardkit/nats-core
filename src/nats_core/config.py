@@ -44,8 +44,12 @@ class NATSConfig(BaseSettings):
     )
     max_reconnect_attempts: int = Field(
         default=60,
-        ge=0,
-        description="Maximum number of reconnection attempts (0 means no retries)",
+        ge=-1,
+        description=(
+            "Maximum number of reconnection attempts. -1 = reconnect for ever. "
+            "0 also means unlimited in nats-py; use a positive number to give "
+            "up after that many attempts"
+        ),
     )
     name: str = Field(
         default="nats-core-client",
@@ -141,14 +145,14 @@ class NATSConfig(BaseSettings):
             ValueError: If auth field combinations are invalid.
         """
         has_user = self.user is not None
-        has_password = self.password is not None
+        has_pw = self.password is not None
         has_creds = self.creds_file is not None
 
-        if has_user != has_password:
+        if has_user != has_pw:
             msg = "user and password must be provided together"
             raise ValueError(msg)
 
-        if has_password and has_creds:
+        if has_pw and has_creds:
             msg = "password auth and creds_file are mutually exclusive"
             raise ValueError(msg)
 
