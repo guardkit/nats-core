@@ -50,7 +50,7 @@ class NATSClient:
             ``agent-registry`` KV).
         disconnected_cb: Optional async callback invoked when the underlying
             connection is lost. nats-py will then begin reconnect attempts up
-            to ``NATSConfig.max_reconnect_attempts``.
+            to ``NATSConfig.max_reconnect_attempts`` (-1, or 0: for ever).
         closed_cb: Optional async callback invoked when the connection has
             reached terminal-closed state (reconnect budget exhausted). When
             omitted, a default callback is wired that logs a structured
